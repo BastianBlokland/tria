@@ -1,0 +1,21 @@
+# --------------------------------------------------------------------------------------------------
+# Files to ignore in git.
+# --------------------------------------------------------------------------------------------------
+
+# Generated files.
+/include/config.hpp
+
+# Build output.
+/[Bb]uild*
+/[Bb]in*
+/compile_commands.json
+
+# User settings (Except portable common settings).
+/.vscode/*
+!/.vscode/settings.json
+!/.vscode/extensions.json
+!/.vscode/tasks.json
+!/.vscode/launch.json
+
+# Clangd cache.
+/.clangd/index/*
