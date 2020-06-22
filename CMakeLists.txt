@@ -5,7 +5,10 @@ project(
   VERSION 0.1.0
   LANGUAGES CXX)
 
-# Custom options options
+# Set path for custom cmake modules.
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake")
+
+# Custom options.
 set(LINTING "Off" CACHE BOOL "Should source linting be enabled")
 
 # Print some diagnostic information.
@@ -72,3 +75,4 @@ configure_file("include/config.hpp.in" "${PROJECT_SOURCE_DIR}/include/config.hpp
 
 # Add child cmake files.
 add_subdirectory(src)
+add_subdirectory(apps)

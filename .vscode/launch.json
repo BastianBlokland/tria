@@ -1,4 +1,16 @@
 {
   "version": "0.2.0",
-  "configurations": []
+  "configurations": [
+    {
+      "name": "sandbox",
+      "preLaunchTask": "build",
+      "type": "lldb",
+      "request": "launch",
+      "program": "${workspaceFolder}/bin/sandbox",
+      "args": [],
+      "cwd": "${workspaceFolder}",
+      "terminal": "integrated",
+      "stopOnEntry": false
+    },
+  ]
 }
