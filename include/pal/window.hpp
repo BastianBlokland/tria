@@ -1,5 +1,6 @@
 #pragma once
+#include "../defines.hpp"
 
-#if defined(linux)
+#if PLATFORM_LINUX
 #include "window.linux.xcb.hpp"
 #endif
