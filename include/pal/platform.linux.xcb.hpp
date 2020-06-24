@@ -1,8 +1,8 @@
 #pragma once
 #include "window.linux.xcb.hpp"
+#include <cstdint>
 #include <list>
 #include <xcb/xcb.h>
-#include <xcb/xproto.h>
 
 namespace pal {
 

@@ -2,6 +2,7 @@
 #include "pal/err/display_protocol_err.hpp"
 #include "pal/err/window_err.hpp"
 #include <algorithm>
+#include <array>
 #include <stdexcept>
 #include <string>
 

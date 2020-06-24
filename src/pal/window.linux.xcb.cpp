@@ -1,4 +1,5 @@
 #include "pal/window.linux.xcb.hpp"
+#include <array>
 
 namespace pal {
 
