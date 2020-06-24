@@ -39,13 +39,6 @@ else()
   set(CMAKE_CXX_FLAGS_RELEASE "-O3 -DNDEBUG ${CXX_FLAGS_SHARED}")
 endif()
 
-# Older version of libstdc++ require linking against the <experimental/filesystem> library directly.
-# TODO(bastian): Investigate if there is a better way to handle this.
-if((UNIX AND NOT APPLE) OR MINGW)
-  message(STATUS "Add linking to stdc++fs (filesystem library)")
-  link_libraries(stdc++fs)
-endif()
-
 # Find the threads library.
 message(STATUS "Finding threads package")
 set(CMAKE_THREAD_PREFER_PTHREAD On)
