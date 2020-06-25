@@ -41,8 +41,6 @@ auto Platform::handleEvents() -> void {
         // Unknown window.
         break;
       }
-      window->m_x      = configMsg->x;
-      window->m_y      = configMsg->y;
       window->m_width  = configMsg->width;
       window->m_height = configMsg->height;
     } break;
@@ -54,7 +52,7 @@ auto Platform::handleEvents() -> void {
   }
 }
 
-auto Platform::createWindow(uint16_t x, uint16_t y, uint16_t width, uint16_t height) -> Window& {
+auto Platform::createWindow(uint16_t width, uint16_t height) -> Window& {
   if (!m_xcbCon) {
     xcbSetup();
   }
@@ -77,8 +75,8 @@ auto Platform::createWindow(uint16_t x, uint16_t y, uint16_t width, uint16_t hei
       XCB_COPY_FROM_PARENT,
       winXId,
       m_xcbScreen->root,
-      x,
-      y,
+      0,
+      0,
       width,
       height,
       0,
@@ -97,7 +95,7 @@ auto Platform::createWindow(uint16_t x, uint16_t y, uint16_t width, uint16_t hei
   xcb_flush(m_xcbCon);
 
   // Keep track of the window.
-  m_windows.push_back(Window{m_xcbCon, winXId, x, y, width, height});
+  m_windows.push_back(Window{m_xcbCon, winXId, width, height});
   return m_windows.back();
 }
 

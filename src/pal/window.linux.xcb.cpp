@@ -18,19 +18,6 @@ auto Window::setTitle(const std::string& title) -> void {
   xcb_flush(m_xcbCon);
 }
 
-auto Window::setPos(uint16_t x, uint16_t y) -> void {
-
-  const auto valList = std::array<uint32_t, 2>{x, y};
-  xcb_configure_window(
-      m_xcbCon, m_xcbWin, XCB_CONFIG_WINDOW_X | XCB_CONFIG_WINDOW_Y, valList.data());
-
-  xcb_flush(m_xcbCon);
-
-  // Update local information immediately.
-  m_x = x;
-  m_y = y;
-}
-
 auto Window::setSize(uint16_t width, uint16_t height) -> void {
 
   const auto valList = std::array<uint32_t, 2>{width, height};
