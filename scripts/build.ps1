@@ -4,6 +4,7 @@
 .DESCRIPTION
   Build the project as configured using MinGW make.
   Dependencies: MinGW (or MinGW-w64).
+  Note: either 7.x or 9.x as MinGW 8.x ships with a broken c++ std::filesystem api.
 .PARAMETER Threads
   Default: -1 (As many as there are cores in the machine)
   Number of threads to use for building.
