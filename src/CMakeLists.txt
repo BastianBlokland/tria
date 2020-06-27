@@ -9,6 +9,14 @@ if(UNIX)
   message(STATUS "Finding xcb package")
   find_package(xcb REQUIRED)
   target_link_libraries(pal PRIVATE xcb)
+
+elseif(WIN32)
+  message(STATUS "Configuring win32 pal library")
+
+  add_library(pal STATIC
+    pal/platform.win32.cpp
+    pal/window.win32.cpp)
+
 endif()
 target_compile_features(pal PRIVATE cxx_std_17)
 if(MSVC)

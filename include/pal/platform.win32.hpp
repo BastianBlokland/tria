@@ -1,18 +1,18 @@
 #pragma once
-#include "window.linux.xcb.hpp"
-#include <cstdint>
+#include "window.win32.hpp"
 #include <list>
-#include <string>
-#include <xcb/xcb.h>
+#include <windows.h>
 
 namespace pal {
 
 class Platform final {
+  friend auto WindowProc(HWND, UINT, WPARAM, LPARAM) noexcept -> LRESULT;
+
 public:
   using WindowIterator = typename std::list<Window>::iterator;
 
   explicit Platform(std::string appName) :
-      m_appName{std::move(appName)}, m_xcbCon{nullptr}, m_xcbScreen{nullptr} {}
+      m_appName{std::move(appName)}, m_hInstance{nullptr}, m_winCreateCounter{0} {}
   Platform(const Platform& rhs)     = delete;
   Platform(Platform&& rhs) noexcept = delete;
   ~Platform();
@@ -32,17 +32,14 @@ public:
 
 private:
   std::string m_appName;
-  xcb_connection_t* m_xcbCon;
-  xcb_screen_t* m_xcbScreen;
-  xcb_atom_t m_xcbProtoMsgAtom;
-  xcb_atom_t m_xcbDeleteMsgAtom;
+  HINSTANCE m_hInstance;
+  unsigned int m_winCreateCounter;
   std::list<Window> m_windows;
 
-  auto xcbSetup() -> void;
-  auto xcbTeardown() noexcept -> void;
-  auto xcbCheckErr() -> void;
-  auto xcbGetAtom(const std::string& name) noexcept -> xcb_atom_t;
-  auto getWindow(xcb_window_t xcbId) noexcept -> Window*;
+  auto win32Setup() -> void;
+  auto getWindow(HWND winHandle) noexcept -> Window*;
+
+  auto handleEvent(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) noexcept -> bool;
 };
 
 } // namespace pal

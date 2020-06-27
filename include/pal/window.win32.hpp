@@ -1,7 +1,7 @@
 #pragma once
 #include <cstdint>
 #include <string>
-#include <xcb/xcb.h>
+#include <windows.h>
 
 namespace pal {
 
@@ -26,15 +26,22 @@ public:
   auto setSize(uint16_t width, uint16_t height) -> void;
 
 private:
-  xcb_connection_t* m_xcbCon;
-  xcb_window_t m_xcbWin;
+  HWND m_winHandle;
+  std::string m_winClassName;
+  DWORD m_winDwStyle;
   uint16_t m_width;
   uint16_t m_height;
   bool m_isCloseRequested;
 
-  Window(xcb_connection_t* xcbCon, xcb_window_t xcbWin, uint16_t width, uint16_t height) noexcept :
-      m_xcbCon{xcbCon},
-      m_xcbWin{xcbWin},
+  Window(
+      HWND winHandle,
+      std::string winClassName,
+      DWORD winDwStyle,
+      uint16_t width,
+      uint16_t height) noexcept :
+      m_winHandle{winHandle},
+      m_winClassName{std::move(winClassName)},
+      m_winDwStyle{winDwStyle},
       m_width{width},
       m_height{height},
       m_isCloseRequested{false} {}
