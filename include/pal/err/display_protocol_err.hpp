@@ -1,21 +1,22 @@
 #pragma once
 #include <exception>
+#include <string>
 
 namespace pal::err {
 
 class DisplayProtocolErr final : public std::exception {
 public:
   DisplayProtocolErr() = delete;
-  explicit DisplayProtocolErr(int platformCode) : m_platformCode{platformCode} {}
+  DisplayProtocolErr(unsigned long platformCode, std::string platformMsg) :
+      m_platformCode{platformCode}, m_platformMsg{std::move(platformMsg)} {}
 
-  [[nodiscard]] auto what() const noexcept -> const char* override {
-    return "Error in platform display protocol";
-  }
+  [[nodiscard]] auto what() const noexcept -> const char* override { return m_platformMsg.c_str(); }
 
-  [[nodiscard]] auto getPlatformCode() const noexcept -> int { return m_platformCode; }
+  [[nodiscard]] auto getPlatformCode() const noexcept -> unsigned long { return m_platformCode; }
 
 private:
-  int m_platformCode;
+  unsigned long m_platformCode;
+  std::string m_platformMsg;
 };
 
 } // namespace pal::err

@@ -5,6 +5,9 @@
       "label": "build",
       "type": "shell",
       "command": "${workspaceFolder}/scripts/build.sh",
+      "windows": {
+        "command": "${workspaceFolder}\\scripts\\build.ps1",
+      },
       "presentation": {
         "echo": true,
         "panel": "shared",
