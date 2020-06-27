@@ -1,4 +1,5 @@
 #include "pal/platform.hpp"
+#include "pal/utils.hpp"
 #include <chrono>
 #include <iostream>
 #include <sstream>
@@ -9,6 +10,7 @@ using namespace std::literals;
 auto main(int /*unused*/, char* * /*unused*/) -> int {
   std::cout << "Sandbox init\n";
 
+  pal::setThreadName("main-thread");
   auto platform = pal::Platform{"Tria sandbox"};
   auto& win     = platform.createWindow(512, 512);
 

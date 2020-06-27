@@ -39,11 +39,6 @@ else()
   set(CMAKE_CXX_FLAGS_RELEASE "-O3 -DNDEBUG ${CXX_FLAGS_SHARED}")
 endif()
 
-# Find the threads library.
-message(STATUS "Finding threads package")
-set(CMAKE_THREAD_PREFER_PTHREAD On)
-find_package(Threads REQUIRED)
-
 # Generate a 'compile_commands.json' for use by clangd.
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
