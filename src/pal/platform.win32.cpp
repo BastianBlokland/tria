@@ -6,8 +6,8 @@
 
 namespace pal {
 
-constexpr auto windowMinWidth = 128;
-constexpr auto windowMaxWidth = 128;
+constexpr auto windowMinWidth  = 128;
+constexpr auto windowMinHeight = 128;
 
 auto WindowProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) noexcept -> LRESULT {
 
@@ -199,7 +199,7 @@ auto Platform::handleEvent(HWND hWnd, UINT msg, WPARAM /*unused*/, LPARAM lParam
   case WM_GETMINMAXINFO: {
     auto minMaxInfo              = reinterpret_cast<LPMINMAXINFO>(lParam);
     minMaxInfo->ptMinTrackSize.x = windowMinWidth;
-    minMaxInfo->ptMinTrackSize.y = windowMaxWidth;
+    minMaxInfo->ptMinTrackSize.y = windowMinHeight;
     return true;
   }
   case WM_PAINT: {
