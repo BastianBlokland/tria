@@ -3,7 +3,7 @@
 
 namespace pal {
 
-auto Window::setTitle(const std::string& title) -> void {
+auto Window::setTitle(std::string_view title) -> void {
 
   xcb_change_property(
       m_xcbCon,
@@ -13,7 +13,7 @@ auto Window::setTitle(const std::string& title) -> void {
       XCB_ATOM_STRING,
       8,
       title.size(),
-      title.c_str());
+      title.data());
 
   xcb_flush(m_xcbCon);
 }

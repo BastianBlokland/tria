@@ -3,6 +3,7 @@
 #include <cstdint>
 #include <list>
 #include <string>
+#include <string_view>
 #include <xcb/xcb.h>
 
 namespace pal {
@@ -20,7 +21,7 @@ public:
   auto operator=(const Platform& rhs) -> Platform& = delete;
   auto operator=(Platform&& rhs) noexcept -> Platform& = delete;
 
-  [[nodiscard]] auto getAppName() const noexcept -> const std::string& { return m_appName; }
+  [[nodiscard]] auto getAppName() const noexcept -> std::string_view { return m_appName; }
 
   [[nodiscard]] auto beginWindows() noexcept -> WindowIterator { return m_windows.begin(); };
   [[nodiscard]] auto endWindows() noexcept -> WindowIterator { return m_windows.end(); };

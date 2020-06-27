@@ -1,6 +1,7 @@
 #pragma once
 #include <cstdint>
 #include <string>
+#include <string_view>
 #include <windows.h>
 
 namespace pal {
@@ -22,7 +23,7 @@ public:
   [[nodiscard]] auto getWidth() const noexcept { return m_width; }
   [[nodiscard]] auto getHeight() const noexcept { return m_height; }
 
-  auto setTitle(const std::string& title) -> void;
+  auto setTitle(std::string_view title) -> void;
   auto setSize(uint16_t width, uint16_t height) -> void;
 
 private:
