@@ -2,9 +2,7 @@
 
 namespace pal {
 
-auto Window::setTitle(const std::string& title) -> void {
-  SetWindowText(m_winHandle, title.c_str());
-}
+auto Window::setTitle(std::string_view title) -> void { SetWindowText(m_winHandle, title.data()); }
 
 auto Window::setSize(uint16_t width, uint16_t height) -> void {
 
