@@ -21,6 +21,7 @@ elseif(WIN32)
 
   add_library(pal STATIC
     pal/platform.win32.cpp
+    pal/utils.win32.cpp
     pal/window.win32.cpp)
 
 endif()
