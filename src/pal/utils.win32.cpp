@@ -1,9 +1,25 @@
 #include "pal/utils.hpp"
+#include <array>
 #include <codecvt>
 #include <locale>
 #include <windows.h>
 
 namespace pal {
+
+static auto errorExit(const char* msg) {
+  std::fprintf(stderr, "%s\n", msg);
+  std::fflush(stderr);
+  std::exit(EXIT_FAILURE);
+}
+
+auto getCurExecutablePath() noexcept -> fs::path {
+  auto pathBuffer = std::array<char, MAX_PATH>{};
+  auto size       = GetModuleFileName(nullptr, pathBuffer.data(), MAX_PATH);
+  if (size == 0) {
+    errorExit("Failed to retreive executable filename");
+  }
+  return fs::path{pathBuffer.data()};
+}
 
 /* Since Windows 10 version 1607 there is an api to name threads. If our windows version is older
  * or we are compiling with MinGW (which unfortunately at the time of writing doesn't have this api

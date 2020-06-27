@@ -1,8 +1,27 @@
 #include "pal/utils.hpp"
+#include <cstdio>
+#include <cstdlib>
 #include <cstring>
 #include <pthread.h>
 
 namespace pal {
+
+static auto errorExit(const char* msg) {
+  std::fprintf(stderr, "%s\n", msg);
+  std::fflush(stderr);
+  std::exit(EXIT_FAILURE);
+}
+
+auto getCurExecutablePath() noexcept -> fs::path {
+  constexpr auto selfLink = "/proc/self/exe";
+
+  std::error_code err;
+  auto path = fs::read_symlink(selfLink, err);
+  if (err) {
+    errorExit("Failed to read '/proc/self/exe'");
+  }
+  return path;
+}
 
 auto setThreadName(std::string_view name) noexcept -> bool {
   const auto curThread = pthread_self();
