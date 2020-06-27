@@ -3,7 +3,6 @@
 #include "pal/err/window_err.hpp"
 #include <algorithm>
 #include <array>
-#include <stdexcept>
 #include <string>
 
 namespace pal {
@@ -145,7 +144,31 @@ auto Platform::xcbCheckErr() -> void {
   }
   const auto err = xcb_connection_has_error(m_xcbCon);
   if (err != 0) {
-    throw err::DisplayProtocolErr{err};
+    std::string msg;
+    switch (err) {
+    case XCB_CONN_ERROR:
+      msg = "Connection error";
+      break;
+    case XCB_CONN_CLOSED_EXT_NOTSUPPORTED:
+      msg = "Extension not supported";
+      break;
+    case XCB_CONN_CLOSED_MEM_INSUFFICIENT:
+      msg = "Insufficient memory available";
+      break;
+    case XCB_CONN_CLOSED_REQ_LEN_EXCEED:
+      msg = "Request length exceeded";
+      break;
+    case XCB_CONN_CLOSED_PARSE_ERR:
+      msg = "Failed to parse display string";
+      break;
+    case XCB_CONN_CLOSED_INVALID_SCREEN:
+      msg = "No valid screen available";
+      break;
+    default:
+      msg = "Unknown error";
+      break;
+    }
+    throw err::DisplayProtocolErr{static_cast<unsigned long>(err), std::move(msg)};
   }
 }
 
