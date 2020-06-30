@@ -56,7 +56,8 @@ private:
   auto logLoop() noexcept -> void {
     pal::setThreadName("log_thread");
 
-    while (!m_threadShutdown) {
+    auto running = true;
+    while (running) {
 
       // Wait for a message to be logged.
       {
@@ -65,6 +66,10 @@ private:
 
         // Move the messages into our process buffer.
         m_msgsInput.swap(m_msgsProcess);
+
+        if (m_threadShutdown) {
+          running = false;
+        }
       }
 
       // Process all messages.
