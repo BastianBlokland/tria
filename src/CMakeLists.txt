@@ -1,3 +1,20 @@
+# Log (logging library).
+message(STATUS "Configuring log library")
+add_library(log STATIC
+  log/json_sink.cpp
+  log/logger.cpp
+  log/param.cpp
+  log/pretty_sink.cpp)
+target_compile_features(log PRIVATE cxx_std_17)
+if(MSVC)
+  target_compile_options(log PRIVATE /EHsc)
+else()
+  target_compile_options(log PRIVATE -fexceptions)
+endif()
+target_include_directories(log PUBLIC ${PROJECT_SOURCE_DIR}/include)
+target_include_directories(log PRIVATE log)
+target_link_libraries(log PRIVATE pal)
+
 # Pal (Platform abstraction layer).
 if(UNIX)
   message(STATUS "Configuring unix pal library")
@@ -33,3 +50,4 @@ else()
 endif()
 target_include_directories(pal PUBLIC ${PROJECT_SOURCE_DIR}/include)
 target_include_directories(pal PRIVATE pal)
+target_include_directories(pal PRIVATE log)

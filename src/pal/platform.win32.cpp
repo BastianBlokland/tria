@@ -140,6 +140,8 @@ auto Platform::createWindow(uint16_t width, uint16_t height) -> Window& {
   SetForegroundWindow(winHandle);
   SetFocus(winHandle);
 
+  LOG_I(m_logger, "Window created", {"width", width}, {"height", height});
+
   // Keep track of the window.
   m_windows.push_back(Window{winHandle, std::move(className), dwStyle, width, height});
   return m_windows.back();
@@ -157,6 +159,8 @@ auto Platform::destroyWindow(const Window& win) -> void {
   // Destroy the win32 window and remove the window class.
   DestroyWindow(win.m_winHandle);
   UnregisterClass(win.m_winClassName.c_str(), m_hInstance);
+
+  LOG_I(m_logger, "Window destroyed");
 
   // Remove the window from our windows list.
   m_windows.erase(winItr);
@@ -190,8 +194,15 @@ auto Platform::handleEvent(HWND hWnd, UINT msg, WPARAM /*unused*/, LPARAM lParam
   case WM_SIZE: {
     auto* window = getWindow(hWnd);
     if (window) {
-      window->m_width  = LOWORD(lParam);
-      window->m_height = HIWORD(lParam);
+      const auto newWidth  = LOWORD(lParam);
+      const auto newHeight = HIWORD(lParam);
+
+      if (newWidth != window->m_width || newHeight != window->m_height) {
+        LOG_D(m_logger, "Window resized", {"width", window->m_width}, {"height", window->m_height});
+      }
+
+      window->m_width  = newWidth;
+      window->m_height = newHeight;
       return true;
     }
     return false;

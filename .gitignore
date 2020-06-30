@@ -5,6 +5,9 @@
 # Generated files.
 /include/config.hpp
 
+# Log files
+*.log
+
 # Build output.
 /[Bb]uild*
 /[Bb]in*

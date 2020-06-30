@@ -1,4 +1,5 @@
 #pragma once
+#include "log/api.hpp"
 #include "window.linux.xcb.hpp"
 #include <cstdint>
 #include <list>
@@ -12,8 +13,8 @@ class Platform final {
 public:
   using WindowIterator = typename std::list<Window>::iterator;
 
-  explicit Platform(std::string appName) :
-      m_appName{std::move(appName)}, m_xcbCon{nullptr}, m_xcbScreen{nullptr} {}
+  explicit Platform(log::Logger* logger, std::string appName) :
+      m_logger{logger}, m_appName{std::move(appName)}, m_xcbCon{nullptr}, m_xcbScreen{nullptr} {}
   Platform(const Platform& rhs)     = delete;
   Platform(Platform&& rhs) noexcept = delete;
   ~Platform();
@@ -32,6 +33,7 @@ public:
   auto destroyWindow(const Window& win) -> void;
 
 private:
+  log::Logger* m_logger;
   std::string m_appName;
   xcb_connection_t* m_xcbCon;
   xcb_screen_t* m_xcbScreen;

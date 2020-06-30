@@ -1,4 +1,5 @@
 #pragma once
+#include "log/api.hpp"
 #include "window.win32.hpp"
 #include <list>
 #include <string>
@@ -13,8 +14,11 @@ class Platform final {
 public:
   using WindowIterator = typename std::list<Window>::iterator;
 
-  explicit Platform(std::string appName) :
-      m_appName{std::move(appName)}, m_hInstance{nullptr}, m_winCreateCounter{0} {}
+  explicit Platform(log::Logger* logger, std::string appName) :
+      m_logger{logger},
+      m_appName{std::move(appName)},
+      m_hInstance{nullptr},
+      m_winCreateCounter{0} {}
   Platform(const Platform& rhs)     = delete;
   Platform(Platform&& rhs) noexcept = delete;
   ~Platform();
@@ -33,6 +37,7 @@ public:
   auto destroyWindow(const Window& win) -> void;
 
 private:
+  log::Logger* m_logger;
   std::string m_appName;
   HINSTANCE m_hInstance;
   unsigned int m_winCreateCounter;
