@@ -1,11 +1,12 @@
-#include "log/api.hpp"
-#include "pal/platform.hpp"
-#include "pal/utils.hpp"
+#include "tria/log/api.hpp"
+#include "tria/pal/platform.hpp"
+#include "tria/pal/utils.hpp"
 #include <chrono>
 #include <sstream>
 #include <thread>
 
 using namespace std::literals;
+using namespace tria;
 
 auto main(int /*unused*/, char* * /*unused*/) -> int {
 
