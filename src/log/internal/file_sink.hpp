@@ -43,14 +43,15 @@ template <typename T, typename... Args>
 template <typename T, typename... Args>
 [[nodiscard]] auto makeFileSink(fs::path path, LevelMask mask, Args&&... args) -> SinkPtr {
 #if defined(_WIN32)
-  auto* file =_wfopen(path.c_str(), L"w");
+  auto* file = _wfopen(path.c_str(), L"w");
 #else
   auto* file = std::fopen(path.c_str(), "w");
 #endif
 
   if (!file) {
-    throw fs::filesystem_error{
-        "Failed to create log file", path.c_str(), std::make_error_code(static_cast<std::errc>(errno))};
+    throw fs::filesystem_error{"Failed to create log file",
+                               path.c_str(),
+                               std::make_error_code(static_cast<std::errc>(errno))};
   }
   return std::make_unique<T>(file, true, mask, std::forward<Args>(args)...);
 }
