@@ -3,7 +3,10 @@
 # --------------------------------------------------------------------------------------------------
 
 # Generated files.
-/include/config.hpp
+/include/tria/config.hpp
+
+# Log files
+*.log
 
 # Build output.
 /[Bb]uild*

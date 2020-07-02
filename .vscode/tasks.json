@@ -18,6 +18,20 @@
         "isDefault": true
       },
       "problemMatcher": []
+    },
+    {
+      "label": "test",
+      "type": "shell",
+      "command": "${workspaceFolder}/scripts/test.sh",
+      "windows": {
+        "command": "${workspaceFolder}\\scripts\\test.ps1",
+      },
+      "presentation": {
+        "echo": true,
+        "panel": "shared",
+        "clear": true
+      },
+      "problemMatcher": []
     }
   ]
 }

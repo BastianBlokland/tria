@@ -1,6 +1,6 @@
-#include "pal/window.win32.hpp"
+#include "tria/pal/window.win32.hpp"
 
-namespace pal {
+namespace tria::pal {
 
 auto Window::setTitle(std::string_view title) -> void { SetWindowText(m_winHandle, title.data()); }
 
@@ -23,4 +23,4 @@ auto Window::setSize(uint16_t width, uint16_t height) -> void {
       SWP_NOCOPYBITS | SWP_NOMOVE | SWP_NOZORDER);
 }
 
-} // namespace pal
+} // namespace tria::pal

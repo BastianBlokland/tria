@@ -1,7 +1,7 @@
-#include "pal/window.linux.xcb.hpp"
+#include "tria/pal/window.linux.xcb.hpp"
 #include <array>
 
-namespace pal {
+namespace tria::pal {
 
 auto Window::setTitle(std::string_view title) -> void {
 
@@ -31,4 +31,4 @@ auto Window::setSize(uint16_t width, uint16_t height) -> void {
   m_height = height;
 }
 
-} // namespace pal
+} // namespace tria::pal

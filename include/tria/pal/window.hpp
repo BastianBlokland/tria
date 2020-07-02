@@ -1,10 +1,10 @@
 #pragma once
-#include "../defines.hpp"
+#include "tria/defines.hpp"
 
 #if PLATFORM_LINUX
-#include "platform.linux.xcb.hpp"
+#include "window.linux.xcb.hpp"
 #elif PLATFORM_WINDOWS
-#include "platform.win32.hpp"
+#include "window.win32.hpp"
 #else
 static_assert(false, "Unsupported platform");
 #endif

@@ -4,7 +4,7 @@
 #include <string_view>
 #include <windows.h>
 
-namespace pal {
+namespace tria::pal {
 
 class Platform;
 
@@ -48,4 +48,4 @@ private:
       m_isCloseRequested{false} {}
 };
 
-} // namespace pal
+} // namespace tria::pal

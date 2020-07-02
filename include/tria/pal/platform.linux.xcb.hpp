@@ -1,20 +1,20 @@
 #pragma once
-#include "window.win32.hpp"
+#include "tria/log/api.hpp"
+#include "tria/pal/window.linux.xcb.hpp"
+#include <cstdint>
 #include <list>
 #include <string>
 #include <string_view>
-#include <windows.h>
+#include <xcb/xcb.h>
 
-namespace pal {
+namespace tria::pal {
 
 class Platform final {
-  friend auto WindowProc(HWND, UINT, WPARAM, LPARAM) noexcept -> LRESULT;
-
 public:
   using WindowIterator = typename std::list<Window>::iterator;
 
-  explicit Platform(std::string appName) :
-      m_appName{std::move(appName)}, m_hInstance{nullptr}, m_winCreateCounter{0} {}
+  explicit Platform(log::Logger* logger, std::string appName) :
+      m_logger{logger}, m_appName{std::move(appName)}, m_xcbCon{nullptr}, m_xcbScreen{nullptr} {}
   Platform(const Platform& rhs)     = delete;
   Platform(Platform&& rhs) noexcept = delete;
   ~Platform();
@@ -33,15 +33,19 @@ public:
   auto destroyWindow(const Window& win) -> void;
 
 private:
+  log::Logger* m_logger;
   std::string m_appName;
-  HINSTANCE m_hInstance;
-  unsigned int m_winCreateCounter;
+  xcb_connection_t* m_xcbCon;
+  xcb_screen_t* m_xcbScreen;
+  xcb_atom_t m_xcbProtoMsgAtom;
+  xcb_atom_t m_xcbDeleteMsgAtom;
   std::list<Window> m_windows;
 
-  auto win32Setup() -> void;
-  auto getWindow(HWND winHandle) noexcept -> Window*;
-
-  auto handleEvent(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) noexcept -> bool;
+  auto xcbSetup() -> void;
+  auto xcbTeardown() noexcept -> void;
+  auto xcbCheckErr() -> void;
+  auto xcbGetAtom(const std::string& name) noexcept -> xcb_atom_t;
+  auto getWindow(xcb_window_t xcbId) noexcept -> Window*;
 };
 
-} // namespace pal
+} // namespace tria::pal

@@ -59,7 +59,7 @@ endif()
 file(WRITE ${EXECUTABLE_OUTPUT_PATH}/VERSION ${CMAKE_PROJECT_VERSION})
 
 # Replace config variables in the config header.
-configure_file("include/config.hpp.in" "${PROJECT_SOURCE_DIR}/include/config.hpp")
+configure_file("include/tria/config.hpp.in" "${PROJECT_SOURCE_DIR}/include/tria/config.hpp")
 
 # Older version of libstdc++ require linking against the std::filesystem library manually.
 if((UNIX AND NOT APPLE) OR MINGW)
@@ -70,3 +70,12 @@ endif()
 # Add child cmake files.
 add_subdirectory(src)
 add_subdirectory(apps)
+if(BUILD_TESTING)
+
+  # Enable 'CTest' testing.
+  message(STATUS "Enable CTest dependency")
+  include(CTest)
+  enable_testing()
+
+  add_subdirectory(tests)
+endif()

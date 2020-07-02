@@ -2,7 +2,7 @@
 #include <exception>
 #include <string>
 
-namespace pal::err {
+namespace tria::pal::err {
 
 class DisplayProtocolErr final : public std::exception {
 public:
@@ -19,4 +19,4 @@ private:
   std::string m_platformMsg;
 };
 
-} // namespace pal::err
+} // namespace tria::pal::err

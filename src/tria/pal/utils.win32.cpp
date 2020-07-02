@@ -1,10 +1,10 @@
-#include "pal/utils.hpp"
+#include "tria/pal/utils.hpp"
 #include <array>
 #include <codecvt>
 #include <locale>
 #include <windows.h>
 
-namespace pal {
+namespace tria::pal {
 
 static auto errorExit(const char* msg) {
   std::fprintf(stderr, "%s\n", msg);
@@ -55,4 +55,4 @@ auto setThreadName(std::string_view /*unused*/) noexcept -> bool { return false;
 
 #endif
 
-} // namespace pal
+} // namespace tria::pal

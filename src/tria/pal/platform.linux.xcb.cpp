@@ -1,11 +1,11 @@
-#include "pal/platform.linux.xcb.hpp"
-#include "pal/err/display_protocol_err.hpp"
-#include "pal/err/window_err.hpp"
+#include "tria/pal/platform.linux.xcb.hpp"
+#include "tria/pal/err/display_protocol_err.hpp"
+#include "tria/pal/err/window_err.hpp"
 #include <algorithm>
 #include <array>
 #include <string>
 
-namespace pal {
+namespace tria::pal {
 
 Platform::~Platform() {
   if (m_xcbCon) {
@@ -40,6 +40,11 @@ auto Platform::handleEvents() -> void {
         // Unknown window.
         break;
       }
+
+      if (configMsg->width != window->m_width || configMsg->height != window->m_height) {
+        LOG_D(m_logger, "Window resized", {"width", window->m_width}, {"height", window->m_height});
+      }
+
       window->m_width  = configMsg->width;
       window->m_height = configMsg->height;
     } break;
@@ -93,6 +98,8 @@ auto Platform::createWindow(uint16_t width, uint16_t height) -> Window& {
 
   xcb_flush(m_xcbCon);
 
+  LOG_I(m_logger, "Window created", {"width", width}, {"height", height});
+
   // Keep track of the window.
   m_windows.push_back(Window{m_xcbCon, winXId, width, height});
   return m_windows.back();
@@ -112,6 +119,8 @@ auto Platform::destroyWindow(const Window& win) -> void {
   xcb_destroy_window(m_xcbCon, win.m_xcbWin);
 
   xcb_flush(m_xcbCon);
+
+  LOG_I(m_logger, "Window destroyed");
 
   // Remove the window from our windows list.
   m_windows.erase(winItr);
@@ -188,4 +197,4 @@ auto Platform::getWindow(xcb_window_t xcbWin) noexcept -> Window* {
   return winItr == m_windows.end() ? nullptr : &(*winItr);
 }
 
-} // namespace pal
+} // namespace tria::pal

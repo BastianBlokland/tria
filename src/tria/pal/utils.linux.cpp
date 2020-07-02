@@ -1,10 +1,10 @@
-#include "pal/utils.hpp"
+#include "tria/pal/utils.hpp"
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
 #include <pthread.h>
 
-namespace pal {
+namespace tria::pal {
 
 static auto errorExit(const char* msg) {
   std::fprintf(stderr, "%s\n", msg);
@@ -43,4 +43,4 @@ auto setThreadName(std::string_view name) noexcept -> bool {
   return result;
 }
 
-} // namespace pal
+} // namespace tria::pal

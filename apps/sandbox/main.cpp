@@ -1,17 +1,20 @@
-#include "pal/platform.hpp"
-#include "pal/utils.hpp"
+#include "tria/log/api.hpp"
+#include "tria/pal/platform.hpp"
+#include "tria/pal/utils.hpp"
 #include <chrono>
-#include <iostream>
 #include <sstream>
 #include <thread>
 
 using namespace std::literals;
+using namespace tria;
 
 auto main(int /*unused*/, char* * /*unused*/) -> int {
-  std::cout << "Sandbox init\n";
+
+  auto logger = log::Logger{log::makeConsolePrettySink(), log::makeFileJsonSink("sandbox.log")};
+  LOG_I(&logger, "Sandbox init");
 
   pal::setThreadName("main-thread");
-  auto platform = pal::Platform{"Tria sandbox"};
+  auto platform = pal::Platform{&logger, "Tria sandbox"};
   auto& win     = platform.createWindow(512, 512);
 
   while (!win.getIsCloseRequested()) {
@@ -28,6 +31,6 @@ auto main(int /*unused*/, char* * /*unused*/) -> int {
     std::this_thread::sleep_for(100ms);
   }
 
-  std::cout << "Sandbox teardown\n";
+  LOG_I(&logger, "Sandbox teardown");
   return 0;
 }
