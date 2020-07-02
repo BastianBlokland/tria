@@ -25,7 +25,7 @@ protected:
     }
   }
 
-  auto writeToFile(const char* data, size_t size) noexcept -> void {
+  auto writeToFile(const char* data, size_t size) noexcept {
     assert(data);
     std::fwrite(data, size, 1, m_fileHandle);
   }

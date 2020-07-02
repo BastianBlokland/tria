@@ -17,6 +17,8 @@
 .PARAMETER Dir
   Default: build
   Build directory.
+.PARAMETER Tests
+  Include compiler and runtime tests.
 .PARAMETER Lint
   Enable source linter.
 #>
@@ -27,6 +29,7 @@ param(
   [ValidateSet("MinGW", "VS2019", IgnoreCase = $true)]
   [string]$Gen = "MinGW",
   [string]$Dir = "build",
+  [switch]$Tests,
   [switch]$Lint
 )
 
@@ -54,7 +57,7 @@ function MapToCMakeGen([string] $gen) {
   }
 }
 
-function ConfigureProj([string] $type, [string] $gen, [string] $dir, [bool] $lint) {
+function ConfigureProj([string] $type, [string] $gen, [string] $dir, [bool] $tests, [bool] $lint) {
   if ([string]::IsNullOrEmpty($dir)) {
     Fail "No target directory provided"
   }
@@ -74,6 +77,7 @@ function ConfigureProj([string] $type, [string] $gen, [string] $dir, [bool] $lin
   cmake.exe -B "$dir" `
     -G "$(MapToCMakeGen $gen)" `
     -DCMAKE_BUILD_TYPE="$type" `
+    -DBUILD_TESTING="$($tests ? "On" : "Off")" `
     -DLINTING="$($lint ? "On" : "Off")"
 
   if ($LASTEXITCODE -ne 0) {
@@ -84,5 +88,5 @@ function ConfigureProj([string] $type, [string] $gen, [string] $dir, [bool] $lin
 }
 
 # Run configuration.
-ConfigureProj $Type $Gen $Dir $Lint
+ConfigureProj $Type $Gen $Dir $Tests $Lint
 exit 0

@@ -38,6 +38,9 @@ public:
   auto operator=(const Param& rhs) -> Param& = default;
   auto operator=(Param&& rhs) noexcept -> Param& = default;
 
+  auto operator==(const Param& rhs) const noexcept -> bool;
+  auto operator!=(const Param& rhs) const noexcept -> bool;
+
   [[nodiscard]] constexpr auto getKey() const noexcept { return m_key; }
 
   auto writeValue(std::string* tgtStr) const noexcept -> void;

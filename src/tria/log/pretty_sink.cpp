@@ -13,15 +13,15 @@ namespace {
  * Ansi escape sequences (https://en.wikipedia.org/wiki/ANSI_escape_code).
  */
 
-constexpr auto ansiReset() noexcept -> std::string_view { return "\x1B[0m"; }
-constexpr auto ansiBold() noexcept -> std::string_view { return "\x1B[1m"; }
-constexpr auto ansiFgBlackColor() noexcept -> std::string_view { return "\x1B[30m"; }
-constexpr auto ansiFgWhiteColor() noexcept -> std::string_view { return "\x1B[37m"; }
-constexpr auto ansiBgRedColor() noexcept -> std::string_view { return "\x1B[41m"; }
-constexpr auto ansiBgGreenColor() noexcept -> std::string_view { return "\x1B[42m"; }
-constexpr auto ansiBgYellowColor() noexcept -> std::string_view { return "\x1B[43m"; }
-constexpr auto ansiBgBlueColor() noexcept -> std::string_view { return "\x1B[44m"; }
-constexpr auto ansiFgGrayColor() noexcept -> std::string_view { return "\x1B[90m"; }
+constexpr auto ansiReset() noexcept { return "\x1B[0m"; }
+constexpr auto ansiBold() noexcept { return "\x1B[1m"; }
+constexpr auto ansiFgBlackColor() noexcept { return "\x1B[30m"; }
+constexpr auto ansiFgWhiteColor() noexcept { return "\x1B[37m"; }
+constexpr auto ansiBgRedColor() noexcept { return "\x1B[41m"; }
+constexpr auto ansiBgGreenColor() noexcept { return "\x1B[42m"; }
+constexpr auto ansiBgYellowColor() noexcept { return "\x1B[43m"; }
+constexpr auto ansiBgBlueColor() noexcept { return "\x1B[44m"; }
+constexpr auto ansiFgGrayColor() noexcept { return "\x1B[90m"; }
 
 } // namespace
 

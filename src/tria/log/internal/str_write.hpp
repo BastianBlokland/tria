@@ -29,7 +29,7 @@ constexpr auto getSecondsFracFormatSpecifier() noexcept -> const char* {
 
 } // namespace
 
-inline auto writeLong(std::string* str, long value) noexcept -> void {
+inline auto writeLong(std::string* str, long value) noexcept {
   constexpr auto maxCharSize = 21;
   auto buffer                = std::array<char, maxCharSize>{};
 
@@ -45,7 +45,7 @@ inline auto writeLong(std::string* str, long value) noexcept -> void {
   str->append(std::string_view{buffer.data(), static_cast<std::string_view::size_type>(size)});
 }
 
-inline auto writeDouble(std::string* str, double value) noexcept -> void {
+inline auto writeDouble(std::string* str, double value) noexcept {
 
   // Check how many characters we need to represent the double.
   const auto size = std::snprintf(nullptr, 0, "%.10g", value);
@@ -60,15 +60,12 @@ inline auto writeDouble(std::string* str, double value) noexcept -> void {
   str->append(std::string_view{buffer, static_cast<std::string_view::size_type>(size)});
 }
 
-inline auto writeLvl(std::string* str, Level value) noexcept -> void {
-  str->append(getName(value));
-}
+inline auto writeLvl(std::string* str, Level value) noexcept { str->append(getName(value)); }
 
 /* ISO 8601 in UTC with microseconds (https://en.wikipedia.org/wiki/ISO_8601).
  * Example output: 2020-06-30T18:15:49.199029Z
  */
-inline auto writeIsoTime(std::string* str, std::chrono::system_clock::time_point value) noexcept
-    -> void {
+inline auto writeIsoTime(std::string* str, std::chrono::system_clock::time_point value) noexcept {
 
   using namespace std::chrono;
 

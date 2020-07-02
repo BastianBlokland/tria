@@ -24,7 +24,7 @@ enum class Level : uint8_t {
 [[nodiscard]] inline constexpr auto noneLevelMask() noexcept -> LevelMask { return 0U; }
 
 [[nodiscard]] inline constexpr auto levelMask(Level lvl) noexcept -> LevelMask {
-  return static_cast<uint8_t>(lvl);
+  return static_cast<LevelMask>(lvl);
 }
 
 [[nodiscard]] inline constexpr auto operator|(Level lhs, Level rhs) noexcept -> LevelMask {
@@ -35,7 +35,7 @@ enum class Level : uint8_t {
   return lhs | levelMask(rhs);
 }
 
-[[nodiscard]] inline constexpr auto isInMask(LevelMask mask, Level lvl) noexcept -> bool {
+[[nodiscard]] inline constexpr auto isInMask(LevelMask mask, Level lvl) noexcept {
   return (mask & static_cast<uint8_t>(lvl)) != 0;
 }
 

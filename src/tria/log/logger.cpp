@@ -34,7 +34,7 @@ public:
     m_thread.join();
   }
 
-  auto publish(Message msg) noexcept -> void {
+  auto publish(Message msg) noexcept {
     {
       std::lock_guard<std::mutex> lk(m_mutex);
       m_msgsInput.push_back(std::move(msg));

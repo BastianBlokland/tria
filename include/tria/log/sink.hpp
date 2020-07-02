@@ -24,7 +24,7 @@ public:
 
   /* Mask to indicate what messages to receive.
    */
-  [[nodiscard]] auto getMask() const noexcept -> LevelMask { return m_mask; }
+  [[nodiscard]] auto getMask() const noexcept { return m_mask; }
 
   /* Write a message to the sink.
    * Note: Does not need to be reentrant as will not be called in parallel.

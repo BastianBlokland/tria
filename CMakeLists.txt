@@ -70,3 +70,12 @@ endif()
 # Add child cmake files.
 add_subdirectory(src)
 add_subdirectory(apps)
+if(BUILD_TESTING)
+
+  # Enable 'CTest' testing.
+  message(STATUS "Enable CTest dependency")
+  include(CTest)
+  enable_testing()
+
+  add_subdirectory(tests)
+endif()

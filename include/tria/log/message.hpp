@@ -24,10 +24,10 @@ public:
       m_meta{meta}, m_time{std::chrono::system_clock::now()}, m_params{std::move(params)} {
     assert(meta);
   }
-  Message(const Message& rhs)     = delete;
+  Message(const Message& rhs)     = default;
   Message(Message&& rhs) noexcept = default;
 
-  auto operator=(const Message& rhs) -> Message& = delete;
+  auto operator=(const Message& rhs) -> Message& = default;
   auto operator=(Message&& rhs) noexcept -> Message& = default;
 
   [[nodiscard]] auto getMeta() const noexcept { return m_meta; }

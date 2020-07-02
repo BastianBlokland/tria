@@ -6,7 +6,7 @@ default: build
 
 .PHONY: configure.debug
 configure.debug:
-	./scripts/configure.sh --type Debug
+	./scripts/configure.sh --type Debug --lint --tests
 
 .PHONY: configure.release
 configure.release:
@@ -15,6 +15,10 @@ configure.release:
 .PHONY: build
 build:
 	./scripts/build.sh
+
+.PHONY: test
+test: build
+	./scripts/test.sh
 
 .PHONY: clean
 clean:

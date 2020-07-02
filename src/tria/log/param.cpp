@@ -7,6 +7,12 @@ namespace tria::log {
 template <typename>
 constexpr bool falseValue = false;
 
+auto Param::operator==(const Param& rhs) const noexcept -> bool {
+  return m_key == rhs.m_key && m_value == rhs.m_value;
+}
+
+auto Param::operator!=(const Param& rhs) const noexcept -> bool { return !Param::operator==(rhs); }
+
 auto Param::writeValue(std::string* tgtStr) const noexcept -> void {
   assert(tgtStr);
   std::visit(
