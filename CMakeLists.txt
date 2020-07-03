@@ -67,6 +67,11 @@ if((UNIX AND NOT APPLE) OR MINGW)
   link_libraries(stdc++fs)
 endif()
 
+# Add dependency to the threads package.
+message(STATUS "Finding threads package")
+set(CMAKE_THREAD_PREFER_PTHREAD On)
+find_package(Threads REQUIRED)
+
 # Add child cmake files.
 add_subdirectory(src)
 add_subdirectory(apps)

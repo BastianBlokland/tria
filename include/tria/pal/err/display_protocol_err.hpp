@@ -4,6 +4,9 @@
 
 namespace tria::pal::err {
 
+/*
+ * Exception that is thrown when there is an error from the native display manager.
+ */
 class DisplayProtocolErr final : public std::exception {
 public:
   DisplayProtocolErr() = delete;
@@ -12,7 +15,7 @@ public:
 
   [[nodiscard]] auto what() const noexcept -> const char* override { return m_platformMsg.c_str(); }
 
-  [[nodiscard]] auto getPlatformCode() const noexcept -> unsigned long { return m_platformCode; }
+  [[nodiscard]] auto getPlatformCode() const noexcept { return m_platformCode; }
 
 private:
   unsigned long m_platformCode;

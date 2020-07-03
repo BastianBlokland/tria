@@ -17,6 +17,9 @@ add_executable(tria_tests
   tria/log/level_test.cpp
   tria/log/logger_test.cpp
   tria/log/param_test.cpp
+
+  tria/pal/utils_test.cpp
+
   tria/main.cpp)
 target_compile_features(tria_tests PUBLIC cxx_std_17)
 if(MSVC)

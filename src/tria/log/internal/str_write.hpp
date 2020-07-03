@@ -8,8 +8,6 @@
 
 namespace tria::log::internal {
 
-namespace {
-
 template <typename>
 constexpr bool falseValue = false;
 
@@ -26,8 +24,6 @@ constexpr auto getSecondsFracFormatSpecifier() noexcept -> const char* {
     return nullptr;
   }
 }
-
-} // namespace
 
 inline auto writeLong(std::string* str, long value) noexcept {
   constexpr auto maxCharSize = 21;
