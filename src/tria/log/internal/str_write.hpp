@@ -56,8 +56,6 @@ inline auto writeDouble(std::string* str, double value) noexcept {
   str->append(std::string_view{buffer, static_cast<std::string_view::size_type>(size)});
 }
 
-inline auto writeLvl(std::string* str, Level value) noexcept { str->append(getName(value)); }
-
 /* ISO 8601 in UTC with microseconds (https://en.wikipedia.org/wiki/ISO_8601).
  * Example output: 2020-06-30T18:15:49.199029Z
  */

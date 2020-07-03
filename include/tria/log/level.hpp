@@ -42,15 +42,15 @@ enum class Level : uint8_t {
 [[nodiscard]] constexpr auto getName(Level lvl) noexcept -> std::string_view {
   switch (lvl) {
   case Level::Debug:
-    return "debug";
+    return "dbg";
   case Level::Info:
-    return "info";
+    return "inf";
   case Level::Warn:
-    return "warn";
+    return "wrn";
   case Level::Error:
-    return "error";
+    return "err";
   default:
-    return "unknown";
+    return "unk";
   }
 }
 

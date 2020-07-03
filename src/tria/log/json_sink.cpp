@@ -24,7 +24,7 @@ public:
 
     // Level.
     m_buffer.append(" \"level\": \"");
-    internal::writeLvl(&m_buffer, msg.getMeta()->getLevel());
+    m_buffer.append(getName(msg.getMeta()->getLevel()));
     m_buffer.append("\",");
 
     // Time.

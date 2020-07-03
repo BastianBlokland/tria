@@ -29,9 +29,12 @@ class PrettySink final : public internal::FileSink {
 public:
   PrettySink(std::FILE* fileHandle, bool closeFile, LevelMask mask, bool styleOutput) :
       FileSink{fileHandle, closeFile, mask}, m_styleOutput{styleOutput} {
+
+    // Preallocate a buffer.
     constexpr auto startingBufferSize = 1024;
     m_buffer.reserve(startingBufferSize);
   }
+
   ~PrettySink() override = default;
 
   auto write(const Message& msg) noexcept -> void override {
@@ -60,7 +63,7 @@ public:
       break;
     }
     m_buffer.append("[");
-    internal::writeLvl(&m_buffer, msg.getMeta()->getLevel());
+    m_buffer.append(getName(msg.getMeta()->getLevel()));
     m_buffer.append("]");
     appendStyle(ansiReset());
 
@@ -88,10 +91,7 @@ public:
 
         // Pad all the parameters to align to the longest parameter.
         // Note this assumes that each character is the same size, so input has to be ascii.
-        const auto padding = maxKeySize - param.getKey().size();
-        for (auto i = 0U; i < padding; ++i) {
-          m_buffer.append(" ");
-        }
+        writeSpaces(maxKeySize - param.getKey().size());
 
         appendStyle(ansiBold());
 
@@ -108,6 +108,13 @@ public:
 private:
   std::string m_buffer;
   bool m_styleOutput;
+
+  template <typename IntT>
+  auto writeSpaces(IntT amount) -> void {
+    for (auto i = 0; i < static_cast<int>(amount); ++i) {
+      m_buffer.append(" ");
+    }
+  }
 
   auto appendStyle(std::string_view styleStr) noexcept -> void {
     if (m_styleOutput) {
