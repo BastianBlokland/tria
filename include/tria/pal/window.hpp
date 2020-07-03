@@ -7,6 +7,11 @@ namespace tria::pal {
 
 class NativePlatform;
 
+/* Handle to a native window.
+ * When handle is destroyed the native window is also closed. Supports moving ownership.
+ *
+ * Note: Api is not thread-safe.
+ */
 class Window final {
   friend NativePlatform;
 
@@ -33,7 +38,10 @@ public:
     return *this;
   }
 
+  /* Has the user requested to close this window.
+   */
   [[nodiscard]] auto getIsCloseRequested() const noexcept -> bool;
+
   [[nodiscard]] auto getWidth() const noexcept -> uint16_t;
   [[nodiscard]] auto getHeight() const noexcept -> uint16_t;
 

@@ -4,6 +4,9 @@
 
 namespace tria::pal::err {
 
+/*
+ * Exception that is thrown when there is an error from the native display manager.
+ */
 class DisplayProtocolErr final : public std::exception {
 public:
   DisplayProtocolErr() = delete;
