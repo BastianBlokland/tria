@@ -3,32 +3,46 @@
 #include "tria/pal/utils.hpp"
 #include <chrono>
 #include <sstream>
+#include <stdexcept>
 #include <thread>
 
 using namespace std::literals;
 using namespace tria;
 
-auto main(int /*unused*/, char* * /*unused*/) -> int {
+auto runApp(log::Logger& /*unused*/, pal::Platform& platform) -> int {
 
-  auto logger = log::Logger{log::makeConsolePrettySink(), log::makeFileJsonSink("sandbox.log")};
-  LOG_I(&logger, "Sandbox startup");
-
-  pal::setThreadName("main-thread");
-  auto platform = pal::Platform{&logger, "Tria sandbox"};
-  auto win      = platform.createWindow(512, 512);
-
-  while (!win.getIsCloseRequested()) {
+  auto mainWin = platform.createWindow(512, 512);
+  while (!mainWin.getIsCloseRequested()) {
 
     // Process platform events.
     platform.handleEvents();
 
     // Update window title.
     std::stringstream titleStream;
-    titleStream << "Tria test - " << win.getWidth() << "x" << win.getHeight();
-    win.setTitle(titleStream.str());
+    titleStream << "Tria sandbox - " << mainWin.getWidth() << "x" << mainWin.getHeight();
+    mainWin.setTitle(titleStream.str());
 
     // Sleep until next 'frame'.
     std::this_thread::sleep_for(100ms);
+  }
+
+  return 0;
+}
+
+auto main(int /*unused*/, char* * /*unused*/) -> int {
+
+  pal::setThreadName("main-thread");
+
+  auto logger = log::Logger{log::makeConsolePrettySink(), log::makeFileJsonSink("sandbox.log")};
+  LOG_I(&logger, "Sandbox startup");
+
+  auto platform = pal::Platform{&logger, "Tria sandbox"};
+  try {
+    runApp(logger, platform);
+  } catch (const std::exception& e) {
+    LOG_E(&logger, "Uncaught exception", {"what", std::string{e.what()}});
+  } catch (...) {
+    LOG_E(&logger, "Uncaught exception");
   }
 
   LOG_I(&logger, "Sandbox shutdown");
