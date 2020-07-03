@@ -13,6 +13,7 @@ else()
 endif()
 target_include_directories(tria_log PUBLIC ${PROJECT_SOURCE_DIR}/include)
 target_include_directories(tria_log PRIVATE log)
+target_link_libraries(tria_log PRIVATE Threads::Threads)
 target_link_libraries(tria_log PRIVATE tria_pal)
 
 # Pal (Platform abstraction layer).
@@ -20,23 +21,20 @@ if(UNIX)
   message(STATUS "Configuring unix pal library")
 
   add_library(tria_pal STATIC
-    tria/pal/platform.linux.xcb.cpp
+    tria/pal/native_platform.xcb.cpp
+    tria/pal/platform.xcb.cpp
     tria/pal/utils.linux.cpp
-    tria/pal/window.linux.xcb.cpp)
+    tria/pal/window.xcb.cpp)
 
   message(STATUS "Finding xcb package")
   find_package(xcb REQUIRED)
   target_link_libraries(tria_pal PRIVATE xcb)
 
-  message(STATUS "Finding threads package")
-  set(CMAKE_THREAD_PREFER_PTHREAD On)
-  find_package(Threads REQUIRED)
-  target_link_libraries(tria_pal PRIVATE Threads::Threads)
-
 elseif(WIN32)
   message(STATUS "Configuring win32 pal library")
 
   add_library(tria_pal STATIC
+    tria/pal/native_platform.win32.cpp
     tria/pal/platform.win32.cpp
     tria/pal/utils.win32.cpp
     tria/pal/window.win32.cpp)
@@ -51,3 +49,5 @@ endif()
 target_include_directories(tria_pal PUBLIC ${PROJECT_SOURCE_DIR}/include)
 target_include_directories(tria_pal PRIVATE pal)
 target_include_directories(tria_pal PRIVATE tria_log)
+target_link_libraries(tria_pal PRIVATE Threads::Threads)
+

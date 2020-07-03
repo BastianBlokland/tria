@@ -1,4 +1,4 @@
-#include "native_platform.win32.hpp"
+#include "native_platform.xcb.hpp"
 #include "tria/pal/window.hpp"
 #include <cassert>
 
