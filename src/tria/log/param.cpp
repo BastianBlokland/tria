@@ -59,6 +59,10 @@ auto Param::writeValue(std::string* tgtStr) const noexcept -> void {
           internal::writeDouble(tgtStr, arg);
         }
         // NOLINTNEXTLINE(bugprone-branch-clone)
+        else if constexpr (std::is_same_v<T, bool>) {
+          tgtStr->append(arg ? "true" : "false");
+        }
+        // NOLINTNEXTLINE(bugprone-branch-clone)
         else if constexpr (std::is_same_v<T, std::string>) {
           tgtStr->append("\"");
           tgtStr->append(arg);

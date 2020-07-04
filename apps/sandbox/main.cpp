@@ -1,3 +1,4 @@
+#include "tria/gfx/context.hpp"
 #include "tria/log/api.hpp"
 #include "tria/pal/platform.hpp"
 #include "tria/pal/utils.hpp"
@@ -9,7 +10,9 @@
 using namespace std::literals;
 using namespace tria;
 
-auto runApp(log::Logger& /*unused*/, pal::Platform& platform) -> int {
+auto runApp(log::Logger& logger, pal::Platform& platform) -> int {
+
+  auto gfxContext = gfx::Context{&logger};
 
   auto mainWin = platform.createWindow(512, 512);
   while (!mainWin.getIsCloseRequested()) {

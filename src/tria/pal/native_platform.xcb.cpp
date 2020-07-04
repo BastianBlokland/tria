@@ -120,8 +120,12 @@ auto NativePlatform::createWindow(uint16_t width, uint16_t height) -> Window {
 
 auto NativePlatform::destroyWindow(WindowId id) noexcept -> void {
   // Remove the window data.
+#if defined(NDEBUG)
+  m_windows.erase(id);
+#else
   auto erased = m_windows.erase(id);
   assert(erased);
+#endif
 
   // Destroy the xcb window it belongs to.
   xcb_destroy_window(m_xcbCon, id);

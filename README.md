@@ -9,3 +9,4 @@ Cross-platform Vulkan renderer.
 ### Linux
 
 * Xcb (apt install libxcb1-dev)
+* Vulkan (https://vulkan.lunarg.com/sdk/home)

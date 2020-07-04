@@ -1,3 +1,26 @@
+# Gfx (graphics library).
+message(STATUS "Configuring gfx vulkan library")
+add_library(tria_gfx STATIC
+  tria/gfx_vulkan/internal/debug_messenger.cpp
+  tria/gfx_vulkan/internal/utils.cpp
+  tria/gfx_vulkan/context.cpp
+  tria/gfx_vulkan/native_context.cpp)
+
+message(STATUS "Finding vulkan package")
+find_package(Vulkan REQUIRED)
+target_link_libraries(tria_gfx PRIVATE ${Vulkan_LIBRARIES})
+
+target_compile_features(tria_gfx PRIVATE cxx_std_17)
+if(MSVC)
+  target_compile_options(tria_gfx PRIVATE /EHsc)
+else()
+  target_compile_options(tria_gfx PRIVATE -fexceptions)
+endif()
+target_include_directories(tria_gfx PUBLIC ${PROJECT_SOURCE_DIR}/include)
+target_include_directories(tria_gfx PRIVATE log)
+target_link_libraries(tria_gfx PRIVATE tria_pal)
+target_link_libraries(tria_gfx PRIVATE tria_log)
+
 # Log (logging library).
 message(STATUS "Configuring log library")
 add_library(tria_log STATIC

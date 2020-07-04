@@ -11,7 +11,8 @@ namespace tria::log {
  * Supported types:
  * - Integer types (stored in a signed/unsigned 64 bit integer).
  * - Floating point types (float and double, stored as a double).
- * - Strings (stored as a copy).
+ * - Bool
+ * - String (stored as a copy).
  *
  * Note: Keys should be literals or strings that have a longer lifetime then the logger.
  * Note: Because it can store std::string it should be moved whenever possible.
@@ -32,7 +33,11 @@ public:
   Param(std::string_view key, T value) noexcept :
       m_key{key}, m_value{static_cast<uint64_t>(value)} {}
 
+  Param(std::string_view key, bool value) noexcept : m_key{key}, m_value{value} {}
+
   Param(std::string_view key, double value) noexcept : m_key{key}, m_value{value} {}
+
+  Param(std::string_view key, const char* value) noexcept : Param(key, std::string(value)) {}
 
   Param(std::string_view key, std::string value) noexcept;
 
@@ -50,7 +55,7 @@ public:
   auto writeValue(std::string* tgtStr) const noexcept -> void;
 
 private:
-  using ValueType = std::variant<int64_t, uint64_t, double, std::string>;
+  using ValueType = std::variant<int64_t, uint64_t, double, bool, std::string>;
 
   std::string_view m_key;
   ValueType m_value;
