@@ -11,12 +11,10 @@ namespace tria::log {
  * - Integer types (stored in a signed 64 bit integer).
  *    TODO: Support unsigned 64 bit integers > signed 64 max?
  * - Floating point types (float and double, stored as a double).
- * - Constant strings (std::string_view).
- *    Note: very important that the lifetime is static, as the logging system needs to access it
- *    for an indeterminate amount of time. TODO: Find a way to statically assert this requirement.
  * - Strings (stored as a copy).
  *
- * Note: because it can store std::string it should be moved whenever possible.
+ * Note: Keys should be literals or strings that have a longer lifetime then the logger.
+ * Note: Because it can store std::string it should be moved whenever possible.
  */
 class Param final {
 public:
@@ -27,10 +25,7 @@ public:
 
   Param(std::string_view key, double value) noexcept : m_key{key}, m_value{value} {}
 
-  Param(std::string_view key, const char* value) noexcept :
-      m_key{key}, m_value{std::string_view{value}} {}
-
-  Param(std::string_view key, std::string value) noexcept : m_key{key}, m_value{std::move(value)} {}
+  Param(std::string_view key, std::string value) noexcept;
 
   Param(const Param& rhs)     = default;
   Param(Param&& rhs) noexcept = default;
@@ -46,7 +41,7 @@ public:
   auto writeValue(std::string* tgtStr) const noexcept -> void;
 
 private:
-  using ValueType = std::variant<long, double, std::string_view, std::string>;
+  using ValueType = std::variant<long, double, std::string>;
 
   std::string_view m_key;
   ValueType m_value;

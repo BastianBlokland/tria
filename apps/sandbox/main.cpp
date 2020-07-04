@@ -40,7 +40,7 @@ auto main(int /*unused*/, char* * /*unused*/) -> int {
   try {
     runApp(logger, platform);
   } catch (const std::exception& e) {
-    LOG_E(&logger, "Uncaught exception", {"what", std::string{e.what()}});
+    LOG_E(&logger, "Uncaught exception", {"what", e.what()});
   } catch (...) {
     LOG_E(&logger, "Uncaught exception");
   }

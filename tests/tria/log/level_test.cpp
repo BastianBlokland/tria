@@ -6,10 +6,10 @@ namespace tria::log::tests {
 TEST_CASE("Log level", "[log]") {
 
   SECTION("Level names") {
-    CHECK(getName(Level::Debug) == std::string{"debug"});
-    CHECK(getName(Level::Info) == std::string{"info"});
-    CHECK(getName(Level::Warn) == std::string{"warn"});
-    CHECK(getName(Level::Error) == std::string{"error"});
+    CHECK(getName(Level::Debug) == std::string{"dbg"});
+    CHECK(getName(Level::Info) == std::string{"inf"});
+    CHECK(getName(Level::Warn) == std::string{"wrn"});
+    CHECK(getName(Level::Error) == std::string{"err"});
   }
 
   SECTION("Level mask") {
