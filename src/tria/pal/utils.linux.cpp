@@ -23,6 +23,10 @@ auto getCurExecutablePath() noexcept -> fs::path {
   return path;
 }
 
+auto getCurExecutableName() noexcept -> std::string {
+  return getCurExecutablePath().filename().string();
+}
+
 auto setThreadName(std::string_view name) noexcept -> bool {
   const auto curThread = pthread_self();
   return pthread_setname_np(curThread, name.data()) == 0;

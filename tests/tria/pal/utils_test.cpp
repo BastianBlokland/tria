@@ -11,6 +11,8 @@ TEST_CASE("Platform utils", "[pal]") {
         (Catch::EndsWith("tria_tests") || Catch::EndsWith("tria_tests.exe")));
   }
 
+  SECTION("Executable name") { CHECK(getCurExecutableName() == "tria_tests"); }
+
   SECTION("Naming threads") {
     auto name = std::string_view{"test_thread"};
     if (setThreadName(name)) {

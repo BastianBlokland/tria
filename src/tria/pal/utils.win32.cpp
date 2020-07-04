@@ -6,11 +6,20 @@
 
 namespace tria::pal {
 
-static auto errorExit(const char* msg) {
+namespace {
+
+auto errorExit(const char* msg) {
   std::fprintf(stderr, "%s\n", msg);
   std::fflush(stderr);
   std::exit(EXIT_FAILURE);
 }
+
+auto endsWith(const std::string& str, const std::string& suffix) -> bool {
+  return str.size() >= suffix.size() &&
+      str.compare(str.size() - suffix.size(), suffix.size(), suffix) == 0;
+}
+
+} // namespace
 
 auto getCurExecutablePath() noexcept -> fs::path {
   auto pathBuffer = std::array<char, MAX_PATH>{};
@@ -19,6 +28,14 @@ auto getCurExecutablePath() noexcept -> fs::path {
     errorExit("Failed to retreive executable filename");
   }
   return fs::path{pathBuffer.data()};
+}
+
+auto getCurExecutableName() noexcept -> std::string {
+  auto fileName = getCurExecutablePath().filename().string();
+  if (endsWith(fileName, ".exe")) {
+    fileName.erase(fileName.end() - 4, fileName.end());
+  }
+  return fileName;
 }
 
 /* Since Windows 10 version 1607 there is an api to name threads. If our windows version is older
