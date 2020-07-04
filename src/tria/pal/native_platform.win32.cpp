@@ -1,5 +1,6 @@
 #include "native_platform.win32.hpp"
 #include "tria/pal/err/platform_err.hpp"
+#include "tria/pal/utils.hpp"
 #include <array>
 
 namespace tria::pal {
@@ -56,6 +57,9 @@ auto WindowProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) noexcept -> L
   // Default window behaviour if platform didn't consume the message.
   return DefWindowProc(hWnd, msg, wParam, lParam);
 }
+
+NativePlatform::NativePlatform(log::Logger* logger) :
+    m_logger{logger}, m_appName{getCurExecutableName()}, m_hInstance{nullptr}, m_nextWinId{1} {}
 
 NativePlatform::~NativePlatform() {
   while (!m_windows.empty()) {

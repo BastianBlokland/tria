@@ -21,12 +21,9 @@ struct WindowData {
 
 class NativePlatform final {
 public:
-  NativePlatform(log::Logger* logger, std::string appName) :
-      m_logger{logger}, m_appName{std::move(appName)}, m_xcbCon{nullptr}, m_xcbScreen{nullptr} {}
+  NativePlatform(log::Logger* logger) : m_logger{logger}, m_xcbCon{nullptr}, m_xcbScreen{nullptr} {}
 
   ~NativePlatform();
-
-  [[nodiscard]] auto getAppName() const noexcept -> std::string_view { return m_appName; }
 
   [[nodiscard]] auto getIsWinCloseRequested(WindowId id) const noexcept -> bool {
     auto* win = getWindow(id);
@@ -58,7 +55,6 @@ public:
 
 private:
   log::Logger* m_logger;
-  std::string m_appName;
   xcb_connection_t* m_xcbCon;
   xcb_screen_t* m_xcbScreen;
   xcb_atom_t m_xcbProtoMsgAtom;

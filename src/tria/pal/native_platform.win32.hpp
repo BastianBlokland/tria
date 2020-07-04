@@ -43,9 +43,7 @@ class NativePlatform final {
   friend auto WindowProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) noexcept -> LRESULT;
 
 public:
-  NativePlatform(log::Logger* logger, std::string appName) :
-      m_logger{logger}, m_appName{std::move(appName)}, m_hInstance{nullptr}, m_nextWinId{1} {}
-
+  NativePlatform(log::Logger* logger);
   ~NativePlatform();
 
   [[nodiscard]] auto getAppName() const noexcept -> std::string_view { return m_appName; }

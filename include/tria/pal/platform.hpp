@@ -2,8 +2,6 @@
 #include "tria/log/api.hpp"
 #include "tria/pal/window.hpp"
 #include <memory>
-#include <string>
-#include <string_view>
 
 namespace tria::pal {
 
@@ -17,17 +15,13 @@ class NativePlatform;
  */
 class Platform final {
 public:
-  Platform(log::Logger* logger, std::string appName);
+  Platform(log::Logger* logger);
   Platform(const Platform& rhs)     = delete;
   Platform(Platform&& rhs) noexcept = default;
   ~Platform();
 
   auto operator=(const Platform& rhs) -> Platform& = delete;
   auto operator=(Platform&& rhs) noexcept -> Platform& = default;
-
-  /* Get the name of this app.
-   */
-  [[nodiscard]] auto getAppName() const noexcept -> std::string_view;
 
   /* Handle any queued os events.
    * Should be called at a regular interval to be 'responsive' to the os.
