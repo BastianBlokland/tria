@@ -1,4 +1,5 @@
 #include "native_platform.win32.hpp"
+#include "tria/pal/err/platform_err.hpp"
 #include <array>
 
 namespace tria::pal {
@@ -25,9 +26,9 @@ auto getWin32ErrorMsg(unsigned long errCode) noexcept -> std::string {
   return result;
 }
 
-auto throwDisplayProtocolError() {
+auto throwPlatformError() {
   const auto errCode = GetLastError();
-  throw err::DisplayProtocolErr{errCode, getWin32ErrorMsg(errCode)};
+  throw err::PlatformErr{errCode, getWin32ErrorMsg(errCode)};
 }
 
 } // namespace
@@ -95,7 +96,7 @@ auto NativePlatform::createWindow(uint16_t width, uint16_t height) -> Window {
 
   // Register the window-class to win32.
   if (!RegisterClassEx(&winClass)) {
-    throwDisplayProtocolError();
+    throwPlatformError();
   }
 
   const DWORD dwStyle = WS_OVERLAPPEDWINDOW | WS_CLIPSIBLINGS | WS_CLIPCHILDREN;
@@ -120,7 +121,7 @@ auto NativePlatform::createWindow(uint16_t width, uint16_t height) -> Window {
       m_hInstance,
       static_cast<LPVOID>(this));
   if (!winHandle) {
-    throwDisplayProtocolError();
+    throwPlatformError();
   }
 
   // Center on screen.
@@ -190,7 +191,7 @@ auto NativePlatform::setWinSize(WindowId id, uint16_t width, uint16_t height) no
 auto NativePlatform::win32Setup() -> void {
   m_hInstance = GetModuleHandle(nullptr);
   if (!m_hInstance) {
-    throwDisplayProtocolError();
+    throwPlatformError();
   }
 
   LOG_I(

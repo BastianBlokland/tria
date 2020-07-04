@@ -1,6 +1,5 @@
 #pragma once
 #include "tria/log/api.hpp"
-#include "tria/pal/err/display_protocol_err.hpp"
 #include "tria/pal/platform.hpp"
 #include <string>
 #include <unordered_map>
