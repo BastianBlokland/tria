@@ -36,7 +36,7 @@ auto main(int /*unused*/, char* * /*unused*/) -> int {
   auto logger = log::Logger{log::makeConsolePrettySink(), log::makeFileJsonSink("sandbox.log")};
   LOG_I(&logger, "Sandbox startup");
 
-  auto platform = pal::Platform{&logger, "Tria sandbox"};
+  auto platform = pal::Platform{&logger};
   try {
     runApp(logger, platform);
   } catch (const std::exception& e) {
