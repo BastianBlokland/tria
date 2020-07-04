@@ -44,7 +44,7 @@ public:
 
     // Line.
     m_buffer.append(" \"line\": ");
-    internal::writeLong(&m_buffer, msg.getMeta()->getLine());
+    internal::writeInt(&m_buffer, msg.getMeta()->getLine());
 
     // Parameters.
     if (msg.hasParams()) {

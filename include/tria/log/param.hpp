@@ -1,6 +1,7 @@
 #pragma once
 #include <string>
 #include <string_view>
+#include <type_traits>
 #include <variant>
 
 namespace tria::log {
@@ -8,8 +9,7 @@ namespace tria::log {
 /*
  * Runtime parameter to a log message.
  * Supported types:
- * - Integer types (stored in a signed 64 bit integer).
- *    TODO: Support unsigned 64 bit integers > signed 64 max?
+ * - Integer types (stored in a signed/unsigned 64 bit integer).
  * - Floating point types (float and double, stored as a double).
  * - Strings (stored as a copy).
  *
@@ -20,8 +20,17 @@ class Param final {
 public:
   Param() = delete;
 
-  template <typename T, typename = std::enable_if_t<std::is_integral<T>::value>>
-  Param(std::string_view key, T value) noexcept : m_key{key}, m_value{static_cast<long>(value)} {}
+  template <
+      typename T,
+      std::enable_if_t<std::is_integral<T>::value && std::is_signed<T>::value, void*> = nullptr>
+  Param(std::string_view key, T value) noexcept :
+      m_key{key}, m_value{static_cast<int64_t>(value)} {}
+
+  template <
+      typename T,
+      std::enable_if_t<std::is_integral<T>::value && std::is_unsigned<T>::value, void*> = nullptr>
+  Param(std::string_view key, T value) noexcept :
+      m_key{key}, m_value{static_cast<uint64_t>(value)} {}
 
   Param(std::string_view key, double value) noexcept : m_key{key}, m_value{value} {}
 
@@ -41,7 +50,7 @@ public:
   auto writeValue(std::string* tgtStr) const noexcept -> void;
 
 private:
-  using ValueType = std::variant<long, double, std::string>;
+  using ValueType = std::variant<int64_t, uint64_t, double, std::string>;
 
   std::string_view m_key;
   ValueType m_value;

@@ -51,8 +51,8 @@ auto Param::writeValue(std::string* tgtStr) const noexcept -> void {
       [tgtStr](auto&& arg) {
         using T = std::decay_t<decltype(arg)>;
         // NOLINTNEXTLINE(bugprone-branch-clone)
-        if constexpr (std::is_same_v<T, long>) {
-          internal::writeLong(tgtStr, arg);
+        if constexpr (std::is_same_v<T, int64_t> || std::is_same_v<T, uint64_t>) {
+          internal::writeInt(tgtStr, arg);
         }
         // NOLINTNEXTLINE(bugprone-branch-clone)
         else if constexpr (std::is_same_v<T, double>) {

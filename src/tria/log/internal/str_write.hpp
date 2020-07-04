@@ -12,6 +12,26 @@ template <typename>
 constexpr bool falseValue = false;
 
 template <typename T>
+constexpr auto getIntFormatSpecifier() noexcept -> const char* {
+  if constexpr (std::is_same<T, int>::value) {
+    return "%d";
+  } else if constexpr (std::is_same<T, unsigned int>::value) {
+    return "%u";
+  } else if constexpr (std::is_same<T, long>::value) {
+    return "%ld";
+  } else if constexpr (std::is_same<T, unsigned long>::value) {
+    return "%lu";
+  } else if constexpr (std::is_same<T, long long>::value) {
+    return "%lld";
+  } else if constexpr (std::is_same<T, unsigned long long>::value) {
+    return "%llu";
+  } else {
+    static_assert(falseValue<T>, "Unsupported type");
+    return nullptr;
+  }
+}
+
+template <typename T>
 constexpr auto getSecondsFracFormatSpecifier() noexcept -> const char* {
   if constexpr (std::is_same<T, int>::value) {
     return "%06d";
@@ -25,7 +45,8 @@ constexpr auto getSecondsFracFormatSpecifier() noexcept -> const char* {
   }
 }
 
-inline auto writeLong(std::string* str, long value) noexcept {
+template <typename IntType>
+inline auto writeInt(std::string* str, IntType value) noexcept {
   constexpr auto maxCharSize = 21;
   auto buffer                = std::array<char, maxCharSize>{};
 
@@ -34,7 +55,8 @@ inline auto writeLong(std::string* str, long value) noexcept {
   const auto convRes = std::to_chars(buffer.begin(), buffer.end(), value);
   const auto size    = convRes.ptr - buffer.data();
 #else
-  const auto size = std::snprintf(buffer.data(), maxCharSize, "%ld", value);
+  const auto size =
+      std::snprintf(buffer.data(), maxCharSize, getIntFormatSpecifier<IntType>(), value);
 #endif
 
   // Wrap the buffer into a string_view and call the string_view overload.
