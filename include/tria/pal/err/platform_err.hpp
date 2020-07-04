@@ -5,13 +5,13 @@
 namespace tria::pal::err {
 
 /*
- * Exception that is thrown when there is an error from the native display manager.
+ * Exception that is thrown when there is an error from the native platform.
  */
-class DisplayProtocolErr final : public std::exception {
+class PlatformErr final : public std::exception {
 public:
-  DisplayProtocolErr() = delete;
-  DisplayProtocolErr(unsigned long platformCode, std::string platformMsg) :
-      m_platformCode{platformCode}, m_platformMsg{std::move(platformMsg)} {}
+  PlatformErr() = delete;
+  PlatformErr(unsigned long platformCode, const std::string& platformMsg) :
+      m_platformCode{platformCode}, m_platformMsg{std::string{"Platform error: "} + platformMsg} {}
 
   [[nodiscard]] auto what() const noexcept -> const char* override { return m_platformMsg.c_str(); }
 

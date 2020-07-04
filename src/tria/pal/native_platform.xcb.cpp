@@ -1,4 +1,5 @@
 #include "native_platform.xcb.hpp"
+#include "tria/pal/err/platform_err.hpp"
 #include <array>
 
 namespace tria::pal {
@@ -187,28 +188,28 @@ auto NativePlatform::xcbCheckErr() -> void {
     std::string msg;
     switch (err) {
     case XCB_CONN_ERROR:
-      msg = "Connection error";
+      msg = "x11: Connection error";
       break;
     case XCB_CONN_CLOSED_EXT_NOTSUPPORTED:
-      msg = "Extension not supported";
+      msg = "x11: Extension not supported";
       break;
     case XCB_CONN_CLOSED_MEM_INSUFFICIENT:
-      msg = "Insufficient memory available";
+      msg = "x11: Insufficient memory available";
       break;
     case XCB_CONN_CLOSED_REQ_LEN_EXCEED:
-      msg = "Request length exceeded";
+      msg = "x11: Request length exceeded";
       break;
     case XCB_CONN_CLOSED_PARSE_ERR:
-      msg = "Failed to parse display string";
+      msg = "x11: Failed to parse display string";
       break;
     case XCB_CONN_CLOSED_INVALID_SCREEN:
-      msg = "No valid screen available";
+      msg = "x11: No valid screen available";
       break;
     default:
-      msg = "Unknown error";
+      msg = "x11: Unknown error";
       break;
     }
-    throw err::DisplayProtocolErr{static_cast<unsigned long>(err), std::move(msg)};
+    throw err::PlatformErr{static_cast<unsigned long>(err), msg};
   }
 }
 
