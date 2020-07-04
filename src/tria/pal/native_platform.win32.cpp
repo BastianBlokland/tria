@@ -59,7 +59,9 @@ auto WindowProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) noexcept -> L
 }
 
 NativePlatform::NativePlatform(log::Logger* logger) :
-    m_logger{logger}, m_appName{getCurExecutableName()}, m_hInstance{nullptr}, m_nextWinId{1} {}
+    m_logger{logger}, m_appName{getCurExecutableName()}, m_hInstance{nullptr}, m_nextWinId{1} {
+  LOG_I(logger, "Platform init", {"executable", m_appName}, {"pid", getCurProcessId()});
+}
 
 NativePlatform::~NativePlatform() {
   while (!m_windows.empty()) {

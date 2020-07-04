@@ -1,8 +1,15 @@
 #include "native_platform.xcb.hpp"
 #include "tria/pal/err/platform_err.hpp"
+#include "tria/pal/utils.hpp"
 #include <array>
 
 namespace tria::pal {
+
+NativePlatform::NativePlatform(log::Logger* logger) :
+    m_logger{logger}, m_xcbCon{nullptr}, m_xcbScreen{nullptr} {
+  LOG_I(
+      logger, "Platform init", {"executable", getCurExecutableName()}, {"pid", getCurProcessId()});
+}
 
 NativePlatform::~NativePlatform() {
   if (m_xcbCon) {

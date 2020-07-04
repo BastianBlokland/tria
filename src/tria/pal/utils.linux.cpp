@@ -3,14 +3,19 @@
 #include <cstdlib>
 #include <cstring>
 #include <pthread.h>
+#include <unistd.h>
 
 namespace tria::pal {
 
-static auto errorExit(const char* msg) {
+namespace {
+
+auto errorExit(const char* msg) {
   std::fprintf(stderr, "%s\n", msg);
   std::fflush(stderr);
   std::exit(EXIT_FAILURE);
 }
+
+} // namespace
 
 auto getCurExecutablePath() noexcept -> fs::path {
   constexpr auto selfLink = "/proc/self/exe";
@@ -26,6 +31,8 @@ auto getCurExecutablePath() noexcept -> fs::path {
 auto getCurExecutableName() noexcept -> std::string {
   return getCurExecutablePath().filename().string();
 }
+
+auto getCurProcessId() noexcept -> int64_t { return getpid(); }
 
 auto setThreadName(std::string_view name) noexcept -> bool {
   const auto curThread = pthread_self();

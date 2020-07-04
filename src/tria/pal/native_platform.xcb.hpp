@@ -21,8 +21,7 @@ struct WindowData {
 
 class NativePlatform final {
 public:
-  NativePlatform(log::Logger* logger) : m_logger{logger}, m_xcbCon{nullptr}, m_xcbScreen{nullptr} {}
-
+  NativePlatform(log::Logger* logger);
   ~NativePlatform();
 
   [[nodiscard]] auto getIsWinCloseRequested(WindowId id) const noexcept -> bool {

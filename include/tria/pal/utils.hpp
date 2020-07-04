@@ -1,5 +1,6 @@
 #pragma once
 #include "tria/fs.hpp"
+#include <cstdint>
 #include <string>
 #include <string_view>
 
@@ -12,6 +13,10 @@ auto getCurExecutablePath() noexcept -> fs::path;
 /* Get the name of the currently running executable.
  */
 auto getCurExecutableName() noexcept -> std::string;
+
+/* Get the id of the current process.
+ */
+auto getCurProcessId() noexcept -> int64_t;
 
 /* Assign a name to the current thread.
  * Mostly usefull for debug purposes.

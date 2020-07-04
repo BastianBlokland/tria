@@ -38,6 +38,8 @@ auto getCurExecutableName() noexcept -> std::string {
   return fileName;
 }
 
+auto getCurProcessId() noexcept -> int64_t { return GetCurrentProcessId(); }
+
 /* Since Windows 10 version 1607 there is an api to name threads. If our windows version is older
  * or we are compiling with MinGW (which unfortunately at the time of writing doesn't have this api
  * yet) then these functions compile into no-ops.
