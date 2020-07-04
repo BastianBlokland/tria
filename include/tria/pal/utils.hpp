@@ -9,6 +9,10 @@ namespace tria::pal {
  */
 auto getCurExecutablePath() noexcept -> fs::path;
 
+/* Get the name of the currently running executable.
+ */
+auto getCurExecutableName() noexcept -> std::string;
+
 /* Assign a name to the current thread.
  * Mostly usefull for debug purposes.
  * Note: Not all platforms implement this feature (returns false if setting the name fails).
