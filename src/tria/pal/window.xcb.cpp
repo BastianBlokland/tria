@@ -4,8 +4,6 @@
 
 namespace tria::pal {
 
-auto getWindowSurfaceType() noexcept -> WindowSurfaceType { return WindowSurfaceType::Xcb; }
-
 Window::~Window() {
   if (m_alive) {
     m_platform->destroyWindow(m_id);

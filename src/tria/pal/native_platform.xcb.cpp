@@ -5,25 +5,22 @@
 
 namespace tria::pal {
 
-NativePlatform::NativePlatform(log::Logger* logger) :
-    m_logger{logger}, m_xcbCon{nullptr}, m_xcbScreen{nullptr} {
+NativePlatform::NativePlatform(log::Logger* logger) : m_logger{logger}, m_xcbScreen{nullptr} {
+
   LOG_I(
       logger, "Platform init", {"executable", getCurExecutableName()}, {"pid", getCurProcessId()});
+
+  xcbSetup();
 }
 
 NativePlatform::~NativePlatform() {
-  if (m_xcbCon) {
-    while (!m_windows.empty()) {
-      destroyWindow(m_windows.begin()->first);
-    }
-    xcbTeardown();
+  while (!m_windows.empty()) {
+    destroyWindow(m_windows.begin()->first);
   }
+  xcbTeardown();
 }
 
 auto NativePlatform::handleEvents() -> void {
-  if (!m_xcbCon) {
-    xcbSetup();
-  }
 
   xcb_generic_event_t* evt;
   while ((evt = xcb_poll_for_event(m_xcbCon))) {
@@ -69,9 +66,6 @@ auto NativePlatform::handleEvents() -> void {
 }
 
 auto NativePlatform::createWindow(uint16_t width, uint16_t height) -> Window {
-  if (!m_xcbCon) {
-    xcbSetup();
-  }
 
   const auto winId    = xcb_generate_id(m_xcbCon);
   const auto eventMsk = XCB_CW_BACK_PIXEL | XCB_CW_EVENT_MASK;
@@ -246,6 +240,14 @@ auto NativePlatform::getWindow(WindowId id) const noexcept -> const WindowData* 
     return nullptr;
   }
   return &itr->second;
+}
+
+[[nodiscard]] auto getLinuxXcbConnection(const Window& window) noexcept -> xcb_connection_t* {
+  return window.getNativePlatformPtr()->getConnection();
+}
+
+auto getLinuxXcbWindow(const Window& window) noexcept -> xcb_window_t {
+  return window.getWindowId();
 }
 
 } // namespace tria::pal

@@ -24,6 +24,21 @@ message(STATUS "* Ouput path: ${PROJECT_SOURCE_DIR}/bin")
 message(STATUS "* Compiler: ${CMAKE_CXX_COMPILER_ID}")
 message(STATUS "* Generator: ${CMAKE_GENERATOR}")
 
+# Detect platform.
+if(UNIX)
+  # At the moment on linux only the xcb x11 display library is supported.
+  set(TRIA_PLATFORM "linux_xcb")
+  add_definitions(-DTRIA_LINUX)
+  add_definitions(-DTRIA_LINUX_XCB)
+  message(STATUS "Detected linux xcb platform")
+elseif(WIN32)
+  set(TRIA_PLATFORM "win32")
+  add_definitions(-DTRIA_WIN32)
+  message(STATUS "Detected win32 platform")
+else()
+  message(FATAL_ERROR "Unsupported platform")
+endif()
+
 # Output executables to bin dir.
 set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY $<1:${PROJECT_SOURCE_DIR}/bin>)
@@ -31,7 +46,7 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY $<1:${PROJECT_SOURCE_DIR}/bin>)
 # Global compiler flags.
 if(MSVC)
   message(STATUS "Setting msvc compiler flags")
-  set(CMAKE_CXX_FLAGS "/std:c++17 /WX /wd4530 /wd26451")
+  set(CMAKE_CXX_FLAGS "/std:c++17 /WX /wd4530 /wd26451 /EHsc")
 else()
   message(STATUS "Setting unix compiler flags")
   set(CXX_FLAGS_SHARED "-std=c++17 -Werror -Wall -Wextra -fno-strict-aliasing")

@@ -24,6 +24,8 @@ public:
   NativePlatform(log::Logger* logger);
   ~NativePlatform();
 
+  [[nodiscard]] auto getConnection() const noexcept { return m_xcbCon; }
+
   [[nodiscard]] auto getIsWinCloseRequested(WindowId id) const noexcept -> bool {
     auto* win = getWindow(id);
     assert(win);

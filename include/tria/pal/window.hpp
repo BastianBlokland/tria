@@ -7,18 +7,6 @@ namespace tria::pal {
 
 class NativePlatform;
 
-/* Type of the window render surface.
- */
-enum class WindowSurfaceType {
-  Xcb   = 1,
-  Win32 = 2,
-};
-
-/* What surface type does this platform use for its windows.
- * Important to know for the graphics layer how to draw to this window.
- */
-auto getWindowSurfaceType() noexcept -> WindowSurfaceType;
-
 /* Handle to a native window.
  * When handle is destroyed the native window is also closed. Supports moving ownership.
  *
@@ -59,6 +47,9 @@ public:
 
   auto setTitle(std::string_view title) -> void;
   auto setSize(uint16_t width, uint16_t height) -> void;
+
+  [[nodiscard]] auto getNativePlatformPtr() const noexcept { return m_platform; }
+  [[nodiscard]] auto getWindowId() const noexcept { return m_id; }
 
 private:
   using WindowId = uint32_t;

@@ -5,6 +5,7 @@
 #include "tria/pal/utils.hpp"
 #include "tria/pal/window.hpp"
 #include <algorithm>
+#include <array>
 #include <cstring>
 
 namespace tria::gfx {
@@ -55,18 +56,15 @@ auto getVkAvailableInstanceLayers() -> std::vector<VkLayerProperties> {
   return result;
 }
 
-auto getVkRequiredInstanceExtensions(bool enableValidation) -> std::vector<const char*> {
+auto getVkRequiredInstanceExtensions(bool enableValidation) noexcept -> std::vector<const char*> {
   auto result = std::vector<const char*>{VK_KHR_SURFACE_EXTENSION_NAME};
-  switch (pal::getWindowSurfaceType()) {
-  case pal::WindowSurfaceType::Xcb:
-    result.push_back("VK_KHR_xcb_surface");
-    break;
-  case pal::WindowSurfaceType::Win32:
-    result.push_back("VK_KHR_win32_surface");
-    break;
-  default:
-    throw err::DriverErr{"Unsupported platform window surface type"};
-  }
+#if defined(TRIA_LINUX_XCB)
+  result.push_back(VK_KHR_XCB_SURFACE_EXTENSION_NAME);
+#elif defined(TRIA_WIN32)
+  result.push_back(VK_KHR_WIN32_SURFACE_EXTENSION_NAME);
+#else
+  static_assert("Unsupported platform");
+#endif
   if (enableValidation) {
     result.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
   }
