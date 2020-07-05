@@ -4,6 +4,7 @@
 
 namespace tria::gfx::internal {
 
+// Called by the vulkan driver.
 static auto vkDebugCallback(
     VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
     VkDebugUtilsMessageTypeFlagsEXT messageType,

@@ -52,7 +52,7 @@ public:
 
   [[nodiscard]] constexpr auto getKey() const noexcept { return m_key; }
 
-  auto writeValue(std::string* tgtStr) const noexcept -> void;
+  auto writeValue(std::string* tgtStr, bool quoteStrings) const noexcept -> void;
 
 private:
   using ValueType = std::variant<int64_t, uint64_t, double, bool, std::string>;

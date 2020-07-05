@@ -1,5 +1,6 @@
 #pragma once
 #include "internal/debug_messenger.hpp"
+#include "internal/device.hpp"
 #include "tria/gfx/context.hpp"
 #include <memory>
 #include <string>
@@ -16,7 +17,8 @@ private:
   log::Logger* m_logger;
   std::string m_appName;
   VkInstance m_vkInstance;
-  std::unique_ptr<internal::DebugMessenger> m_dbgMessenger;
+  internal::DebugMessengerPtr m_dbgMessenger;
+  internal::DevicePtr m_device;
 };
 
 } // namespace tria::gfx

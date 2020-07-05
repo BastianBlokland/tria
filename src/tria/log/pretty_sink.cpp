@@ -95,7 +95,7 @@ public:
 
         appendStyle(ansiBold());
 
-        param.writeValue(&m_buffer);
+        param.writeValue(&m_buffer, false);
         m_buffer.append("\n");
 
         appendStyle(ansiReset());

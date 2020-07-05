@@ -8,7 +8,7 @@ namespace {
 
 auto paramValueToString(const Param& param) {
   auto str = std::string{};
-  param.writeValue(&str);
+  param.writeValue(&str, true);
   return str;
 }
 

@@ -15,6 +15,19 @@ namespace {
 
 constexpr std::array<const char*, 1> validationLayers = {"VK_LAYER_KHRONOS_validation"};
 
+[[maybe_unused]] auto checkValidationLayersSupport(const std::vector<VkLayerProperties>& available)
+    -> bool {
+  // Check if all validation layers are present in the list of available layers.
+  for (const auto* required : validationLayers) {
+    if (!std::any_of(available.begin(), available.end(), [required](const VkLayerProperties& l) {
+          return std::strcmp(required, l.layerName) == 0;
+        })) {
+      return false;
+    }
+  }
+  return true;
+}
+
 auto makeVkAppInfo(const std::string appName) noexcept -> VkApplicationInfo {
   VkApplicationInfo appInfo  = {};
   appInfo.sType              = VK_STRUCTURE_TYPE_APPLICATION_INFO;
@@ -28,17 +41,17 @@ auto makeVkAppInfo(const std::string appName) noexcept -> VkApplicationInfo {
 
 auto getVkAvailableInstanceExtensions() -> std::vector<VkExtensionProperties> {
   uint32_t extCount = 0;
-  vkEnumerateInstanceExtensionProperties(nullptr, &extCount, nullptr);
+  checkVkResult(vkEnumerateInstanceExtensionProperties(nullptr, &extCount, nullptr));
   auto result = std::vector<VkExtensionProperties>{extCount};
-  vkEnumerateInstanceExtensionProperties(nullptr, &extCount, result.data());
+  checkVkResult(vkEnumerateInstanceExtensionProperties(nullptr, &extCount, result.data()));
   return result;
 }
 
 auto getVkAvailableInstanceLayers() -> std::vector<VkLayerProperties> {
   uint32_t layerCount = 0;
-  vkEnumerateInstanceLayerProperties(&layerCount, nullptr);
+  checkVkResult(vkEnumerateInstanceLayerProperties(&layerCount, nullptr));
   auto result = std::vector<VkLayerProperties>{layerCount};
-  vkEnumerateInstanceLayerProperties(&layerCount, result.data());
+  checkVkResult(vkEnumerateInstanceLayerProperties(&layerCount, result.data()));
   return result;
 }
 
@@ -79,19 +92,6 @@ auto makeVkInstance(const std::string appName, bool enableValidation) -> VkInsta
   return result;
 }
 
-#if !defined(NDEBUG)
-auto checkValidationLayersSupport(const std::vector<VkLayerProperties>& available) -> bool {
-  for (const auto* required : validationLayers) {
-    if (!std::any_of(available.begin(), available.end(), [required](const VkLayerProperties& l) {
-          return std::strcmp(required, l.layerName) == 0;
-        })) {
-      return false;
-    }
-  }
-  return true;
-}
-#endif
-
 } // namespace
 
 NativeContext::NativeContext(log::Logger* logger) :
@@ -120,10 +120,19 @@ NativeContext::NativeContext(log::Logger* logger) :
   if (enableValidationlayers) {
     m_dbgMessenger = std::make_unique<DebugMessenger>(m_vkInstance, m_logger);
   }
+
+  m_device = getDevice(m_logger, m_vkInstance);
+  if (!m_device) {
+    throw err::DriverErr{"No device found with vulkan support"};
+  }
 }
 
 NativeContext::~NativeContext() {
-  m_dbgMessenger = nullptr; // Destroy the messenger before destroying the vkInstance.
+  // Destroy created resources.
+  m_device       = nullptr;
+  m_dbgMessenger = nullptr;
+
+  // Destroy the vulkan instance.
   vkDestroyInstance(m_vkInstance, nullptr);
 }
 
