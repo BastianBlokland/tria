@@ -9,7 +9,7 @@ static auto vkDebugCallback(
     VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
     VkDebugUtilsMessageTypeFlagsEXT messageType,
     const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
-    void* pUserData) -> VkBool32 {
+    void* pUserData) noexcept -> VkBool32 {
 
   auto* messenger = static_cast<DebugMessenger*>(pUserData);
   messenger->handleMessage(messageSeverity, messageType, pCallbackData);
@@ -44,16 +44,24 @@ auto destroyDebugUtilsMessengerEXT(
   }
 }
 
-auto setupVkDebugMessenger(VkInstance vkInstance, DebugMessenger* messenger)
+auto setupVkDebugMessenger(VkInstance vkInstance, DebugMessenger* messenger, bool verbose)
     -> VkDebugUtilsMessengerEXT {
   assert(messenger);
 
+  auto severityMask = 0U;
+  if (verbose) {
+    severityMask = VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT |
+        VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT |
+        VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
+  } else {
+    severityMask = VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT |
+        VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
+  }
+
   VkDebugUtilsMessengerCreateInfoEXT createInfo = {};
   createInfo.sType           = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
-  createInfo.messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT |
-      VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT |
-      VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
-  createInfo.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT |
+  createInfo.messageSeverity = severityMask;
+  createInfo.messageType     = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT |
       VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT |
       VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
   createInfo.pfnUserCallback = vkDebugCallback;
@@ -66,10 +74,10 @@ auto setupVkDebugMessenger(VkInstance vkInstance, DebugMessenger* messenger)
 
 } // namespace
 
-DebugMessenger::DebugMessenger(VkInstance vkInstance, log::Logger* logger) :
-    m_vkInstance{vkInstance}, m_logger{logger} {
+DebugMessenger::DebugMessenger(log::Logger* logger, VkInstance vkInstance, bool verbose) :
+    m_logger{logger}, m_vkInstance{vkInstance} {
 
-  m_vkDebugMessenger = setupVkDebugMessenger(m_vkInstance, this);
+  m_vkDebugMessenger = setupVkDebugMessenger(m_vkInstance, this, verbose);
 }
 
 DebugMessenger::~DebugMessenger() {
@@ -80,7 +88,7 @@ DebugMessenger::~DebugMessenger() {
 auto DebugMessenger::handleMessage(
     VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
     VkDebugUtilsMessageTypeFlagsEXT messageType,
-    const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData) -> void {
+    const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData) noexcept -> void {
 
   const char* messageTypeLabel = nullptr;
   switch (messageType) {

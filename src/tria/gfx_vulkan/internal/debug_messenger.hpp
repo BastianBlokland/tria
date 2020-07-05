@@ -10,17 +10,17 @@ namespace tria::gfx::internal {
  */
 class DebugMessenger final {
 public:
-  DebugMessenger(VkInstance vkInstance, log::Logger* logger);
+  DebugMessenger(log::Logger* logger, VkInstance vkInstance, bool verbose);
   ~DebugMessenger();
 
   auto handleMessage(
       VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
       VkDebugUtilsMessageTypeFlagsEXT messageType,
-      const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData) -> void;
+      const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData) noexcept -> void;
 
 private:
-  VkInstance m_vkInstance;
   log::Logger* m_logger;
+  VkInstance m_vkInstance;
   VkDebugUtilsMessengerEXT m_vkDebugMessenger;
 };
 

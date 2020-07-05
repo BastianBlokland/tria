@@ -118,7 +118,7 @@ NativeContext::NativeContext(log::Logger* logger) :
   LOG_I(m_logger, "Vulkan instance created", {"validation", enableValidationlayers});
 
   if (enableValidationlayers) {
-    m_dbgMessenger = std::make_unique<DebugMessenger>(m_vkInstance, m_logger);
+    m_dbgMessenger = std::make_unique<DebugMessenger>(m_logger, m_vkInstance, false);
   }
 
   m_device = getDevice(m_logger, m_vkInstance);
