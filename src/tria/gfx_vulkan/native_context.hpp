@@ -8,10 +8,16 @@
 
 namespace tria::gfx {
 
+class NativeSurface;
+
 class NativeContext final {
 public:
   NativeContext(log::Logger* logger);
   ~NativeContext();
+
+  [[nodiscard]] auto getVkInstance() const noexcept { return m_vkInstance; }
+
+  [[nodiscard]] auto createSurface(const pal::Window* window) -> std::unique_ptr<NativeSurface>;
 
 private:
   log::Logger* m_logger;

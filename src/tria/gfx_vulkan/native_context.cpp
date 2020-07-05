@@ -1,5 +1,6 @@
 #include "native_context.hpp"
 #include "internal/utils.hpp"
+#include "native_surface.hpp"
 #include "tria/config.hpp"
 #include "tria/gfx/err/driver_err.hpp"
 #include "tria/pal/utils.hpp"
@@ -132,6 +133,12 @@ NativeContext::~NativeContext() {
 
   // Destroy the vulkan instance.
   vkDestroyInstance(m_vkInstance, nullptr);
+
+  LOG_I(m_logger, "Vulkan instance destroyed");
+}
+
+auto NativeContext::createSurface(const pal::Window* window) -> std::unique_ptr<NativeSurface> {
+  return std::make_unique<NativeSurface>(m_logger, this, window);
 }
 
 } // namespace tria::gfx

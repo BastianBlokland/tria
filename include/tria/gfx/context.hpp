@@ -1,5 +1,7 @@
 #pragma once
+#include "tria/gfx/surface.hpp"
 #include "tria/log/api.hpp"
+#include "tria/pal/window.hpp"
 
 namespace tria::gfx {
 
@@ -19,6 +21,8 @@ public:
 
   auto operator=(const Context& rhs) -> Context& = delete;
   auto operator=(Context&& rhs) noexcept -> Context& = default;
+
+  [[nodiscard]] auto createSurface(const pal::Window* window) -> Surface;
 
 private:
   std::unique_ptr<NativeContext> m_native;

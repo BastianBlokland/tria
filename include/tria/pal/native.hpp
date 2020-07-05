@@ -1,5 +1,7 @@
 #include "tria/pal/window.hpp"
 
+namespace tria::pal {
+
 /*
  * This header can be used to retreive the low-level platform information about windows.
  * Note: Only include this if it is absolutely required as it will drag in big platform headers.
@@ -20,3 +22,5 @@
 [[nodiscard]] auto getWin32HWnd(const Window& window) noexcept -> HWND;
 
 #endif
+
+} // namespace tria::pal

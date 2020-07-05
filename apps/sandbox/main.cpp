@@ -12,9 +12,10 @@ using namespace tria;
 
 auto runApp(log::Logger& logger, pal::Platform& platform) -> int {
 
-  auto gfxContext = gfx::Context{&logger};
+  auto gfxContext  = gfx::Context{&logger};
+  auto mainWin     = platform.createWindow(512, 512);
+  auto mainSurface = gfxContext.createSurface(&mainWin);
 
-  auto mainWin = platform.createWindow(512, 512);
   while (!mainWin.getIsCloseRequested()) {
 
     // Process platform events.

@@ -5,7 +5,9 @@ add_library(tria_gfx STATIC
   tria/gfx_vulkan/internal/device.cpp
   tria/gfx_vulkan/internal/utils.cpp
   tria/gfx_vulkan/context.cpp
-  tria/gfx_vulkan/native_context.cpp)
+  tria/gfx_vulkan/native_context.cpp
+  tria/gfx_vulkan/native_surface.cpp
+  tria/gfx_vulkan/surface.cpp)
 
 message(STATUS "Finding vulkan package")
 find_package(Vulkan REQUIRED)
