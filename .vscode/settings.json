@@ -10,9 +10,5 @@
   "editor.rulers": [
     100
   ],
-  "clangd.semanticHighlighting": true,
-  "terminal.integrated.shellArgs.windows": [
-    "-ExecutionPolicy",
-    "Bypass"
-  ]
+  "clangd.semanticHighlighting": true
 }
