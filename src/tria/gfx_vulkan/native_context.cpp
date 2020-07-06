@@ -15,7 +15,9 @@ using namespace internal;
 
 namespace {
 
-constexpr std::array<const char*, 1> validationLayers = {"VK_LAYER_KHRONOS_validation"};
+constexpr std::array<const char*, 1> validationLayers = {
+    "VK_LAYER_KHRONOS_validation",
+};
 
 [[maybe_unused]] auto checkValidationLayersSupport(const std::vector<VkLayerProperties>& available)
     -> bool {
@@ -42,7 +44,7 @@ auto makeVkAppInfo(const std::string appName) noexcept -> VkApplicationInfo {
 }
 
 auto getVkAvailableInstanceExtensions() -> std::vector<VkExtensionProperties> {
-  uint32_t extCount = 0;
+  uint32_t extCount = 0U;
   checkVkResult(vkEnumerateInstanceExtensionProperties(nullptr, &extCount, nullptr));
   auto result = std::vector<VkExtensionProperties>{extCount};
   checkVkResult(vkEnumerateInstanceExtensionProperties(nullptr, &extCount, result.data()));
@@ -50,7 +52,7 @@ auto getVkAvailableInstanceExtensions() -> std::vector<VkExtensionProperties> {
 }
 
 auto getVkAvailableInstanceLayers() -> std::vector<VkLayerProperties> {
-  uint32_t layerCount = 0;
+  uint32_t layerCount = 0U;
   checkVkResult(vkEnumerateInstanceLayerProperties(&layerCount, nullptr));
   auto result = std::vector<VkLayerProperties>{layerCount};
   checkVkResult(vkEnumerateInstanceLayerProperties(&layerCount, result.data()));
@@ -96,8 +98,8 @@ auto makeVkInstance(const std::string appName, bool enableValidation) -> VkInsta
 NativeContext::NativeContext(log::Logger* logger) :
     m_logger{logger}, m_appName{pal::getCurExecutableName()} {
 
-  auto availableInstExts   = getVkAvailableInstanceExtensions();
-  auto availableInstLayers = getVkAvailableInstanceLayers();
+  const auto availableInstExts   = getVkAvailableInstanceExtensions();
+  const auto availableInstLayers = getVkAvailableInstanceLayers();
 
   LOG_D(
       m_logger,
@@ -119,16 +121,10 @@ NativeContext::NativeContext(log::Logger* logger) :
   if (enableValidationlayers) {
     m_dbgMessenger = std::make_unique<DebugMessenger>(m_logger, m_vkInstance, false);
   }
-
-  m_device = getDevice(m_logger, m_vkInstance);
-  if (!m_device) {
-    throw err::DriverErr{"No device found with vulkan support"};
-  }
 }
 
 NativeContext::~NativeContext() {
   // Destroy created resources.
-  m_device       = nullptr;
   m_dbgMessenger = nullptr;
 
   // Destroy the vulkan instance.

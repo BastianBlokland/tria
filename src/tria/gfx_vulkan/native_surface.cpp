@@ -40,14 +40,21 @@ NativeSurface::NativeSurface(
   assert(m_window);
 
   m_vkSurface = makeVkSurfaceKhr(m_context, m_window);
-
-  LOG_I(m_logger, "Surface created");
+  try {
+    m_device = getDevice(m_logger, context->getVkInstance(), m_vkSurface);
+    if (!m_device) {
+      throw err::DriverErr{"No device found with vulkan support"};
+    }
+  } catch (...) {
+    // Cleanup up already created resources.
+    vkDestroySurfaceKHR(m_context->getVkInstance(), m_vkSurface, nullptr);
+    throw;
+  }
 }
 
 NativeSurface::~NativeSurface() {
   vkDestroySurfaceKHR(m_context->getVkInstance(), m_vkSurface, nullptr);
-
-  LOG_I(m_logger, "Surface destroyed");
+  m_device = nullptr;
 }
 
 } // namespace tria::gfx

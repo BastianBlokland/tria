@@ -1,4 +1,5 @@
 #pragma once
+#include "internal/device.hpp"
 #include "tria/gfx/surface.hpp"
 #include "tria/log/api.hpp"
 #include "tria/pal/window.hpp"
@@ -18,6 +19,7 @@ private:
   const NativeContext* m_context;
   const pal::Window* m_window;
   VkSurfaceKHR m_vkSurface;
+  internal::DevicePtr m_device;
 };
 
 } // namespace tria::gfx

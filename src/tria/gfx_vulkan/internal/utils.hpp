@@ -5,7 +5,12 @@
 
 namespace tria::gfx::internal {
 
-auto getVkErrStr(VkResult errCode) noexcept -> std::string;
+[[nodiscard]] auto getVkErrStr(VkResult errCode) noexcept -> std::string;
+[[nodiscard]] auto getVkDeviceTypeString(VkPhysicalDeviceType type) noexcept -> std::string;
+[[nodiscard]] auto getVkVendorString(uint32_t vendorId) noexcept -> std::string;
+[[nodiscard]] auto getVkFormatString(VkFormat format) noexcept -> std::string;
+[[nodiscard]] auto getVkColorSpaceString(VkColorSpaceKHR colorSpace) noexcept -> std::string;
+[[nodiscard]] auto getVkPresentModeString(VkPresentModeKHR mode) noexcept -> std::string;
 
 inline auto checkVkResult(VkResult result) -> void {
   if (result != VK_SUCCESS) {
@@ -14,7 +19,7 @@ inline auto checkVkResult(VkResult result) -> void {
 }
 
 template <typename CollectionType, typename SelectFunc>
-auto collectionToStr(const CollectionType& col, SelectFunc func) -> std::string {
+[[nodiscard]] auto collectionToStr(const CollectionType& col, SelectFunc func) -> std::string {
   auto result = std::string{};
   for (auto itr = col.begin(); itr != col.end(); ++itr) {
     const auto first = itr == col.begin();
