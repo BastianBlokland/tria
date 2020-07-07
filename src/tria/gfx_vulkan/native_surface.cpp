@@ -50,11 +50,13 @@ NativeSurface::NativeSurface(
     vkDestroySurfaceKHR(m_context->getVkInstance(), m_vkSurface, nullptr);
     throw;
   }
+
+  m_device->initSwapchain(window->getWidth(), window->getHeight());
 }
 
 NativeSurface::~NativeSurface() {
-  vkDestroySurfaceKHR(m_context->getVkInstance(), m_vkSurface, nullptr);
   m_device = nullptr;
+  vkDestroySurfaceKHR(m_context->getVkInstance(), m_vkSurface, nullptr);
 }
 
 } // namespace tria::gfx

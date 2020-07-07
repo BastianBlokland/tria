@@ -64,7 +64,16 @@ constexpr std::array<const char*, 1> requiredDeviceExtensions = {
   return result;
 }
 
-[[nodiscard]] auto pickGraphicsQueueIdx(const std::vector<VkQueueFamilyProperties>& queues)
+[[nodiscard]] auto getSwapchainVkImages(VkDevice vkDevice, VkSwapchainKHR vkSwapchain)
+    -> std::vector<VkImage> {
+  uint32_t count = 0;
+  checkVkResult(vkGetSwapchainImagesKHR(vkDevice, vkSwapchain, &count, nullptr));
+  auto result = std::vector<VkImage>{count};
+  checkVkResult(vkGetSwapchainImagesKHR(vkDevice, vkSwapchain, &count, result.data()));
+  return result;
+}
+
+[[nodiscard]] auto pickGraphicsQueueIdx(const std::vector<VkQueueFamilyProperties>& queues) noexcept
     -> std::optional<uint32_t> {
   for (auto i = 0U; i != queues.size(); ++i) {
     if (queues[i].queueFlags & VK_QUEUE_GRAPHICS_BIT) {
@@ -81,7 +90,8 @@ constexpr std::array<const char*, 1> requiredDeviceExtensions = {
 
   for (auto i = 0U; i != queues.size(); ++i) {
     VkBool32 presentSupport = false;
-    vkGetPhysicalDeviceSurfaceSupportKHR(vkPhysicalDevice, i, vkSurface, &presentSupport);
+    checkVkResult(
+        vkGetPhysicalDeviceSurfaceSupportKHR(vkPhysicalDevice, i, vkSurface, &presentSupport));
     if (presentSupport) {
       return i;
     }
@@ -89,7 +99,8 @@ constexpr std::array<const char*, 1> requiredDeviceExtensions = {
   return std::nullopt;
 }
 
-[[nodiscard]] auto pickSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats)
+[[nodiscard]] auto
+pickSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats) noexcept
     -> std::optional<VkSurfaceFormatKHR> {
 
   // Prefer srgb.
@@ -104,7 +115,7 @@ constexpr std::array<const char*, 1> requiredDeviceExtensions = {
   return availableFormats.empty() ? std::nullopt : std::optional(*availableFormats.begin());
 }
 
-[[nodiscard]] auto pickPresentMode(const std::vector<VkPresentModeKHR>& availableModes)
+[[nodiscard]] auto pickPresentMode(const std::vector<VkPresentModeKHR>& availableModes) noexcept
     -> VkPresentModeKHR {
 
   // Prefer mailbox.
@@ -115,6 +126,37 @@ constexpr std::array<const char*, 1> requiredDeviceExtensions = {
   }
   // If thats not availble then fall back to fifo (which is guaranteed to be available).
   return VK_PRESENT_MODE_FIFO_KHR;
+}
+
+[[nodiscard]] auto getImageCount(const VkSurfaceCapabilitiesKHR& capabilities) noexcept
+    -> uint32_t {
+  // One more then minimum to avoid having to block to acquire a new image.
+  auto result = capabilities.minImageCount + 1;
+  // Note '0' maxImageCount indicates that there is no maximum.
+  if (capabilities.maxImageCount != 0 && result > capabilities.maxImageCount) {
+    result = capabilities.maxImageCount;
+  }
+  return result;
+}
+
+[[nodiscard]] auto getSwapExtent(
+    const VkSurfaceCapabilitiesKHR& capabilities, uint16_t width, uint16_t height) noexcept
+    -> VkExtent2D {
+  // Note: If current extent is not equal to uint32_max then we have to respect that, otherwise
+  // we get to choose ourselves.
+  if (capabilities.currentExtent.width != UINT32_MAX) {
+    return capabilities.currentExtent;
+  } else {
+    auto extent = VkExtent2D{width, height};
+    // We have to respect the min and max image extent capabilities of the device.
+    extent.width = std::max(
+        capabilities.minImageExtent.width,
+        std::min(capabilities.maxImageExtent.width, extent.width));
+    extent.height = std::max(
+        capabilities.minImageExtent.height,
+        std::min(capabilities.maxImageExtent.height, extent.height));
+    return extent;
+  }
 }
 
 [[nodiscard]] auto createVkDevice(VkPhysicalDevice physicalDevice, std::set<uint32_t> queueFamilies)
@@ -152,7 +194,10 @@ constexpr std::array<const char*, 1> requiredDeviceExtensions = {
 } // namespace
 
 Device::Device(log::Logger* logger, VkPhysicalDevice vkPhysicalDevice, VkSurfaceKHR vkSurface) :
-    m_logger{logger}, m_vkPhysicalDevice{vkPhysicalDevice} {
+    m_logger{logger},
+    m_vkPhysicalDevice{vkPhysicalDevice},
+    m_vkSurface{vkSurface},
+    m_vkSwapchain{nullptr} {
 
   vkGetPhysicalDeviceProperties(m_vkPhysicalDevice, &m_properties);
   vkGetPhysicalDeviceFeatures(vkPhysicalDevice, &m_features);
@@ -161,11 +206,15 @@ Device::Device(log::Logger* logger, VkPhysicalDevice vkPhysicalDevice, VkSurface
 
   const auto queueFamilies    = getVkQueueFamilies(vkPhysicalDevice);
   const auto foundGfxQueueIdx = pickGraphicsQueueIdx(queueFamilies);
-  if (!foundGfxQueueIdx) {
+  if (foundGfxQueueIdx) {
+    m_graphicsQueueIdx = *foundGfxQueueIdx;
+  } else {
     throw err::DriverErr{"Selected vulkan device is missing a graphics queue"};
   }
   const auto foundPresentQueueIdx = pickPresentQueueIdx(queueFamilies, vkPhysicalDevice, vkSurface);
-  if (!foundPresentQueueIdx) {
+  if (foundPresentQueueIdx) {
+    m_presentQueueIdx = *foundPresentQueueIdx;
+  } else {
     throw err::DriverErr{"Selected vulkan device is missing a presentation queue"};
   }
 
@@ -189,14 +238,95 @@ Device::Device(log::Logger* logger, VkPhysicalDevice vkPhysicalDevice, VkSurface
       "Device created",
       {"deviceId", m_properties.deviceID},
       {"deviceName", m_properties.deviceName},
-      {"graphicsQueueIdx", *foundGfxQueueIdx},
-      {"presentQueueIdx", *foundPresentQueueIdx},
+      {"graphicsQueueIdx", m_graphicsQueueIdx},
+      {"presentQueueIdx", m_presentQueueIdx},
       {"surfaceFormat", getVkFormatString(m_surfaceFormat.format)},
       {"surfaceColorSpace", getVkColorSpaceString(m_surfaceFormat.colorSpace)},
       {"presentMode", getVkPresentModeString(m_presentMode)});
 }
 
-Device::~Device() { vkDestroyDevice(m_vkDevice, nullptr); }
+Device::~Device() {
+  for (const auto& vkImageView : m_swapchainVkImageViews) {
+    vkDestroyImageView(m_vkDevice, vkImageView, nullptr);
+  }
+  if (m_vkSwapchain != nullptr) {
+    vkDestroySwapchainKHR(m_vkDevice, m_vkSwapchain, nullptr);
+  }
+  vkDestroyDevice(m_vkDevice, nullptr);
+}
+
+auto Device::initSwapchain(uint16_t width, uint16_t height) -> void {
+  // Delete any imageView that belonged to the previous swapchain.
+  for (const auto& vkImageView : m_swapchainVkImageViews) {
+    vkDestroyImageView(m_vkDevice, vkImageView, nullptr);
+  }
+  m_swapchainVkImageViews.clear();
+
+  auto extent   = getSwapExtent(m_capabilities, width, height);
+  auto imgCount = getImageCount(m_capabilities);
+
+  VkSwapchainCreateInfoKHR createInfo{};
+  createInfo.sType            = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
+  createInfo.surface          = m_vkSurface;
+  createInfo.minImageCount    = imgCount;
+  createInfo.imageFormat      = m_surfaceFormat.format;
+  createInfo.imageColorSpace  = m_surfaceFormat.colorSpace;
+  createInfo.imageExtent      = extent;
+  createInfo.imageArrayLayers = 1;
+  createInfo.imageUsage       = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+
+  std::array<uint32_t, 2> queueFamilyIndices = {m_graphicsQueueIdx, m_presentQueueIdx};
+  if (queueFamilyIndices[0] == queueFamilyIndices[1]) {
+    createInfo.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
+  } else {
+    // Note: For compatiblity we support devices where the graphics and present queues are not the
+    // same, however this is not a common case. If it becomes a more common case we should probably
+    // setup explicit ownership transfers instead of the concurrent mode for higher performance.
+    createInfo.imageSharingMode      = VK_SHARING_MODE_CONCURRENT;
+    createInfo.queueFamilyIndexCount = queueFamilyIndices.size();
+    createInfo.pQueueFamilyIndices   = queueFamilyIndices.data();
+  }
+
+  createInfo.preTransform   = m_capabilities.currentTransform;
+  createInfo.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
+  createInfo.presentMode    = m_presentMode;
+  createInfo.clipped        = VK_TRUE;
+  createInfo.oldSwapchain   = m_vkSwapchain;
+
+  // Create the swapchain and retrieve the swapchain images.
+  checkVkResult(vkCreateSwapchainKHR(m_vkDevice, &createInfo, nullptr, &m_vkSwapchain));
+  m_swapchainVkImages = getSwapchainVkImages(m_vkDevice, m_vkSwapchain);
+  m_swapchainSize     = extent;
+
+  // Create an imageview for every swapchain image.
+  for (const auto& vkImage : m_swapchainVkImages) {
+    VkImageViewCreateInfo createInfo           = {};
+    createInfo.sType                           = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+    createInfo.image                           = vkImage;
+    createInfo.viewType                        = VK_IMAGE_VIEW_TYPE_2D;
+    createInfo.format                          = m_surfaceFormat.format;
+    createInfo.components.r                    = VK_COMPONENT_SWIZZLE_IDENTITY;
+    createInfo.components.g                    = VK_COMPONENT_SWIZZLE_IDENTITY;
+    createInfo.components.b                    = VK_COMPONENT_SWIZZLE_IDENTITY;
+    createInfo.components.a                    = VK_COMPONENT_SWIZZLE_IDENTITY;
+    createInfo.subresourceRange.aspectMask     = VK_IMAGE_ASPECT_COLOR_BIT;
+    createInfo.subresourceRange.baseMipLevel   = 0;
+    createInfo.subresourceRange.levelCount     = 1;
+    createInfo.subresourceRange.baseArrayLayer = 0;
+    createInfo.subresourceRange.layerCount     = 1;
+    VkImageView result;
+    checkVkResult(vkCreateImageView(m_vkDevice, &createInfo, nullptr, &result));
+    m_swapchainVkImageViews.push_back(result);
+  }
+
+  LOG_D(
+      m_logger,
+      "Swapchain created",
+      {"imageCount", imgCount},
+      {"sharedGfxPresentQueue", m_graphicsQueueIdx == m_presentQueueIdx},
+      {"width", extent.width},
+      {"height", extent.height});
+}
 
 [[nodiscard]] auto getDevice(log::Logger* logger, VkInstance vkInstance, VkSurfaceKHR vkSurface)
     -> DevicePtr {
@@ -235,9 +365,7 @@ Device::~Device() { vkDestroyDevice(m_vkDevice, nullptr); }
         {"vendorId", properties.vendorID},
         {"vendorName", getVkVendorString(properties.vendorID)},
         {"suitable", deviceIsSuitable},
-        {"score", score},
-        {"availableExts",
-         collectionToStr(availableExts, [](const auto& elem) { return elem.extensionName; })});
+        {"score", score});
 
     if (deviceIsSuitable) {
       devices.insert({score, vkPhysicalDevice});

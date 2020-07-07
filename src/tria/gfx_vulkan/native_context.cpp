@@ -101,14 +101,6 @@ NativeContext::NativeContext(log::Logger* logger) :
   const auto availableInstExts   = getVkAvailableInstanceExtensions();
   const auto availableInstLayers = getVkAvailableInstanceLayers();
 
-  LOG_D(
-      m_logger,
-      "Vulkan init",
-      {"availableInstExts",
-       collectionToStr(availableInstExts, [](const auto& elem) { return elem.extensionName; })},
-      {"availableInstLayers",
-       collectionToStr(availableInstLayers, [](const auto& elem) { return elem.layerName; })});
-
 #if defined(NDEBUG)
   auto enableValidationlayers = false;
 #else
