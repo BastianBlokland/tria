@@ -46,7 +46,7 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY $<1:${PROJECT_SOURCE_DIR}/bin>)
 # Global compiler flags.
 if(MSVC)
   message(STATUS "Setting msvc compiler flags")
-  set(CMAKE_CXX_FLAGS "/std:c++17 /WX /wd4530 /wd26451 /EHsc")
+  set(CMAKE_CXX_FLAGS "/std:c++17 /WX /wd4530 /wd26451 /EHsc -DNOMINMAX")
 else()
   message(STATUS "Setting unix compiler flags")
   set(CXX_FLAGS_SHARED "-std=c++17 -Werror -Wall -Wextra -fno-strict-aliasing")
