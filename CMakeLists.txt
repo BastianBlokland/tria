@@ -90,6 +90,7 @@ find_package(Threads REQUIRED)
 # Add child cmake files.
 add_subdirectory(src)
 add_subdirectory(apps)
+add_subdirectory(data)
 if(BUILD_TESTING)
 
   # Enable 'CTest' testing.
