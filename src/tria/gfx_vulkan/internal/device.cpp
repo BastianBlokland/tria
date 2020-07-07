@@ -124,7 +124,8 @@ constexpr std::array<const char*, 1> requiredDeviceExtensions = {
   VkPhysicalDeviceFeatures deviceFeatures = {};
 
   // Queues to create on the device.
-  auto queueCreateInfos = std::vector<VkDeviceQueueCreateInfo>{queueFamilies.size()};
+  auto queueCreateInfos = std::vector<VkDeviceQueueCreateInfo>{};
+  queueCreateInfos.reserve(queueFamilies.size());
   for (auto queueFamily : queueFamilies) {
     std::array<float, 1> queuePriorities    = {1.0f};
     VkDeviceQueueCreateInfo queueCreateInfo = {};
