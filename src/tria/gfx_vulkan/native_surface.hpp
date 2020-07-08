@@ -1,5 +1,6 @@
 #pragma once
 #include "internal/device.hpp"
+#include "internal/shader_asset.hpp"
 #include "tria/gfx/surface.hpp"
 #include "tria/log/api.hpp"
 #include "tria/pal/window.hpp"
@@ -20,6 +21,9 @@ private:
   const pal::Window* m_window;
   VkSurfaceKHR m_vkSurface;
   internal::DevicePtr m_device;
+
+  internal::ShaderAssetPtr m_triangleVertShader;
+  internal::ShaderAssetPtr m_triangleFragShader;
 };
 
 } // namespace tria::gfx

@@ -11,6 +11,8 @@ public:
   Device(log::Logger* logger, VkPhysicalDevice vkPhysicalDevice, VkSurfaceKHR vkSurface);
   ~Device();
 
+  [[nodiscard]] auto getVkDevice() const noexcept -> const VkDevice& { return m_vkDevice; }
+
   auto initSwapchain(uint16_t width, uint16_t height) -> void;
 
 private:

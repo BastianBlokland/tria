@@ -2,6 +2,7 @@
 #include "internal/utils.hpp"
 #include "native_context.hpp"
 #include "tria/pal/native.hpp"
+#include "tria/pal/utils.hpp"
 #include <cassert>
 
 namespace tria::gfx {
@@ -52,9 +53,17 @@ NativeSurface::NativeSurface(
   }
 
   m_device->initSwapchain(window->getWidth(), window->getHeight());
+
+  m_triangleVertShader = loadShaderAsset(
+      m_device.get(), pal::getCurExecutablePath().parent_path() / "data/shaders/triangle.vert.spv");
+  m_triangleFragShader = loadShaderAsset(
+      m_device.get(), pal::getCurExecutablePath().parent_path() / "data/shaders/triangle.frag.spv");
 }
 
 NativeSurface::~NativeSurface() {
+  m_triangleVertShader = nullptr;
+  m_triangleFragShader = nullptr;
+
   m_device = nullptr;
   vkDestroySurfaceKHR(m_context->getVkInstance(), m_vkSurface, nullptr);
 }

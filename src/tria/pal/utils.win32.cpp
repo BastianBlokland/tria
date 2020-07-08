@@ -59,6 +59,9 @@ auto setThreadName(std::string_view name) noexcept -> bool {
 
   PWSTR wideName     = nullptr;
   const auto retCode = GetThreadDescription(curThread, &wideName);
+  if (FAILED(retCode)) {
+    return "";
+  }
 
   auto result = std::wstring_convert<std::codecvt_utf8<wchar_t>>().to_bytes(wideName);
 
@@ -70,7 +73,7 @@ auto setThreadName(std::string_view name) noexcept -> bool {
 
 auto setThreadName(std::string_view /*unused*/) noexcept -> bool { return false; }
 
-[[nodiscard]] auto getThreadName() noexcept -> std::string { return "thread"; }
+[[nodiscard]] auto getThreadName() noexcept -> std::string { return ""; }
 
 #endif
 

@@ -19,7 +19,7 @@ function(configure_shaders)
     add_custom_command(
       OUTPUT ${fileDst}
       DEPENDS ${fileSrc}
-      COMMAND ${glslcPath} -o ${fileDst} ${fileSrc})
+      COMMAND ${glslcPath} -O -o ${fileDst} ${fileSrc})
 
     # Keep a list of all ouput files.
     list(APPEND shaderArtifacts ${fileDst})

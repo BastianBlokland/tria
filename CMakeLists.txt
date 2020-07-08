@@ -43,13 +43,21 @@ endif()
 set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY $<1:${PROJECT_SOURCE_DIR}/bin>)
 
+set(CXX_FLAGS_WIN32 "\
+  -DNOMINMAX \
+  -D_CRT_SECURE_NO_WARNINGS\
+  -D_SILENCE_CXX17_CODECVT_HEADER_DEPRECATION_WARNING")
+
 # Global compiler flags.
 if(MSVC)
   message(STATUS "Setting msvc compiler flags")
-  set(CMAKE_CXX_FLAGS "/std:c++17 /WX /wd4530 /wd26451 /EHsc -DNOMINMAX")
+  set(CMAKE_CXX_FLAGS "/std:c++17 /WX /wd4530 /wd26451 /EHsc ${CXX_FLAGS_WIN32}")
 else()
   message(STATUS "Setting unix compiler flags")
   set(CXX_FLAGS_SHARED "-std=c++17 -Werror -Wall -Wextra -fno-strict-aliasing")
+  if(${TRIA_PLATFORM} STREQUAL "win32")
+    set(CXX_FLAGS_SHARED "${CXX_FLAGS_SHARED} ${CXX_FLAGS_WIN32}")
+  endif()
   set(CMAKE_CXX_FLAGS_DEBUG "-O1 -g -fno-omit-frame-pointer ${CXX_FLAGS_SHARED}")
   set(CMAKE_CXX_FLAGS_RELEASE "-O3 -DNDEBUG ${CXX_FLAGS_SHARED}")
 endif()
