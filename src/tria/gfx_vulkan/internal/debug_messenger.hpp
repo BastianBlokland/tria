@@ -24,6 +24,6 @@ private:
   VkDebugUtilsMessengerEXT m_vkDebugMessenger;
 };
 
-using DebugMessengerPtr = std::unique_ptr<DebugMessenger>;
+using DebugMessengerUnique = std::unique_ptr<DebugMessenger>;
 
 } // namespace tria::gfx::internal

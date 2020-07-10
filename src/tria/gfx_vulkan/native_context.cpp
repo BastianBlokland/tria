@@ -1,8 +1,7 @@
 #include "native_context.hpp"
 #include "internal/utils.hpp"
-#include "native_surface.hpp"
+#include "native_canvas.hpp"
 #include "tria/config.hpp"
-#include "tria/gfx/err/driver_err.hpp"
 #include "tria/pal/utils.hpp"
 #include "tria/pal/window.hpp"
 #include <algorithm>
@@ -41,22 +40,6 @@ auto makeVkAppInfo(const std::string appName) noexcept -> VkApplicationInfo {
   appInfo.engineVersion = VK_MAKE_VERSION(ENGINE_VER_MAJOR, ENGINE_VER_MINOR, ENGINE_VER_PATCH);
   appInfo.apiVersion    = VK_API_VERSION_1_2;
   return appInfo;
-}
-
-auto getVkAvailableInstanceExtensions() -> std::vector<VkExtensionProperties> {
-  uint32_t extCount = 0U;
-  checkVkResult(vkEnumerateInstanceExtensionProperties(nullptr, &extCount, nullptr));
-  auto result = std::vector<VkExtensionProperties>{extCount};
-  checkVkResult(vkEnumerateInstanceExtensionProperties(nullptr, &extCount, result.data()));
-  return result;
-}
-
-auto getVkAvailableInstanceLayers() -> std::vector<VkLayerProperties> {
-  uint32_t layerCount = 0U;
-  checkVkResult(vkEnumerateInstanceLayerProperties(&layerCount, nullptr));
-  auto result = std::vector<VkLayerProperties>{layerCount};
-  checkVkResult(vkEnumerateInstanceLayerProperties(&layerCount, result.data()));
-  return result;
 }
 
 auto getVkRequiredInstanceExtensions(bool enableValidation) noexcept -> std::vector<const char*> {
@@ -125,8 +108,9 @@ NativeContext::~NativeContext() {
   LOG_I(m_logger, "Vulkan instance destroyed");
 }
 
-auto NativeContext::createSurface(const pal::Window* window) -> std::unique_ptr<NativeSurface> {
-  return std::make_unique<NativeSurface>(m_logger, this, window);
+auto NativeContext::createCanvas(const pal::Window* window, bool vSync)
+    -> std::unique_ptr<NativeCanvas> {
+  return std::make_unique<NativeCanvas>(m_logger, this, window, vSync);
 }
 
 } // namespace tria::gfx

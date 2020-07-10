@@ -83,11 +83,11 @@ private:
   }
 };
 
-auto makeConsoleJsonSink(LevelMask mask) -> SinkPtr {
+auto makeConsoleJsonSink(LevelMask mask) -> SinkUnique {
   return internal::makeConsoleSink<JsonSink>(mask);
 }
 
-auto makeFileJsonSink(fs::path path, LevelMask mask) -> SinkPtr {
+auto makeFileJsonSink(fs::path path, LevelMask mask) -> SinkUnique {
   return internal::makeFileSink<JsonSink>(std::move(path), mask);
 }
 

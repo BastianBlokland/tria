@@ -19,7 +19,7 @@ public:
   template <typename... Sinks>
   explicit Logger(Sinks&&... sinks) : Logger(makeSinkVector(std::forward<Sinks>(sinks)...)) {}
 
-  explicit Logger(std::vector<SinkPtr> sinks);
+  explicit Logger(std::vector<SinkUnique> sinks);
 
   Logger(const Logger& rhs)     = delete;
   Logger(Logger&& rhs) noexcept = default;

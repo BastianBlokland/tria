@@ -38,7 +38,7 @@ private:
   LevelMask m_mask;
 };
 
-using SinkPtr = std::unique_ptr<Sink>;
+using SinkUnique = std::unique_ptr<Sink>;
 
 template <typename T>
 auto sinkVectorPush(std::vector<T>&) noexcept -> void {}
@@ -50,8 +50,8 @@ auto sinkVectorPush(std::vector<T>& v, FirstSink&& first, OtherSinks&&... args) 
 }
 
 template <typename... Sinks>
-[[nodiscard]] auto makeSinkVector(Sinks&&... sinks) noexcept -> std::vector<SinkPtr> {
-  auto result = std::vector<SinkPtr>{};
+[[nodiscard]] auto makeSinkVector(Sinks&&... sinks) noexcept -> std::vector<SinkUnique> {
+  auto result = std::vector<SinkUnique>{};
   sinkVectorPush(result, std::forward<Sinks>(sinks)...);
   return result;
 }
@@ -83,8 +83,8 @@ template <typename... Sinks>
  *   "extra": { "val": 42 } }
  */
 
-[[nodiscard]] auto makeConsoleJsonSink(LevelMask mask = allLevelMask()) -> SinkPtr;
-[[nodiscard]] auto makeFileJsonSink(fs::path path, LevelMask mask = allLevelMask()) -> SinkPtr;
+[[nodiscard]] auto makeConsoleJsonSink(LevelMask mask = allLevelMask()) -> SinkUnique;
+[[nodiscard]] auto makeFileJsonSink(fs::path path, LevelMask mask = allLevelMask()) -> SinkUnique;
 
 /* PrettySink
  * Log sink that outputs every log as a (styled) pretty printed line.
@@ -97,9 +97,9 @@ template <typename... Sinks>
  */
 
 [[nodiscard]] auto makeConsolePrettySink(LevelMask mask = allLevelMask(), bool styleOutput = true)
-    -> SinkPtr;
+    -> SinkUnique;
 [[nodiscard]] auto
 makeFilePrettySink(fs::path path, LevelMask mask = allLevelMask(), bool styleOutput = false)
-    -> SinkPtr;
+    -> SinkUnique;
 
 } // namespace tria::log

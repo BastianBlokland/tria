@@ -2,6 +2,94 @@
 
 namespace tria::gfx::internal {
 
+auto getVkAvailableInstanceExtensions() -> std::vector<VkExtensionProperties> {
+  uint32_t extCount = 0U;
+  checkVkResult(vkEnumerateInstanceExtensionProperties(nullptr, &extCount, nullptr));
+  auto result = std::vector<VkExtensionProperties>{extCount};
+  checkVkResult(vkEnumerateInstanceExtensionProperties(nullptr, &extCount, result.data()));
+  return result;
+}
+
+auto getVkAvailableInstanceLayers() -> std::vector<VkLayerProperties> {
+  uint32_t layerCount = 0U;
+  checkVkResult(vkEnumerateInstanceLayerProperties(&layerCount, nullptr));
+  auto result = std::vector<VkLayerProperties>{layerCount};
+  checkVkResult(vkEnumerateInstanceLayerProperties(&layerCount, result.data()));
+  return result;
+}
+
+auto getVkPhysicalDevices(VkInstance vkInstance) -> std::vector<VkPhysicalDevice> {
+  uint32_t count = 0;
+  checkVkResult(vkEnumeratePhysicalDevices(vkInstance, &count, nullptr));
+  auto result = std::vector<VkPhysicalDevice>{count};
+  checkVkResult(vkEnumeratePhysicalDevices(vkInstance, &count, result.data()));
+  return result;
+}
+
+auto getVkQueueFamilies(VkPhysicalDevice vkPhysicalDevice) -> std::vector<VkQueueFamilyProperties> {
+  uint32_t count = 0;
+  vkGetPhysicalDeviceQueueFamilyProperties(vkPhysicalDevice, &count, nullptr);
+  auto result = std::vector<VkQueueFamilyProperties>{count};
+  vkGetPhysicalDeviceQueueFamilyProperties(vkPhysicalDevice, &count, result.data());
+  return result;
+}
+
+auto getVkDeviceExtensions(VkPhysicalDevice vkPhysicalDevice)
+    -> std::vector<VkExtensionProperties> {
+  uint32_t count = 0;
+  checkVkResult(vkEnumerateDeviceExtensionProperties(vkPhysicalDevice, nullptr, &count, nullptr));
+  auto result = std::vector<VkExtensionProperties>{count};
+  checkVkResult(
+      vkEnumerateDeviceExtensionProperties(vkPhysicalDevice, nullptr, &count, result.data()));
+  return result;
+}
+
+auto getVkSurfaceFormats(VkPhysicalDevice vkPhysicalDevice, VkSurfaceKHR vkSurface)
+    -> std::vector<VkSurfaceFormatKHR> {
+  uint32_t count = 0;
+  checkVkResult(vkGetPhysicalDeviceSurfaceFormatsKHR(vkPhysicalDevice, vkSurface, &count, nullptr));
+  auto result = std::vector<VkSurfaceFormatKHR>{count};
+  checkVkResult(
+      vkGetPhysicalDeviceSurfaceFormatsKHR(vkPhysicalDevice, vkSurface, &count, result.data()));
+  return result;
+}
+
+auto getVkPresentModes(VkPhysicalDevice vkPhysicalDevice, VkSurfaceKHR vkSurface)
+    -> std::vector<VkPresentModeKHR> {
+  uint32_t count = 0;
+  checkVkResult(
+      vkGetPhysicalDeviceSurfacePresentModesKHR(vkPhysicalDevice, vkSurface, &count, nullptr));
+  auto result = std::vector<VkPresentModeKHR>{count};
+  checkVkResult(vkGetPhysicalDeviceSurfacePresentModesKHR(
+      vkPhysicalDevice, vkSurface, &count, result.data()));
+  return result;
+}
+
+auto getSwapchainVkImages(VkDevice vkDevice, VkSwapchainKHR vkSwapchain) -> std::vector<VkImage> {
+  uint32_t count = 0;
+  checkVkResult(vkGetSwapchainImagesKHR(vkDevice, vkSwapchain, &count, nullptr));
+  auto result = std::vector<VkImage>{count};
+  checkVkResult(vkGetSwapchainImagesKHR(vkDevice, vkSwapchain, &count, result.data()));
+  return result;
+}
+
+auto createVkSemaphore(VkDevice vkDevice) -> VkSemaphore {
+  VkSemaphoreCreateInfo semaphoreInfo = {};
+  semaphoreInfo.sType                 = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+  VkSemaphore result;
+  checkVkResult(vkCreateSemaphore(vkDevice, &semaphoreInfo, nullptr, &result));
+  return result;
+}
+
+auto createVkFence(VkDevice vkDevice, bool initialState) -> VkFence {
+  VkFenceCreateInfo fenceInfo = {};
+  fenceInfo.sType             = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
+  fenceInfo.flags             = initialState ? VK_FENCE_CREATE_SIGNALED_BIT : 0;
+  VkFence result;
+  checkVkResult(vkCreateFence(vkDevice, &fenceInfo, nullptr, &result));
+  return result;
+}
+
 auto getVkErrStr(VkResult errCode) noexcept -> std::string {
 #define ERROR_STR(name)                                                                            \
   case VK_##name:                                                                                  \

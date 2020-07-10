@@ -1,54 +1,70 @@
 #pragma once
 #include "tria/log/api.hpp"
+#include "tria/pal/window.hpp"
 #include <memory>
 #include <vector>
 #include <vulkan/vulkan.h>
 
 namespace tria::gfx::internal {
 
+/* Abstraction of a graphics device and a surface (window) to render to.
+ * Reason why the device is combined with the surface is that you might want / need different device
+ * features for different surfaces. So combining them allows us to pick a device best suited for
+ * rendering to the given window.
+ *
+ * Note: Surface-format is treated as something that is constant throughout the application's
+ * lifetime, technically there is nothing in the Vulkan spec that enforces this. So if we find a
+ * platform where the surface-format can change we need to add some additional handling.
+ */
 class Device final {
 public:
-  Device(log::Logger* logger, VkPhysicalDevice vkPhysicalDevice, VkSurfaceKHR vkSurface);
+  Device(
+      log::Logger* logger,
+      VkInstance vkInstance,
+      VkPhysicalDevice vkPhysicalDevice,
+      const pal::Window* window);
   ~Device();
 
-  [[nodiscard]] auto getVkDevice() const noexcept -> const VkDevice& { return m_vkDevice; }
-  [[nodiscard]] auto getVkRenderpass() const noexcept -> const VkRenderPass& {
-    return m_vkRenderPass;
-  }
-  [[nodiscard]] auto getSwapExtent() const noexcept { return m_swapchainExtent; }
-  [[nodiscard]] auto getSwapWidth() const noexcept { return m_swapchainExtent.width; }
-  [[nodiscard]] auto getSwapHeight() const noexcept { return m_swapchainExtent.height; }
-  [[nodiscard]] auto getSwapFormat() const noexcept { return m_surfaceFormat.format; }
+  [[nodiscard]] auto getVkPhysicalDevice() const noexcept { return m_vkPhysicalDevice; }
+  [[nodiscard]] auto getVkDevice() const noexcept { return m_vkDevice; }
+  [[nodiscard]] auto getVkSurface() const noexcept { return m_vkSurface; }
+  [[nodiscard]] auto getVkSurfaceFormat() const noexcept { return m_surfaceFormat; }
 
-  auto initSwapchain(uint16_t width, uint16_t height) -> void;
+  [[nodiscard]] auto getVkGraphicsQueue() const noexcept { return m_graphicsQueue; }
+  [[nodiscard]] auto getVkGraphicsQueueIdx() const noexcept { return m_graphicsQueueIdx; }
+
+  [[nodiscard]] auto getVkPresentQueue() const noexcept { return m_presentQueue; }
+  [[nodiscard]] auto getVkPresentQueueIdx() const noexcept { return m_presentQueueIdx; }
+
+  [[nodiscard]] auto getGraphicsVkCommandPool() const noexcept { return m_graphicsVkCommandPool; }
+
+  [[nodiscard]] auto queryVkSurfaceCapabilities() const -> VkSurfaceCapabilitiesKHR;
 
 private:
   log::Logger* m_logger;
+  VkInstance m_vkInstance;
   VkPhysicalDevice m_vkPhysicalDevice;
-  VkSurfaceKHR m_vkSurface;
   VkPhysicalDeviceProperties m_properties;
   VkPhysicalDeviceFeatures m_features;
-  VkSurfaceCapabilitiesKHR m_capabilities;
+
+  VkSurfaceKHR m_vkSurface;
+  VkSurfaceFormatKHR m_surfaceFormat;
+
   VkDevice m_vkDevice;
   VkQueue m_graphicsQueue;
   uint32_t m_graphicsQueueIdx;
   VkQueue m_presentQueue;
   uint32_t m_presentQueueIdx;
-  VkSurfaceFormatKHR m_surfaceFormat;
-  VkPresentModeKHR m_presentMode;
-  VkSwapchainKHR m_vkSwapchain;
-  std::vector<VkImage> m_swapchainVkImages;
-  std::vector<VkImageView> m_swapchainVkImageViews;
-  std::vector<VkFramebuffer> m_swapchainFramebuffers;
-  std::vector<VkCommandBuffer> m_commandbuffers;
-  VkExtent2D m_swapchainExtent;
-  VkRenderPass m_vkRenderPass;
-  VkCommandPool m_vkCommandPool;
+
+  VkCommandPool m_graphicsVkCommandPool;
 };
 
-using DevicePtr = std::unique_ptr<Device>;
+using DeviceUnique = std::unique_ptr<Device>;
 
-[[nodiscard]] auto getDevice(log::Logger* logger, VkInstance vkInstance, VkSurfaceKHR vkSurface)
-    -> DevicePtr;
+/* Construct a device that is capable of rendering to the given window.
+ * Note: returns null if no suitable device is found.
+ */
+[[nodiscard]] auto getDevice(log::Logger* logger, VkInstance vkInstance, const pal::Window* window)
+    -> DeviceUnique;
 
 } // namespace tria::gfx::internal

@@ -10,10 +10,11 @@ namespace tria::log {
 
 class Logger::Impl final {
 public:
-  explicit Impl(std::vector<SinkPtr> sinks) : m_sinks{std::move(sinks)}, m_threadShutdown{false} {
+  explicit Impl(std::vector<SinkUnique> sinks) :
+      m_sinks{std::move(sinks)}, m_threadShutdown{false} {
     // Validate input sinks.
-    for (const auto& sinkPtr : sinks) {
-      if (!sinkPtr) {
+    for (const auto& sink : sinks) {
+      if (!sink) {
         throw std::invalid_argument{"Null sink pointer is not supported"};
       }
     }
@@ -43,7 +44,7 @@ public:
   }
 
 private:
-  std::vector<SinkPtr> m_sinks;
+  std::vector<SinkUnique> m_sinks;
   std::thread m_thread;
   bool m_threadShutdown;
 
@@ -81,15 +82,15 @@ private:
   }
 
   auto processMsg(const Message& msg) noexcept -> void {
-    for (const auto& sinkPtr : m_sinks) {
-      if (isInMask(sinkPtr->getMask(), msg.getMeta()->getLevel())) {
-        sinkPtr->write(msg);
+    for (const auto& sink : m_sinks) {
+      if (isInMask(sink->getMask(), msg.getMeta()->getLevel())) {
+        sink->write(msg);
       }
     }
   }
 };
 
-Logger::Logger(std::vector<SinkPtr> sinks) : m_impl{std::make_unique<Impl>(std::move(sinks))} {}
+Logger::Logger(std::vector<SinkUnique> sinks) : m_impl{std::make_unique<Impl>(std::move(sinks))} {}
 
 Logger::~Logger() = default;
 

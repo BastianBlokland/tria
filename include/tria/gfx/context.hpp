@@ -1,5 +1,5 @@
 #pragma once
-#include "tria/gfx/surface.hpp"
+#include "tria/gfx/canvas.hpp"
 #include "tria/log/api.hpp"
 #include "tria/pal/window.hpp"
 
@@ -22,7 +22,9 @@ public:
   auto operator=(const Context& rhs) -> Context& = delete;
   auto operator=(Context&& rhs) noexcept -> Context& = default;
 
-  [[nodiscard]] auto createSurface(const pal::Window* window) -> Surface;
+  /* Create a canvas to render into that outputs to the given window.
+   */
+  [[nodiscard]] auto createCanvas(const pal::Window* window, bool vSync) -> Canvas;
 
 private:
   std::unique_ptr<NativeContext> m_native;

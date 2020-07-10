@@ -256,8 +256,8 @@ auto NativePlatform::handleEvent(HWND hWnd, UINT msg, WPARAM /*unused*/, LPARAM 
 }
 
 auto NativePlatform::getWindow(HWND handle) noexcept -> WindowData* {
-  // TODO: If we ever have a significant amount of windows we should add a faster lookup then this
-  // linear scan.
+  // TODO(bastian): If we ever have a significant amount of windows we should add a faster lookup
+  // then this linear scan.
   for (auto& kvp : m_windows) {
     if (kvp.second.handle == handle) {
       return &kvp.second;

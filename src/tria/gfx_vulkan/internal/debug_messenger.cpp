@@ -25,7 +25,7 @@ auto createDebugUtilsMessengerEXT(
     const VkAllocationCallbacks* pAllocator,
     VkDebugUtilsMessengerEXT* pDebugMessenger) -> VkResult {
 
-  auto func = reinterpret_cast<PFN_vkCreateDebugUtilsMessengerEXT>(
+  const auto func = reinterpret_cast<PFN_vkCreateDebugUtilsMessengerEXT>(
       vkGetInstanceProcAddr(instance, "vkCreateDebugUtilsMessengerEXT"));
   return func ? func(instance, pCreateInfo, pAllocator, pDebugMessenger)
               : VK_ERROR_EXTENSION_NOT_PRESENT;
@@ -37,7 +37,7 @@ auto destroyDebugUtilsMessengerEXT(
     VkDebugUtilsMessengerEXT debugMessenger,
     const VkAllocationCallbacks* pAllocator) -> void {
 
-  auto func = reinterpret_cast<PFN_vkDestroyDebugUtilsMessengerEXT>(
+  const auto func = reinterpret_cast<PFN_vkDestroyDebugUtilsMessengerEXT>(
       vkGetInstanceProcAddr(instance, "vkDestroyDebugUtilsMessengerEXT"));
   if (func) {
     func(instance, debugMessenger, pAllocator);
@@ -81,7 +81,6 @@ DebugMessenger::DebugMessenger(log::Logger* logger, VkInstance vkInstance, bool 
 }
 
 DebugMessenger::~DebugMessenger() {
-
   destroyDebugUtilsMessengerEXT(m_vkInstance, m_vkDebugMessenger, nullptr);
 }
 

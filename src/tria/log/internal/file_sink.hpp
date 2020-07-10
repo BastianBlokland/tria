@@ -36,12 +36,12 @@ private:
 };
 
 template <typename T, typename... Args>
-[[nodiscard]] auto makeConsoleSink(LevelMask mask, Args&&... args) -> SinkPtr {
+[[nodiscard]] auto makeConsoleSink(LevelMask mask, Args&&... args) -> SinkUnique {
   return std::make_unique<T>(stdout, false, mask, std::forward<Args>(args)...);
 }
 
 template <typename T, typename... Args>
-[[nodiscard]] auto makeFileSink(fs::path path, LevelMask mask, Args&&... args) -> SinkPtr {
+[[nodiscard]] auto makeFileSink(fs::path path, LevelMask mask, Args&&... args) -> SinkUnique {
 #if defined(_WIN32)
   auto* file = _wfopen(path.c_str(), L"w");
 #else

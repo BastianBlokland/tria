@@ -128,11 +128,11 @@ private:
   }
 };
 
-auto makeConsolePrettySink(LevelMask mask, bool styleOutput) -> SinkPtr {
+auto makeConsolePrettySink(LevelMask mask, bool styleOutput) -> SinkUnique {
   return internal::makeConsoleSink<PrettySink>(mask, styleOutput);
 }
 
-auto makeFilePrettySink(fs::path path, LevelMask mask, bool styleOutput) -> SinkPtr {
+auto makeFilePrettySink(fs::path path, LevelMask mask, bool styleOutput) -> SinkUnique {
   return internal::makeFileSink<PrettySink>(std::move(path), mask, styleOutput);
 }
 
