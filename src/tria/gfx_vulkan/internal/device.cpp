@@ -139,7 +139,7 @@ pickSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats) noexc
   return result;
 }
 
-[[nodiscard]] auto getSwapExtent(
+[[nodiscard]] auto calcSwapExtent(
     const VkSurfaceCapabilitiesKHR& capabilities, uint16_t width, uint16_t height) noexcept
     -> VkExtent2D {
   // Note: If current extent is not equal to uint32_max then we have to respect that, otherwise
@@ -233,6 +233,39 @@ Device::Device(log::Logger* logger, VkPhysicalDevice vkPhysicalDevice, VkSurface
   vkGetDeviceQueue(m_vkDevice, *foundGfxQueueIdx, 0U, &m_graphicsQueue);
   vkGetDeviceQueue(m_vkDevice, *foundPresentQueueIdx, 0U, &m_presentQueue);
 
+  VkAttachmentDescription colorAttachment = {};
+  colorAttachment.format                  = m_surfaceFormat.format;
+  colorAttachment.samples                 = VK_SAMPLE_COUNT_1_BIT;
+  colorAttachment.loadOp                  = VK_ATTACHMENT_LOAD_OP_CLEAR;
+  colorAttachment.storeOp                 = VK_ATTACHMENT_STORE_OP_STORE;
+  colorAttachment.stencilLoadOp           = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+  colorAttachment.stencilStoreOp          = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+  colorAttachment.initialLayout           = VK_IMAGE_LAYOUT_UNDEFINED;
+  colorAttachment.finalLayout             = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+
+  VkAttachmentReference colorAttachmentRef = {};
+  colorAttachmentRef.attachment            = 0;
+  colorAttachmentRef.layout                = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+  VkSubpassDescription subpass = {};
+  subpass.pipelineBindPoint    = VK_PIPELINE_BIND_POINT_GRAPHICS;
+  subpass.colorAttachmentCount = 1;
+  subpass.pColorAttachments    = &colorAttachmentRef;
+
+  VkRenderPassCreateInfo renderPassInfo{};
+  renderPassInfo.sType           = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
+  renderPassInfo.attachmentCount = 1;
+  renderPassInfo.pAttachments    = &colorAttachment;
+  renderPassInfo.subpassCount    = 1;
+  renderPassInfo.pSubpasses      = &subpass;
+  checkVkResult(vkCreateRenderPass(m_vkDevice, &renderPassInfo, nullptr, &m_vkRenderPass));
+
+  VkCommandPoolCreateInfo poolInfo{};
+  poolInfo.sType            = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+  poolInfo.queueFamilyIndex = m_graphicsQueueIdx;
+  poolInfo.flags            = VK_COMMAND_POOL_CREATE_TRANSIENT_BIT;
+  checkVkResult(vkCreateCommandPool(m_vkDevice, &poolInfo, nullptr, &m_vkCommandPool));
+
   LOG_I(
       m_logger,
       "Device created",
@@ -246,8 +279,13 @@ Device::Device(log::Logger* logger, VkPhysicalDevice vkPhysicalDevice, VkSurface
 }
 
 Device::~Device() {
+  vkDestroyCommandPool(m_vkDevice, m_vkCommandPool, nullptr);
+  vkDestroyRenderPass(m_vkDevice, m_vkRenderPass, nullptr);
   for (const auto& vkImageView : m_swapchainVkImageViews) {
     vkDestroyImageView(m_vkDevice, vkImageView, nullptr);
+  }
+  for (const auto& vkFramebuffer : m_swapchainFramebuffers) {
+    vkDestroyFramebuffer(m_vkDevice, vkFramebuffer, nullptr);
   }
   if (m_vkSwapchain != nullptr) {
     vkDestroySwapchainKHR(m_vkDevice, m_vkSwapchain, nullptr);
@@ -262,7 +300,13 @@ auto Device::initSwapchain(uint16_t width, uint16_t height) -> void {
   }
   m_swapchainVkImageViews.clear();
 
-  auto extent   = getSwapExtent(m_capabilities, width, height);
+  // Delete any frameBuffer that belonged to the previous swapchain.
+  for (const auto& vkFramebuffer : m_swapchainFramebuffers) {
+    vkDestroyFramebuffer(m_vkDevice, vkFramebuffer, nullptr);
+  }
+  m_swapchainFramebuffers.clear();
+
+  auto extent   = calcSwapExtent(m_capabilities, width, height);
   auto imgCount = getImageCount(m_capabilities);
 
   VkSwapchainCreateInfoKHR createInfo{};
@@ -296,7 +340,7 @@ auto Device::initSwapchain(uint16_t width, uint16_t height) -> void {
   // Create the swapchain and retrieve the swapchain images.
   checkVkResult(vkCreateSwapchainKHR(m_vkDevice, &createInfo, nullptr, &m_vkSwapchain));
   m_swapchainVkImages = getSwapchainVkImages(m_vkDevice, m_vkSwapchain);
-  m_swapchainSize     = extent;
+  m_swapchainExtent   = extent;
 
   // Create an imageview for every swapchain image.
   for (const auto& vkImage : m_swapchainVkImages) {
@@ -318,6 +362,36 @@ auto Device::initSwapchain(uint16_t width, uint16_t height) -> void {
     checkVkResult(vkCreateImageView(m_vkDevice, &createInfo, nullptr, &result));
     m_swapchainVkImageViews.push_back(result);
   }
+
+  for (size_t i = 0; i < m_swapchainVkImages.size(); i++) {
+    std::array<VkImageView, 1> attachments = {m_swapchainVkImageViews[i]};
+
+    VkFramebufferCreateInfo framebufferInfo = {};
+    framebufferInfo.sType                   = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+    framebufferInfo.renderPass              = m_vkRenderPass;
+    framebufferInfo.attachmentCount         = 1;
+    framebufferInfo.pAttachments            = attachments.data();
+    framebufferInfo.width                   = m_swapchainExtent.width;
+    framebufferInfo.height                  = m_swapchainExtent.height;
+    framebufferInfo.layers                  = 1;
+
+    VkFramebuffer result;
+    checkVkResult(vkCreateFramebuffer(m_vkDevice, &framebufferInfo, nullptr, &result));
+    m_swapchainFramebuffers.push_back(result);
+  }
+
+  // Release any previously created command-buffers.
+  vkResetCommandPool(m_vkDevice, m_vkCommandPool, VK_COMMAND_POOL_RESET_RELEASE_RESOURCES_BIT);
+
+  // Allocate new command-buffers.
+  m_commandbuffers.resize(m_swapchainVkImages.size());
+  VkCommandBufferAllocateInfo commandBufferAllocInfo = {};
+  commandBufferAllocInfo.sType              = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+  commandBufferAllocInfo.commandPool        = m_vkCommandPool;
+  commandBufferAllocInfo.level              = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+  commandBufferAllocInfo.commandBufferCount = m_commandbuffers.size();
+  checkVkResult(
+      vkAllocateCommandBuffers(m_vkDevice, &commandBufferAllocInfo, m_commandbuffers.data()));
 
   LOG_D(
       m_logger,

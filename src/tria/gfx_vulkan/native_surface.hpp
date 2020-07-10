@@ -21,6 +21,8 @@ private:
   const pal::Window* m_window;
   VkSurfaceKHR m_vkSurface;
   internal::DevicePtr m_device;
+  VkPipelineLayout m_pipelineLayout;
+  VkPipeline m_graphicsPipeline;
 
   internal::ShaderAssetPtr m_triangleVertShader;
   internal::ShaderAssetPtr m_triangleFragShader;

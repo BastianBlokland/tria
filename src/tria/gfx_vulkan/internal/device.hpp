@@ -12,6 +12,13 @@ public:
   ~Device();
 
   [[nodiscard]] auto getVkDevice() const noexcept -> const VkDevice& { return m_vkDevice; }
+  [[nodiscard]] auto getVkRenderpass() const noexcept -> const VkRenderPass& {
+    return m_vkRenderPass;
+  }
+  [[nodiscard]] auto getSwapExtent() const noexcept { return m_swapchainExtent; }
+  [[nodiscard]] auto getSwapWidth() const noexcept { return m_swapchainExtent.width; }
+  [[nodiscard]] auto getSwapHeight() const noexcept { return m_swapchainExtent.height; }
+  [[nodiscard]] auto getSwapFormat() const noexcept { return m_surfaceFormat.format; }
 
   auto initSwapchain(uint16_t width, uint16_t height) -> void;
 
@@ -32,7 +39,11 @@ private:
   VkSwapchainKHR m_vkSwapchain;
   std::vector<VkImage> m_swapchainVkImages;
   std::vector<VkImageView> m_swapchainVkImageViews;
-  VkExtent2D m_swapchainSize;
+  std::vector<VkFramebuffer> m_swapchainFramebuffers;
+  std::vector<VkCommandBuffer> m_commandbuffers;
+  VkExtent2D m_swapchainExtent;
+  VkRenderPass m_vkRenderPass;
+  VkCommandPool m_vkCommandPool;
 };
 
 using DevicePtr = std::unique_ptr<Device>;
