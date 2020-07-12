@@ -42,6 +42,14 @@ inline auto checkVkResult(VkResult result) -> void {
   if (result != VK_SUCCESS) {
     throw err::DriverErr{getVkErrStr(result)};
   }
+
+// Usefull to test if the code gracefully handles driver errors.
+#if defined(TEST_VK_ERR_HANDLE)
+  const auto chance = 0.001;
+  if (rand() < RAND_MAX * chance) {
+    throw err::DriverErr{"test_error"};
+  }
+#endif
 }
 
 } // namespace tria::gfx::internal
