@@ -48,6 +48,9 @@ public:
   auto setTitle(std::string_view title) -> void;
   auto setSize(uint16_t width, uint16_t height) -> void;
 
+  [[nodiscard]] auto getNativePlatformPtr() const noexcept { return m_platform; }
+  [[nodiscard]] auto getWindowId() const noexcept { return m_id; }
+
 private:
   using WindowId = uint32_t;
 

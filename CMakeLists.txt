@@ -24,17 +24,40 @@ message(STATUS "* Ouput path: ${PROJECT_SOURCE_DIR}/bin")
 message(STATUS "* Compiler: ${CMAKE_CXX_COMPILER_ID}")
 message(STATUS "* Generator: ${CMAKE_GENERATOR}")
 
+# Detect platform.
+if(UNIX)
+  # At the moment on linux only the xcb x11 display library is supported.
+  set(TRIA_PLATFORM "linux_xcb")
+  add_definitions(-DTRIA_LINUX)
+  add_definitions(-DTRIA_LINUX_XCB)
+  message(STATUS "Detected linux xcb platform")
+elseif(WIN32)
+  set(TRIA_PLATFORM "win32")
+  add_definitions(-DTRIA_WIN32)
+  message(STATUS "Detected win32 platform")
+else()
+  message(FATAL_ERROR "Unsupported platform")
+endif()
+
 # Output executables to bin dir.
 set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY $<1:${PROJECT_SOURCE_DIR}/bin>)
 
+set(CXX_FLAGS_WIN32 "\
+  -DNOMINMAX \
+  -D_CRT_SECURE_NO_WARNINGS\
+  -D_SILENCE_CXX17_CODECVT_HEADER_DEPRECATION_WARNING")
+
 # Global compiler flags.
 if(MSVC)
   message(STATUS "Setting msvc compiler flags")
-  set(CMAKE_CXX_FLAGS "/std:c++17 /WX /wd4530 /wd26451")
+  set(CMAKE_CXX_FLAGS "/std:c++17 /WX /wd4530 /wd26451 /EHsc ${CXX_FLAGS_WIN32}")
 else()
   message(STATUS "Setting unix compiler flags")
   set(CXX_FLAGS_SHARED "-std=c++17 -Werror -Wall -Wextra -fno-strict-aliasing")
+  if(${TRIA_PLATFORM} STREQUAL "win32")
+    set(CXX_FLAGS_SHARED "${CXX_FLAGS_SHARED} ${CXX_FLAGS_WIN32}")
+  endif()
   set(CMAKE_CXX_FLAGS_DEBUG "-O1 -g -fno-omit-frame-pointer ${CXX_FLAGS_SHARED}")
   set(CMAKE_CXX_FLAGS_RELEASE "-O3 -DNDEBUG ${CXX_FLAGS_SHARED}")
 endif()
@@ -75,6 +98,7 @@ find_package(Threads REQUIRED)
 # Add child cmake files.
 add_subdirectory(src)
 add_subdirectory(apps)
+add_subdirectory(data)
 if(BUILD_TESTING)
 
   # Enable 'CTest' testing.

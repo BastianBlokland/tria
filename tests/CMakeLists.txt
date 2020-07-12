@@ -22,11 +22,6 @@ add_executable(tria_tests
 
   tria/main.cpp)
 target_compile_features(tria_tests PUBLIC cxx_std_17)
-if(MSVC)
-  target_compile_options(tria_tests PUBLIC /EHsc)
-else()
-  target_compile_options(tria_tests PUBLIC -fexceptions)
-endif()
 target_link_libraries(tria_tests PRIVATE Catch2::Catch2)
 target_link_libraries(tria_tests PRIVATE tria_log)
 

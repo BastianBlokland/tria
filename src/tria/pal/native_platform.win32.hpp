@@ -46,6 +46,8 @@ public:
   NativePlatform(log::Logger* logger);
   ~NativePlatform();
 
+  [[nodiscard]] auto getHInstance() const noexcept { return m_hInstance; }
+
   [[nodiscard]] auto getAppName() const noexcept -> std::string_view { return m_appName; }
 
   [[nodiscard]] auto getIsWinCloseRequested(WindowId id) const noexcept -> bool {
@@ -65,6 +67,8 @@ public:
     assert(win);
     return win->height;
   }
+
+  [[nodiscard]] auto getHWnd(WindowId id) const noexcept -> HWND { return getWindow(id)->handle; }
 
   auto handleEvents() -> void;
 

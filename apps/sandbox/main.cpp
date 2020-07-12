@@ -1,3 +1,4 @@
+#include "tria/gfx/context.hpp"
 #include "tria/log/api.hpp"
 #include "tria/pal/platform.hpp"
 #include "tria/pal/utils.hpp"
@@ -9,21 +10,47 @@
 using namespace std::literals;
 using namespace tria;
 
-auto runApp(log::Logger& /*unused*/, pal::Platform& platform) -> int {
+using Clock    = std::chrono::high_resolution_clock;
+using Duration = std::chrono::duration<double>;
 
-  auto mainWin = platform.createWindow(512, 512);
+auto operator<<(std::ostream& out, const Duration& rhs) -> std::ostream& {
+  auto s = rhs.count();
+  if (s < .001) {
+    out << s * 1000000 << " us";
+  } else {
+    out << s * 1000 << " ms";
+  }
+  return out;
+}
+
+auto runApp(log::Logger& logger, pal::Platform& platform) -> int {
+
+  auto gfxContext = gfx::Context{&logger};
+  auto mainWin    = platform.createWindow(512, 512);
+  auto mainCanvas = gfxContext.createCanvas(&mainWin, false);
+
+  auto frameBegin = Clock::now();
   while (!mainWin.getIsCloseRequested()) {
 
     // Process platform events.
     platform.handleEvents();
 
+    if (mainCanvas.drawBegin()) {
+      // Do some actual drawing here :)
+      mainCanvas.drawEnd();
+    } else {
+      // Unable to draw, possibly due to a minimized window.
+      std::this_thread::sleep_for(100ms);
+    }
+
+    auto frameEnd = Clock::now();
+    auto dur      = frameEnd - frameBegin;
+    frameBegin    = frameEnd;
+
     // Update window title.
     std::stringstream titleStream;
-    titleStream << "Tria sandbox - " << mainWin.getWidth() << "x" << mainWin.getHeight();
+    titleStream << "Sandbox - " << mainWin.getWidth() << "x" << mainWin.getHeight() << " " << dur;
     mainWin.setTitle(titleStream.str());
-
-    // Sleep until next 'frame'.
-    std::this_thread::sleep_for(100ms);
   }
 
   return 0;

@@ -22,7 +22,7 @@ private:
 };
 
 [[nodiscard]] auto makeMockSink(std::vector<Message>* output, LevelMask mask = allLevelMask())
-    -> SinkPtr {
+    -> SinkUnique {
   return std::make_unique<MockSink>(output, mask);
 }
 

@@ -9,13 +9,12 @@
 
 #define LOG(logger, lvl, txt, ...)                                                                 \
   do {                                                                                             \
-    constexpr static auto meta = log::MetaData{                                                    \
-        lvl,                                                                                       \
-        std::string_view{txt},                                                                     \
-        std::string_view{__FILE__},                                                                \
-        std::string_view{__PRETTY_FUNCTION__},                                                     \
-        __LINE__};                                                                                 \
-    auto* loggerPtr = (logger);                                                                    \
+    constexpr static auto meta = log::MetaData{lvl,                                                \
+                                               std::string_view{txt},                              \
+                                               std::string_view{__FILE__},                         \
+                                               std::string_view{__PRETTY_FUNCTION__},              \
+                                               __LINE__};                                          \
+    auto* loggerPtr            = (logger);                                                         \
     if (loggerPtr) {                                                                               \
       loggerPtr->publish(log::Message{&meta, {__VA_ARGS__}});                                      \
     }                                                                                              \
@@ -24,7 +23,7 @@
 #if defined(NDEBUG)
 /* Log a debug message.
  */
-#define LOG_D(logger, txt, ...)
+#define LOG_D(logger, txt, ...) (void)logger
 #else
 /* Log a debug message.
  */

@@ -45,10 +45,10 @@ auto Param::operator==(const Param& rhs) const noexcept -> bool {
 
 auto Param::operator!=(const Param& rhs) const noexcept -> bool { return !Param::operator==(rhs); }
 
-auto Param::writeValue(std::string* tgtStr) const noexcept -> void {
+auto Param::writeValue(std::string* tgtStr, bool quoteStrings) const noexcept -> void {
   assert(tgtStr);
   std::visit(
-      [tgtStr](auto&& arg) {
+      [tgtStr, quoteStrings](auto&& arg) {
         using T = std::decay_t<decltype(arg)>;
         // NOLINTNEXTLINE(bugprone-branch-clone)
         if constexpr (std::is_same_v<T, int64_t> || std::is_same_v<T, uint64_t>) {
@@ -59,10 +59,18 @@ auto Param::writeValue(std::string* tgtStr) const noexcept -> void {
           internal::writeDouble(tgtStr, arg);
         }
         // NOLINTNEXTLINE(bugprone-branch-clone)
+        else if constexpr (std::is_same_v<T, bool>) {
+          tgtStr->append(arg ? "true" : "false");
+        }
+        // NOLINTNEXTLINE(bugprone-branch-clone)
         else if constexpr (std::is_same_v<T, std::string>) {
-          tgtStr->append("\"");
+          if (quoteStrings) {
+            tgtStr->append("\"");
+          }
           tgtStr->append(arg);
-          tgtStr->append("\"");
+          if (quoteStrings) {
+            tgtStr->append("\"");
+          }
         } else {
           static_assert(falseValue<T>, "Non exhaustive write-value routine");
         }

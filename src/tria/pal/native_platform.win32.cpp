@@ -59,8 +59,11 @@ auto WindowProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) noexcept -> L
 }
 
 NativePlatform::NativePlatform(log::Logger* logger) :
-    m_logger{logger}, m_appName{getCurExecutableName()}, m_hInstance{nullptr}, m_nextWinId{1} {
+    m_logger{logger}, m_appName{getCurExecutableName()}, m_nextWinId{1} {
+
   LOG_I(logger, "Platform init", {"executable", m_appName}, {"pid", getCurProcessId()});
+
+  win32Setup();
 }
 
 NativePlatform::~NativePlatform() {
@@ -78,10 +81,6 @@ auto NativePlatform::handleEvents() -> void {
 }
 
 auto NativePlatform::createWindow(uint16_t width, uint16_t height) -> Window {
-  if (!m_hInstance) {
-    win32Setup();
-  }
-
   auto winId = m_nextWinId++;
 
   // Create a unique class-name for this window class.
@@ -160,9 +159,13 @@ auto NativePlatform::destroyWindow(WindowId id) noexcept -> void {
   DestroyWindow(winData->handle);
   UnregisterClass(winData->className.c_str(), m_hInstance);
 
-  // Remove the window data.
+// Remove the window data.
+#if defined(NDEBUG)
+  m_windows.erase(id);
+#else
   auto erased = m_windows.erase(id);
   assert(erased);
+#endif
 
   LOG_I(m_logger, "Window destroyed", {"id", id});
 }
@@ -253,8 +256,8 @@ auto NativePlatform::handleEvent(HWND hWnd, UINT msg, WPARAM /*unused*/, LPARAM 
 }
 
 auto NativePlatform::getWindow(HWND handle) noexcept -> WindowData* {
-  // TODO: If we ever have a significant amount of windows we should add a faster lookup then this
-  // linear scan.
+  // TODO(bastian): If we ever have a significant amount of windows we should add a faster lookup
+  // then this linear scan.
   for (auto& kvp : m_windows) {
     if (kvp.second.handle == handle) {
       return &kvp.second;
@@ -277,6 +280,14 @@ auto NativePlatform::getWindow(WindowId id) const noexcept -> const WindowData* 
     return nullptr;
   }
   return &itr->second;
+}
+
+[[nodiscard]] auto getWin32HInstance(const Window& window) noexcept -> HINSTANCE {
+  return window.getNativePlatformPtr()->getHInstance();
+}
+
+[[nodiscard]] auto getWin32HWnd(const Window& window) noexcept -> HWND {
+  return window.getNativePlatformPtr()->getHWnd(window.getWindowId());
 }
 
 } // namespace tria::pal
