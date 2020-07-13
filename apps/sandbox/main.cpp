@@ -1,6 +1,6 @@
 #include "tria/gfx/context.hpp"
 #include "tria/log/api.hpp"
-#include "tria/pal/interupt.hpp"
+#include "tria/pal/interrupt.hpp"
 #include "tria/pal/platform.hpp"
 #include "tria/pal/utils.hpp"
 #include <chrono>
@@ -31,7 +31,7 @@ auto runApp(log::Logger& logger, pal::Platform& platform) -> int {
   auto mainCanvas = gfxContext.createCanvas(&mainWin, false);
 
   auto frameBegin = Clock::now();
-  while (!mainWin.getIsCloseRequested() && !pal::isInteruptRequested()) {
+  while (!mainWin.getIsCloseRequested() && !pal::isInterruptRequested()) {
 
     // Process platform events.
     platform.handleEvents();
@@ -60,7 +60,7 @@ auto runApp(log::Logger& logger, pal::Platform& platform) -> int {
 auto main(int /*unused*/, char* * /*unused*/) -> int {
 
   pal::setThreadName("main-thread");
-  pal::setupInteruptHandler();
+  pal::setupInterruptHandler();
 
   auto logger = log::Logger{log::makeConsolePrettySink(), log::makeFileJsonSink("sandbox.log")};
   LOG_I(&logger, "Sandbox startup");
