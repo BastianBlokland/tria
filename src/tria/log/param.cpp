@@ -45,10 +45,10 @@ auto Param::operator==(const Param& rhs) const noexcept -> bool {
 
 auto Param::operator!=(const Param& rhs) const noexcept -> bool { return !Param::operator==(rhs); }
 
-auto Param::writeValue(std::string* tgtStr, bool quoteStrings) const noexcept -> void {
+auto Param::writeValue(std::string* tgtStr, WriteMode mode) const noexcept -> void {
   assert(tgtStr);
   std::visit(
-      [tgtStr, quoteStrings](auto&& arg) {
+      [tgtStr, mode](auto&& arg) {
         using T = std::decay_t<decltype(arg)>;
         // NOLINTNEXTLINE(bugprone-branch-clone)
         if constexpr (std::is_same_v<T, int64_t> || std::is_same_v<T, uint64_t>) {
@@ -64,14 +64,47 @@ auto Param::writeValue(std::string* tgtStr, bool quoteStrings) const noexcept ->
         }
         // NOLINTNEXTLINE(bugprone-branch-clone)
         else if constexpr (std::is_same_v<T, std::string>) {
-          if (quoteStrings) {
+          if (mode == WriteMode::Json) {
             tgtStr->append("\"");
           }
           tgtStr->append(arg);
-          if (quoteStrings) {
+          if (mode == WriteMode::Json) {
             tgtStr->append("\"");
           }
-        } else {
+        }
+        // NOLINTNEXTLINE(bugprone-branch-clone)
+        else if constexpr (std::is_same_v<T, Duration>) {
+          switch (mode) {
+          case WriteMode::Json: {
+            // In json write the elapsed nanoseconds.
+            auto nanoSec = std::chrono::duration_cast<std::chrono::nanoseconds>(arg).count();
+            internal::writeInt(tgtStr, nanoSec);
+          } break;
+          case WriteMode::Pretty:
+            internal::writePrettyDuration(tgtStr, arg);
+            break;
+          }
+        } else if constexpr (std::is_same_v<T, TimePoint>) {
+          if (mode == WriteMode::Json) {
+            tgtStr->append("\"");
+          }
+          internal::writeIsoTime(tgtStr, arg);
+          if (mode == WriteMode::Json) {
+            tgtStr->append("\"");
+          }
+        }
+        // NOLINTNEXTLINE(bugprone-branch-clone)
+        else if constexpr (std::is_same_v<T, MemSize>)
+          switch (mode) {
+          case WriteMode::Json:
+            // In json just write the size in bytes.
+            internal::writeInt(tgtStr, arg.getSize());
+            break;
+          case WriteMode::Pretty:
+            internal::writePrettyMemSize(tgtStr, arg.getSize());
+            break;
+          }
+        else {
           static_assert(falseValue<T>, "Non exhaustive write-value routine");
         }
       },

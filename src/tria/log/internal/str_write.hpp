@@ -1,6 +1,7 @@
 #pragma once
 #include <array>
 #include <chrono>
+#include <cmath>
 #include <ctime>
 #include <string>
 #include <tria/log/level.hpp>
@@ -63,16 +64,16 @@ inline auto writeInt(std::string* str, IntType value) noexcept {
   str->append(std::string_view{buffer.data(), static_cast<std::string_view::size_type>(size)});
 }
 
-inline auto writeDouble(std::string* str, double value) noexcept {
+inline auto writeDouble(std::string* str, double value, const char* fmtStr = "%.10g") noexcept {
 
   // Check how many characters we need to represent the double.
-  const auto size = std::snprintf(nullptr, 0, "%.10g", value);
+  const auto size = std::snprintf(nullptr, 0, fmtStr, value);
 
   // Allocate a buffer on the stack with that size.
   auto buffer = static_cast<char*>(alloca(size + 1));
 
   // Write the characters in the stack buffer.
-  std::snprintf(buffer, size + 1, "%.10g", value);
+  std::snprintf(buffer, size + 1, fmtStr, value);
 
   // Wrap the buffer into a string_view and call the string_view overload.
   str->append(std::string_view{buffer, static_cast<std::string_view::size_type>(size)});
@@ -106,6 +107,40 @@ inline auto writeIsoTime(std::string* str, std::chrono::system_clock::time_point
   // Wrap the buffer into a string_view and call the string_view overload.
   str->append(
       std::string_view{buffer.data(), static_cast<std::string_view::size_type>(bufferSize - 1)});
+}
+
+inline auto writePrettyDuration(std::string* str, std::chrono::duration<double> dur) noexcept {
+  constexpr static std::array<std::string_view, 4> units = {" sec", " ms", " us", " ns"};
+
+  auto unitIdx = 0U;
+  auto t       = dur.count();
+  for (; t < 1.0 && unitIdx != units.size() - 1; ++unitIdx) {
+    t *= 1000.0;
+  }
+  const auto rounded = std::round(t);
+  if (std::abs(t - rounded) < .05) {
+    writeInt(str, static_cast<uint64_t>(rounded));
+  } else {
+    writeDouble(str, t, "%.1f");
+  }
+  str->append(units[unitIdx]);
+}
+
+inline auto writePrettyMemSize(std::string* str, const size_t size) noexcept {
+  constexpr static std::array<std::string_view, 6> units = {
+      " B", " KiB", " MiB", " GiB", " TiB", " PiB"};
+
+  auto unitIdx = 0U;
+  auto sizeD   = static_cast<double>(size);
+  for (; sizeD >= 1024.0 && unitIdx != units.size() - 1; ++unitIdx) {
+    sizeD /= 1024.0;
+  }
+  if (sizeD - std::floor(sizeD) < .1) {
+    writeInt(str, static_cast<uint64_t>(sizeD));
+  } else {
+    writeDouble(str, sizeD, "%.1f");
+  }
+  str->append(units[unitIdx]);
 }
 
 } // namespace tria::log::internal
