@@ -58,7 +58,6 @@ auto runApp(log::Logger& logger, pal::Platform& platform) -> int {
 
 auto main(int /*unused*/, char* * /*unused*/) -> int {
 
-  pal::setupConsole();
   pal::setThreadName("main-thread");
 
   auto logger = log::Logger{log::makeConsolePrettySink(), log::makeFileJsonSink("sandbox.log")};

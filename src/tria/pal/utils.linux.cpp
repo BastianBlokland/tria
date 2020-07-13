@@ -18,8 +18,8 @@ auto errorExit(const char* msg) {
 } // namespace
 
 auto setupConsole() noexcept -> bool {
-  // Check if there is a terminal attached to file descriptor 0 (std out).
-  return isatty(0);
+  // Check if there is a terminal attached to std out.
+  return isatty(STDOUT_FILENO);
 }
 
 auto getCurExecutablePath() noexcept -> fs::path {

@@ -96,10 +96,7 @@ template <typename... Sinks>
  *   height: 512
  */
 
-[[nodiscard]] auto makeConsolePrettySink(LevelMask mask = allLevelMask(), bool styleOutput = true)
-    -> SinkUnique;
-[[nodiscard]] auto
-makeFilePrettySink(fs::path path, LevelMask mask = allLevelMask(), bool styleOutput = false)
-    -> SinkUnique;
+[[nodiscard]] auto makeConsolePrettySink(LevelMask mask = allLevelMask()) -> SinkUnique;
+[[nodiscard]] auto makeFilePrettySink(fs::path path, LevelMask mask = allLevelMask()) -> SinkUnique;
 
 } // namespace tria::log

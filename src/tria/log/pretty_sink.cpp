@@ -2,6 +2,7 @@
 #include "internal/str_write.hpp"
 #include "tria/log/metadata.hpp"
 #include "tria/log/sink.hpp"
+#include "tria/pal/utils.hpp"
 #include <algorithm>
 #include <stdexcept>
 
@@ -128,12 +129,13 @@ private:
   }
 };
 
-auto makeConsolePrettySink(LevelMask mask, bool styleOutput) -> SinkUnique {
-  return internal::makeConsoleSink<PrettySink>(mask, styleOutput);
+auto makeConsolePrettySink(LevelMask mask) -> SinkUnique {
+  const auto isConsole = pal::setupConsole(); // Could be false if output is redirected.
+  return internal::makeConsoleSink<PrettySink>(mask, isConsole);
 }
 
-auto makeFilePrettySink(fs::path path, LevelMask mask, bool styleOutput) -> SinkUnique {
-  return internal::makeFileSink<PrettySink>(std::move(path), mask, styleOutput);
+auto makeFilePrettySink(fs::path path, LevelMask mask) -> SinkUnique {
+  return internal::makeFileSink<PrettySink>(std::move(path), mask, false);
 }
 
 } // namespace tria::log
