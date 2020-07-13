@@ -2,6 +2,13 @@
 #include "tria/log/logger.hpp"
 #include "tria/log/metadata.hpp"
 
+// If 'SRC_PATH_LENGTH' is defined we strip that part of the path of.
+#if defined(SRC_PATH_LENGTH)
+#define __FILENAME__ (static_cast<const char*>(__FILE__) + SRC_PATH_LENGTH)
+#else
+#define __FILENAME__ __FILE__
+#endif
+
 // '__PRETTY_FUNCTION__' does not exist on msvc, use '__FUNCSIG__' instead.
 #if defined(_MSC_VER)
 #define __PRETTY_FUNCTION__ __FUNCSIG__
@@ -11,7 +18,7 @@
   do {                                                                                             \
     constexpr static auto meta = log::MetaData{lvl,                                                \
                                                std::string_view{txt},                              \
-                                               std::string_view{__FILE__},                         \
+                                               std::string_view{__FILENAME__},                     \
                                                std::string_view{__PRETTY_FUNCTION__},              \
                                                __LINE__};                                          \
     auto* loggerPtr            = (logger);                                                         \

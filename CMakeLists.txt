@@ -95,6 +95,11 @@ message(STATUS "Finding threads package")
 set(CMAKE_THREAD_PREFER_PTHREAD On)
 find_package(Threads REQUIRED)
 
+# Set a define that is the length of the path to the root directory. Usefull to make absolute paths
+# inside the project relative to the root in a cheap way.
+string(LENGTH "${CMAKE_SOURCE_DIR}/" SRC_PATH_LENGTH)
+add_definitions("-DSRC_PATH_LENGTH=${SRC_PATH_LENGTH}")
+
 # Add child cmake files.
 add_subdirectory(src)
 add_subdirectory(apps)
