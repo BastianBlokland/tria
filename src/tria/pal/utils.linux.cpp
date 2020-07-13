@@ -17,6 +17,11 @@ auto errorExit(const char* msg) {
 
 } // namespace
 
+auto setupConsole() noexcept -> bool {
+  // Check if there is a terminal attached to file descriptor 0 (std out).
+  return isatty(0);
+}
+
 auto getCurExecutablePath() noexcept -> fs::path {
   constexpr auto selfLink = "/proc/self/exe";
 

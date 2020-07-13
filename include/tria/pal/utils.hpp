@@ -30,4 +30,10 @@ auto setThreadName(std::string_view name) noexcept -> bool;
  */
 [[nodiscard]] auto getThreadName() noexcept -> std::string;
 
+/* Setup the console (if attached) for console output.
+ * Returns true if a console is present or false if no console is present (for example if the output
+ * is redirected to a file).
+ */
+auto setupConsole() noexcept -> bool;
+
 } // namespace tria::pal

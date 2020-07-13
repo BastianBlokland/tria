@@ -14,12 +14,30 @@ auto errorExit(const char* msg) {
   std::exit(EXIT_FAILURE);
 }
 
-auto endsWith(const std::string& str, const std::string& suffix) -> bool {
+auto endsWith(const std::string& str, const std::string& suffix) {
   return str.size() >= suffix.size() &&
       str.compare(str.size() - suffix.size(), suffix.size(), suffix) == 0;
 }
 
+auto enableVTConsoleMode() -> bool {
+  auto hOut = GetStdHandle(STD_OUTPUT_HANDLE);
+  if (hOut == INVALID_HANDLE_VALUE) {
+    return false;
+  }
+  DWORD dwMode = 0;
+  if (!GetConsoleMode(hOut, &dwMode)) {
+    return false;
+  }
+  dwMode |= 0x0004; // ENABLE_VIRTUAL_TERMINAL_PROCESSING 0x0004
+  return SetConsoleMode(hOut, dwMode);
+}
+
 } // namespace
+
+auto setupConsole() noexcept -> bool {
+  // Enable vt-console mode to support ansi escape sequences.
+  return enableVTConsoleMode();
+}
 
 auto getCurExecutablePath() noexcept -> fs::path {
   auto pathBuffer = std::array<char, MAX_PATH>{};
