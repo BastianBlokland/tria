@@ -42,6 +42,10 @@ endif()
 # Output executables to bin dir.
 set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY $<1:${PROJECT_SOURCE_DIR}/bin>)
+# Remove output directory if it already exists.
+if(EXISTS ${EXECUTABLE_OUTPUT_PATH})
+  file(REMOVE_RECURSE ${EXECUTABLE_OUTPUT_PATH})
+endif()
 
 set(CXX_FLAGS_WIN32 "\
   -DNOMINMAX \
