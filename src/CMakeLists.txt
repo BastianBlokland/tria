@@ -47,6 +47,7 @@ if(${TRIA_PLATFORM} STREQUAL "linux_xcb")
 
 message(STATUS "Configuring linux xcb pal library")
   add_library(tria_pal STATIC
+    tria/pal/interupt.linux.cpp
     tria/pal/native_platform.xcb.cpp
     tria/pal/platform.xcb.cpp
     tria/pal/utils.linux.cpp

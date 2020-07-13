@@ -1,3 +1,4 @@
+#pragma once
 #include "tria/pal/window.hpp"
 
 namespace tria::pal {
