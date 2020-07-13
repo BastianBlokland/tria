@@ -57,7 +57,7 @@ function BuildProjMake([int] $threads, [string] $dir) {
 function BuildProjMSBuild([int] $threads, [string] $dir) {
   # Find out what type of configuration this is (Debug or Release).
   $buildType = Get-Content "$dir/build_type" -First 1
-  if ($buildType -ne "Debug" || $buildType -ne "Release") {
+  if ($buildType -ne "Debug" -and $buildType -ne "Release") {
     Fail "Unexpected build-type: '$buildType'"
   }
 
