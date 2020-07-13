@@ -71,7 +71,22 @@ auto Param::writeValue(std::string* tgtStr, WriteMode mode) const noexcept -> vo
           if (mode == WriteMode::Json) {
             tgtStr->append("\"");
           }
-        } else if constexpr (std::is_same_v<T, MemSize>)
+        }
+        // NOLINTNEXTLINE(bugprone-branch-clone)
+        else if constexpr (std::is_same_v<T, Duration>) {
+          switch (mode) {
+          case WriteMode::Json: {
+            // In json write the elapsed nanoseconds.
+            auto nanoSec = std::chrono::duration_cast<std::chrono::nanoseconds>(arg).count();
+            internal::writeInt(tgtStr, nanoSec);
+          } break;
+          case WriteMode::Pretty:
+            internal::writePrettyDuration(tgtStr, arg);
+            break;
+          }
+        }
+        // NOLINTNEXTLINE(bugprone-branch-clone)
+        else if constexpr (std::is_same_v<T, MemSize>)
           switch (mode) {
           case WriteMode::Json:
             // In json just write the size in bytes.

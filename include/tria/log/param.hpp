@@ -1,4 +1,5 @@
 #pragma once
+#include <chrono>
 #include <string>
 #include <string_view>
 #include <type_traits>
@@ -6,8 +7,11 @@
 
 namespace tria::log {
 
-/*
- * Memory size.
+/* Elapsed time.
+ */
+using Duration = std::chrono::duration<double>;
+
+/* Memory size.
  * Wrapper around a size_t, that gives additional semantic information.
  */
 class MemSize final {
@@ -22,13 +26,13 @@ private:
   size_t m_size;
 };
 
-/*
- * Runtime parameter to a log message.
+/* Runtime parameter to a log message.
  * Supported types:
  * - Integer types (stored in a signed/unsigned 64 bit integer).
  * - Floating point types (float and double, stored as a double).
  * - Bool
  * - String (stored as a copy).
+ * - Duration (std::chrono::duration<double>)
  * - MemSize (wrapper around size_t)
  *
  * Note: Keys should be literals or strings that have a longer lifetime then the logger.
@@ -63,7 +67,9 @@ public:
 
   Param(std::string_view key, std::string value) noexcept;
 
-  Param(std::string_view key, MemSize memSize) noexcept : m_key{key}, m_value{memSize} {}
+  Param(std::string_view key, Duration value) noexcept : m_key{key}, m_value{value} {}
+
+  Param(std::string_view key, MemSize value) noexcept : m_key{key}, m_value{value} {}
 
   Param(const Param& rhs)     = default;
   Param(Param&& rhs) noexcept = default;
@@ -79,7 +85,7 @@ public:
   auto writeValue(std::string* tgtStr, WriteMode mode) const noexcept -> void;
 
 private:
-  using ValueType = std::variant<int64_t, uint64_t, double, bool, std::string, MemSize>;
+  using ValueType = std::variant<int64_t, uint64_t, double, bool, std::string, Duration, MemSize>;
 
   std::string_view m_key;
   ValueType m_value;

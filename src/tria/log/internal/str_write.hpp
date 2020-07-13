@@ -109,9 +109,27 @@ inline auto writeIsoTime(std::string* str, std::chrono::system_clock::time_point
       std::string_view{buffer.data(), static_cast<std::string_view::size_type>(bufferSize - 1)});
 }
 
+inline auto writePrettyDuration(std::string* str, std::chrono::duration<double> dur) noexcept {
+  constexpr static std::array<std::string_view, 4> units = {" sec", " ms", " us", " ns"};
+
+  auto unitIdx = 0U;
+  auto t       = dur.count();
+  for (; t < 1.0 && unitIdx != units.size() - 1; ++unitIdx) {
+    t *= 1000.0;
+  }
+  const auto rounded = std::round(t);
+  if (std::abs(t - rounded) < .05) {
+    writeInt(str, static_cast<uint64_t>(rounded));
+  } else {
+    writeDouble(str, t, "%.1f");
+  }
+  str->append(units[unitIdx]);
+}
+
 inline auto writePrettyMemSize(std::string* str, const size_t size) noexcept {
   constexpr static std::array<std::string_view, 6> units = {
       " B", " KiB", " MiB", " GiB", " TiB", " PiB"};
+
   auto unitIdx = 0U;
   auto sizeD   = static_cast<double>(size);
   for (; sizeD >= 1024.0 && unitIdx != units.size() - 1; ++unitIdx) {
