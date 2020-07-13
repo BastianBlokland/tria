@@ -84,6 +84,9 @@ function ConfigureProj([string] $type, [string] $gen, [string] $dir, [bool] $tes
     Fail "Configure failed"
   }
 
+  # Save a file to remember what build-type is this.
+  Set-Content -Path "$dir/build_type" -Value "$type"
+
   PInfo "Succesfully configured build directory '$dir'"
 }
 
