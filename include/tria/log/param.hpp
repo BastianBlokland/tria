@@ -1,6 +1,5 @@
 #pragma once
 #include <chrono>
-#include <ctime>
 #include <string>
 #include <string_view>
 #include <type_traits>
@@ -76,9 +75,6 @@ public:
   Param(std::string_view key, Duration value) noexcept : m_key{key}, m_value{value} {}
 
   Param(std::string_view key, TimePoint value) noexcept : m_key{key}, m_value{value} {}
-
-  Param(std::string_view key, std::time_t value) noexcept :
-      m_key{key}, m_value{std::chrono::system_clock::from_time_t(value)} {}
 
   Param(std::string_view key, MemSize value) noexcept : m_key{key}, m_value{value} {}
 

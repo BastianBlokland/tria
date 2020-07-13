@@ -19,7 +19,7 @@ auto toStringJson(const Param& param) {
   return str;
 }
 
-auto getRefTimeT(int year, int month, int day, int hour, int min, int sec) -> std::time_t {
+auto getRefTimeT(int year, int month, int day, int hour, int min, int sec) -> TimePoint {
   tm t      = {};
   t.tm_year = year - 1900;
   t.tm_mon  = month - 1;
@@ -29,7 +29,7 @@ auto getRefTimeT(int year, int month, int day, int hour, int min, int sec) -> st
   t.tm_sec  = sec;
   auto time = std::mktime(&t);
   std::localtime(&time);
-  return time;
+  return std::chrono::system_clock::from_time_t(time);
 }
 
 } // namespace
@@ -65,12 +65,10 @@ TEST_CASE("Log write param", "[log]") {
         toStringPretty({"key", getRefTimeT(2020, 7, 13, 12, 36, 42)}) ==
         "2020-07-13T10:36:42.000000Z");
     CHECK(
-        toStringPretty(
-            {"key", system_clock::from_time_t(getRefTimeT(2020, 7, 13, 12, 36, 42)) + 1337ms}) ==
+        toStringPretty({"key", getRefTimeT(2020, 7, 13, 12, 36, 42) + 1337ms}) ==
         "2020-07-13T10:36:43.337000Z");
     CHECK(
-        toStringPretty(
-            {"key", system_clock::from_time_t(getRefTimeT(2020, 7, 13, 12, 36, 42)) + 42us}) ==
+        toStringPretty({"key", getRefTimeT(2020, 7, 13, 12, 36, 42) + 42us}) ==
         "2020-07-13T10:36:42.000042Z");
 
     CHECK(toStringPretty({"key", MemSize{0}}) == "0 B");
