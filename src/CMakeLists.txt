@@ -60,6 +60,7 @@ message(STATUS "Configuring linux xcb pal library")
 elseif(${TRIA_PLATFORM} STREQUAL "win32")
   message(STATUS "Configuring win32 pal library")
   add_library(tria_pal STATIC
+    tria/pal/interupt.win32.cpp
     tria/pal/native_platform.win32.cpp
     tria/pal/platform.win32.cpp
     tria/pal/utils.win32.cpp
