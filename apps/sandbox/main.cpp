@@ -59,7 +59,7 @@ auto runApp(log::Logger& logger, pal::Platform& platform) -> int {
 
 auto main(int /*unused*/, char* * /*unused*/) -> int {
 
-  pal::setThreadName("main-thread");
+  pal::setThreadName("main_thread");
   pal::setupInterruptHandler();
 
   auto logger = log::Logger{log::makeConsolePrettySink(), log::makeFileJsonSink("sandbox.log")};
