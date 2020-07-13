@@ -7,18 +7,40 @@
 namespace tria::log {
 
 /*
+ * Memory size.
+ * Wrapper around a size_t, that gives additional semantic information.
+ */
+class MemSize final {
+public:
+  explicit MemSize(size_t size) : m_size{size} {}
+
+  auto operator==(const MemSize& rhs) const noexcept -> bool { return m_size == rhs.m_size; }
+
+  [[nodiscard]] auto getSize() const noexcept { return m_size; }
+
+private:
+  size_t m_size;
+};
+
+/*
  * Runtime parameter to a log message.
  * Supported types:
  * - Integer types (stored in a signed/unsigned 64 bit integer).
  * - Floating point types (float and double, stored as a double).
  * - Bool
  * - String (stored as a copy).
+ * - MemSize (wrapper around size_t)
  *
  * Note: Keys should be literals or strings that have a longer lifetime then the logger.
  * Note: Because it can store std::string it should be moved whenever possible.
  */
 class Param final {
 public:
+  enum class WriteMode {
+    Pretty,
+    Json,
+  };
+
   Param() = delete;
 
   template <
@@ -41,6 +63,8 @@ public:
 
   Param(std::string_view key, std::string value) noexcept;
 
+  Param(std::string_view key, MemSize memSize) noexcept : m_key{key}, m_value{memSize} {}
+
   Param(const Param& rhs)     = default;
   Param(Param&& rhs) noexcept = default;
 
@@ -52,10 +76,10 @@ public:
 
   [[nodiscard]] constexpr auto getKey() const noexcept { return m_key; }
 
-  auto writeValue(std::string* tgtStr, bool quoteStrings) const noexcept -> void;
+  auto writeValue(std::string* tgtStr, WriteMode mode) const noexcept -> void;
 
 private:
-  using ValueType = std::variant<int64_t, uint64_t, double, bool, std::string>;
+  using ValueType = std::variant<int64_t, uint64_t, double, bool, std::string, MemSize>;
 
   std::string_view m_key;
   ValueType m_value;
