@@ -84,6 +84,14 @@ auto Param::writeValue(std::string* tgtStr, WriteMode mode) const noexcept -> vo
             internal::writePrettyDuration(tgtStr, arg);
             break;
           }
+        } else if constexpr (std::is_same_v<T, TimePoint>) {
+          if (mode == WriteMode::Json) {
+            tgtStr->append("\"");
+          }
+          internal::writeIsoTime(tgtStr, arg);
+          if (mode == WriteMode::Json) {
+            tgtStr->append("\"");
+          }
         }
         // NOLINTNEXTLINE(bugprone-branch-clone)
         else if constexpr (std::is_same_v<T, MemSize>)

@@ -39,7 +39,7 @@ public:
 
 private:
   const MetaData* m_meta;
-  std::chrono::system_clock::time_point m_time;
+  TimePoint m_time;
   std::vector<Param> m_params;
 };
 
