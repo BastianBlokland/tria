@@ -1,0 +1,49 @@
+name: build-test
+
+on: [push]
+
+jobs:
+  build:
+    name: ${{matrix.config.image}}-${{matrix.config.arch}}-${{matrix.config.compiler}}
+    runs-on: ${{matrix.config.image}}
+    strategy:
+      fail-fast: false
+      matrix:
+        config:
+        - {
+            image: ubuntu-16.04,
+            arch: x86_64,
+            os: ubuntu,
+            dist: xenial,
+            compiler: clang9,
+            cc: clang-9,
+            cxx: clang++-9
+          }
+    env:
+      CC: ${{matrix.config.cc}}
+      CXX: ${{matrix.config.cxx}}
+    steps:
+    - uses: actions/checkout@v1
+
+    - name: install-ubuntu
+      run: |
+        readonly dist=${{matrix.config.dist}}
+        echo "Add llvm ppa";              sudo apt-add-repository \
+          "deb http://apt.llvm.org/${dist}/ llvm-toolchain-${dist}-9 main"
+        echo "Installing clang-tidy-9";   sudo apt install clang-tidy-9
+        echo "clang-tidy-9 --version:";   clang-tidy-9 --version
+
+    - name: configure-unix
+      run: ./scripts/configure.sh --type Release --tests --lint
+
+    - name: build-unix
+      run: ./scripts/build.sh
+
+    - name: test-unix
+      run: ./scripts/test.sh
+
+    - name: archive
+      uses: actions/upload-artifact@v1
+      with:
+        name: ${{matrix.config.image}}-${{matrix.config.arch}}-${{matrix.config.compiler}}
+        path: bin
