@@ -1,3 +1,36 @@
+include(FetchContent)
+
+# External: 'simdjson' json parsing library.
+message(STATUS "Fetching dependency: simdjson")
+FetchContent_Declare(
+  simdjson
+  GIT_REPOSITORY https://github.com/simdjson/simdjson.git
+  GIT_TAG v0.4.6
+  GIT_SHALLOW TRUE)
+set(SIMDJSON_JUST_LIBRARY ON CACHE INTERNAL "")
+set(SIMDJSON_BUILD_STATIC ON CACHE INTERNAL "")
+set(SIMDJSON_COMPETITION OFF CACHE INTERNAL "")
+FetchContent_MakeAvailable(simdjson)
+
+# Enable linting, add external code above this line.
+enable_linting()
+
+# Asset (asset loading library).
+message(STATUS "Configuring asset library")
+add_library(tria_asset STATIC
+  tria/asset/internal/graphic_loader.cpp
+  tria/asset/internal/json.cpp
+  tria/asset/internal/loader.cpp
+  tria/asset/internal/raw_asset_loader.cpp
+  tria/asset/internal/shader_loader.cpp
+  tria/asset/database.cpp
+  tria/asset/database_impl.cpp)
+target_compile_features(tria_asset PRIVATE cxx_std_17)
+target_include_directories(tria_asset PUBLIC ${PROJECT_SOURCE_DIR}/include)
+target_link_libraries(tria_asset PRIVATE simdjson)
+target_link_libraries(tria_asset PRIVATE tria_log)
+target_link_libraries(tria_asset PRIVATE Threads::Threads)
+
 # Gfx (graphics library).
 message(STATUS "Configuring gfx vulkan library")
 add_library(tria_gfx STATIC
@@ -25,7 +58,6 @@ endif()
 
 target_compile_features(tria_gfx PRIVATE cxx_std_17)
 target_include_directories(tria_gfx PUBLIC ${PROJECT_SOURCE_DIR}/include)
-target_include_directories(tria_gfx PRIVATE log)
 target_link_libraries(tria_gfx PRIVATE tria_pal)
 target_link_libraries(tria_gfx PRIVATE tria_log)
 
@@ -38,7 +70,6 @@ add_library(tria_log STATIC
   tria/log/pretty_sink.cpp)
 target_compile_features(tria_log PRIVATE cxx_std_17)
 target_include_directories(tria_log PUBLIC ${PROJECT_SOURCE_DIR}/include)
-target_include_directories(tria_log PRIVATE log)
 target_link_libraries(tria_log PRIVATE Threads::Threads)
 target_link_libraries(tria_log PRIVATE tria_pal)
 
@@ -69,7 +100,6 @@ elseif(${TRIA_PLATFORM} STREQUAL "win32")
 endif()
 target_compile_features(tria_pal PRIVATE cxx_std_17)
 target_include_directories(tria_pal PUBLIC ${PROJECT_SOURCE_DIR}/include)
-target_include_directories(tria_pal PRIVATE pal)
-target_include_directories(tria_pal PRIVATE tria_log)
+target_link_libraries(tria_pal PRIVATE tria_log)
 target_link_libraries(tria_pal PRIVATE Threads::Threads)
 

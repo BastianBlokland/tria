@@ -61,9 +61,9 @@ else()
   message(STATUS "Setting unix compiler flags")
   set(CXX_FLAGS_SHARED "-std=c++17 -Werror -Wall -Wextra -fno-strict-aliasing")
   if(${TRIA_PLATFORM} STREQUAL "win32")
-    set(CXX_FLAGS_SHARED "${CXX_FLAGS_SHARED} ${CXX_FLAGS_WIN32}")
+    set(CXX_FLAGS_SHARED "${CXX_FLAGS_SHARED} ${CXX_FLAGS_WIN32} -Wno-deprecated-declarations")
   endif()
-  set(CMAKE_CXX_FLAGS_DEBUG "-O1 -g -fno-omit-frame-pointer ${CXX_FLAGS_SHARED}")
+  set(CMAKE_CXX_FLAGS_DEBUG "-Og -g -fno-omit-frame-pointer ${CXX_FLAGS_SHARED}")
   set(CMAKE_CXX_FLAGS_RELEASE "-O3 -DNDEBUG ${CXX_FLAGS_SHARED}")
 endif()
 
@@ -74,17 +74,18 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 # reason is that MinGW does not respect that file.
 set(CMAKE_CXX_USE_RESPONSE_FILE_FOR_INCLUDES OFF)
 
-if(LINTING)
-  # Use the clang-tidy linter if installed.
-  find_program(CLANG_TIDY_BIN NAMES "clang-tidy" "clang-tidy-9")
-  if(CLANG_TIDY_BIN)
-    message(STATUS "Enabling clang-tidy linter")
-    set(CMAKE_CXX_CLANG_TIDY ${CLANG_TIDY_BIN})
+# Define a function that can be used to enable linting tools.
+# Reason why not to just enable it here is that we don't want to run it on external code.
+function(enable_linting)
+  if(LINTING)
+    # Use the clang-tidy linter if installed.
+    find_program(CLANG_TIDY_BIN NAMES "clang-tidy" "clang-tidy-9")
+    if(CLANG_TIDY_BIN)
+      message(STATUS "Enabling clang-tidy linter")
+      set(CMAKE_CXX_CLANG_TIDY ${CLANG_TIDY_BIN})
+    endif()
   endif()
-endif()
-
-# Write a 'VERSION' file to the bin dir with the cmake project version.
-file(WRITE ${EXECUTABLE_OUTPUT_PATH}/VERSION ${CMAKE_PROJECT_VERSION})
+endfunction()
 
 # Replace config variables in the config header.
 configure_file("include/tria/config.hpp.in" "${PROJECT_SOURCE_DIR}/include/tria/config.hpp")

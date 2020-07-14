@@ -82,8 +82,8 @@ function BuildProjMSBuild([int] $threads, [string] $dir) {
 
   # Msbuild creates extra empty directores in the output directory, we remove those as it
   # just clutters up the output.
-  Remove-Item "$dir\..\bin\Debug" -Force -ErrorAction Ignore
-  Remove-Item "$dir\..\bin\Release" -Force -ErrorAction Ignore
+  Remove-Item "$dir\..\bin\Debug" -Recurse -Force -Confirm:$false -ErrorAction Ignore
+  Remove-Item "$dir\..\bin\Release" -Recurse -Force -Confirm:$false -ErrorAction Ignore
 
   if ($msbuildResult -ne 0) {
     Fail "Build failed"

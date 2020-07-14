@@ -12,5 +12,15 @@
       "terminal": "integrated",
       "stopOnEntry": false
     },
+    {
+      "name": "tria_tests",
+      "preLaunchTask": "build",
+      "type": "lldb",
+      "request": "launch",
+      "program": "${workspaceFolder}/bin/tria_tests",
+      "cwd": "${workspaceFolder}",
+      "terminal": "integrated",
+      "stopOnEntry": false
+    }
   ]
 }

@@ -5,9 +5,9 @@
 
 namespace tria::log::tests {
 
-TEST_CASE("Logger", "[log]") {
+TEST_CASE("[log] - Logger", "[log]") {
 
-  SECTION("Message publishing") {
+  SECTION("Published messages arrive to sink") {
     auto output = std::vector<Message>{};
     {
       auto logger    = Logger{makeMockSink(&output)};
@@ -38,7 +38,7 @@ TEST_CASE("Logger", "[log]") {
                                                   {"param4", std::string{"dyn_string"}}}));
   }
 
-  SECTION("Multithreaded publishing") {
+  SECTION("Messages can be published in parallel") {
     constexpr static int numThreads          = 5;
     constexpr static int numMessagePerThread = 10'000;
 

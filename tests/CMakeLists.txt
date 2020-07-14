@@ -1,6 +1,6 @@
 include(FetchContent)
 
-# 'Catch2' testing framework.
+# External: 'Catch2' testing framework.
 message(STATUS "Fetching dependency: catch2")
 FetchContent_Declare(
   catch2
@@ -11,9 +11,17 @@ FetchContent_MakeAvailable(catch2)
 list(APPEND CMAKE_MODULE_PATH ${catch2_SOURCE_DIR}/contrib)
 include(Catch)
 
+# Enable linting, add external code above this line.
+enable_linting()
+
 # 'tria_tests' executable.
 message(STATUS "Configuring tria_tests executable")
 add_executable(tria_tests
+  tria/asset/database_test.cpp
+  tria/asset/graphic_test.cpp
+  tria/asset/shader_test.cpp
+  tria/asset/utils.cpp
+
   tria/log/level_test.cpp
   tria/log/logger_test.cpp
   tria/log/param_test.cpp
@@ -23,7 +31,9 @@ add_executable(tria_tests
   tria/main.cpp)
 target_compile_features(tria_tests PUBLIC cxx_std_17)
 target_link_libraries(tria_tests PRIVATE Catch2::Catch2)
+target_link_libraries(tria_tests PRIVATE tria_asset)
 target_link_libraries(tria_tests PRIVATE tria_log)
+target_link_libraries(tria_tests PRIVATE tria_pal)
 
 # Register tests to CTest.
 message(STATUS "Registering tests to CTest")

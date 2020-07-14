@@ -6,7 +6,7 @@ namespace tria::pal {
 
 std::atomic_bool g_interruptRequested = false;
 
-auto interruptHandler(DWORD dwCtrlType) -> int {
+auto interruptHandler(DWORD dwCtrlType) noexcept -> int {
   switch (dwCtrlType) {
   case CTRL_C_EVENT:
   case CTRL_BREAK_EVENT:

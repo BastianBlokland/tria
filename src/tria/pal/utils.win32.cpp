@@ -2,24 +2,25 @@
 #include <array>
 #include <codecvt>
 #include <locale>
+#include <string_view>
 #include <windows.h>
 
 namespace tria::pal {
 
 namespace {
 
-auto errorExit(const char* msg) {
+auto errorExit(const char* msg) noexcept {
   std::fprintf(stderr, "%s\n", msg);
   std::fflush(stderr);
   std::exit(EXIT_FAILURE);
 }
 
-auto endsWith(const std::string& str, const std::string& suffix) {
+auto endsWith(const std::string& str, const std::string_view suffix) noexcept {
   return str.size() >= suffix.size() &&
       str.compare(str.size() - suffix.size(), suffix.size(), suffix) == 0;
 }
 
-auto enableVTConsoleMode() -> bool {
+auto enableVTConsoleMode() noexcept -> bool {
   auto hOut = GetStdHandle(STD_OUTPUT_HANDLE);
   if (hOut == INVALID_HANDLE_VALUE) {
     return false;

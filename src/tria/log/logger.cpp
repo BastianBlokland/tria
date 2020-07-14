@@ -55,7 +55,7 @@ private:
   std::condition_variable m_logCondVar;
 
   auto logLoop() noexcept -> void {
-    pal::setThreadName("log_thread");
+    pal::setThreadName("tria_log_thread");
 
     auto running = true;
     while (running) {

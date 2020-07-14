@@ -49,9 +49,8 @@ enum class Level : uint8_t {
     return "wrn";
   case Level::Error:
     return "err";
-  default:
-    return "unk";
   }
+  return "unk";
 }
 
 } // namespace tria::log
