@@ -41,7 +41,7 @@ TEST_CASE("[asset] - Database", "[asset]") {
   }
 
   SECTION("Assets can be loaded in parallel") {
-    constexpr static int numFiles          = 250;
+    constexpr static int numFiles          = 100;
     constexpr static int numThreads        = 10;
     constexpr static int numLoadsPerThread = 1'000;
 

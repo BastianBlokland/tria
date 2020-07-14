@@ -16,6 +16,7 @@ message(STATUS "Configuring tria_tests executable")
 add_executable(tria_tests
   tria/asset/database_test.cpp
   tria/asset/shader_test.cpp
+  tria/asset/utils.cpp
 
   tria/log/level_test.cpp
   tria/log/logger_test.cpp
