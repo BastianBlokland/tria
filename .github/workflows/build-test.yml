@@ -28,6 +28,13 @@ jobs:
             cc: clang-9,
             cxx: clang++-9
           }
+        - {
+            image: windows-2019,
+            arch: x86_64,
+            os: windows,
+            compiler: mingw-w64-7,
+            generator: MinGW
+          }
     env:
       CC: ${{matrix.config.cc}}
       CXX: ${{matrix.config.cxx}}
@@ -35,6 +42,7 @@ jobs:
     - uses: actions/checkout@v1
 
     - name: install-ubuntu
+      if: matrix.config.os == 'ubuntu'
       run: |
         readonly dist=${{matrix.config.dist}}
         echo "Add llvm ppa";              sudo apt-add-repository \
@@ -48,14 +56,44 @@ jobs:
           http://packages.lunarg.com/vulkan/1.2.141/lunarg-vulkan-1.2.141-xenial.list
         echo "Installing vulkan sdk"; sudo apt update; sudo apt install vulkan-sdk
 
+    - name: install-mingw
+      if: matrix.config.generator == 'MinGW'
+      run: |
+        echo "Installing mingw-w64-7"
+        choco install mingw --version=7.3.0 --force
+        echo "g++.exe --version:"
+        g++.exe --version
+
+    - name: install-windows
+      if: matrix.config.os == 'windows'
+      run: |
+        echo "Installing Vulkan-Sdk"
+        choco install vulkan-sdk
+        refreshenv
+
     - name: configure-unix
+      if: matrix.config.os != 'windows'
       run: ./scripts/configure.sh --type Release --tests --lint
 
+    - name: configure-windows
+      if: matrix.config.os == 'windows'
+      run: pwsh .\scripts\configure.ps1 -Gen ${{matrix.config.generator}} -Type Release -Tests
+
     - name: build-unix
+      if: matrix.config.os != 'windows'
       run: ./scripts/build.sh
 
+    - name: build-windows
+      if: matrix.config.os == 'windows'
+      run: pwsh .\scripts\build.ps1
+
     - name: test-unix
+      if: matrix.config.os != 'windows'
       run: ./scripts/test.sh
+
+    - name: test-windows
+      if: matrix.config.os == 'windows'
+      run: pwsh .\scripts\test.ps1
 
     - name: archive
       uses: actions/upload-artifact@v1
