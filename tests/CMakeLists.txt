@@ -11,6 +11,9 @@ FetchContent_MakeAvailable(catch2)
 list(APPEND CMAKE_MODULE_PATH ${catch2_SOURCE_DIR}/contrib)
 include(Catch)
 
+# Enable linting, add external code above this line.
+enable_linting()
+
 # 'tria_tests' executable.
 message(STATUS "Configuring tria_tests executable")
 add_executable(tria_tests

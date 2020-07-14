@@ -12,6 +12,9 @@ set(SIMDJSON_BUILD_STATIC ON CACHE INTERNAL "")
 set(SIMDJSON_COMPETITION OFF CACHE INTERNAL "")
 FetchContent_MakeAvailable(simdjson)
 
+# Enable linting, add external code above this line.
+enable_linting()
+
 # Asset (asset loading library).
 message(STATUS "Configuring asset library")
 add_library(tria_asset STATIC

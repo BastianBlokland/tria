@@ -1,3 +1,6 @@
+# Enable linting, add external code above this line.
+enable_linting()
+
 # Sandbox.
 message(STATUS "Configuring sandbox executable")
 add_executable(sandbox
