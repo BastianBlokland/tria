@@ -70,6 +70,8 @@ public:
 
   Param(std::string_view key, const char* value) noexcept : Param(key, std::string(value)) {}
 
+  Param(std::string_view key, std::string_view value) noexcept : Param(key, std::string(value)) {}
+
   Param(std::string_view key, std::string value) noexcept;
 
   Param(std::string_view key, Duration value) noexcept : m_key{key}, m_value{value} {}

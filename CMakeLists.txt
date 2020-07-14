@@ -63,7 +63,7 @@ else()
   if(${TRIA_PLATFORM} STREQUAL "win32")
     set(CXX_FLAGS_SHARED "${CXX_FLAGS_SHARED} ${CXX_FLAGS_WIN32}")
   endif()
-  set(CMAKE_CXX_FLAGS_DEBUG "-O1 -g -fno-omit-frame-pointer ${CXX_FLAGS_SHARED}")
+  set(CMAKE_CXX_FLAGS_DEBUG "-Og -g -fno-omit-frame-pointer ${CXX_FLAGS_SHARED}")
   set(CMAKE_CXX_FLAGS_RELEASE "-O3 -DNDEBUG ${CXX_FLAGS_SHARED}")
 endif()
 
@@ -82,9 +82,6 @@ if(LINTING)
     set(CMAKE_CXX_CLANG_TIDY ${CLANG_TIDY_BIN})
   endif()
 endif()
-
-# Write a 'VERSION' file to the bin dir with the cmake project version.
-file(WRITE ${EXECUTABLE_OUTPUT_PATH}/VERSION ${CMAKE_PROJECT_VERSION})
 
 # Replace config variables in the config header.
 configure_file("include/tria/config.hpp.in" "${PROJECT_SOURCE_DIR}/include/tria/config.hpp")

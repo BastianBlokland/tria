@@ -6,7 +6,7 @@ namespace tria::pal {
 
 std::atomic_bool g_interruptRequested = false;
 
-auto interruptHandler(int /*unused*/) -> void {
+auto interruptHandler(int /*unused*/) noexcept -> void {
   g_interruptRequested.store(true, std::memory_order_release);
 }
 

@@ -1,6 +1,7 @@
 #pragma once
 #include <exception>
 #include <string>
+#include <string_view>
 
 namespace tria::pal::err {
 
@@ -10,8 +11,9 @@ namespace tria::pal::err {
 class PlatformErr final : public std::exception {
 public:
   PlatformErr() = delete;
-  PlatformErr(unsigned long platformCode, const std::string& platformMsg) :
-      m_platformCode{platformCode}, m_platformMsg{std::string{"Platform error: "} + platformMsg} {}
+  PlatformErr(unsigned long platformCode, std::string_view platformMsg) :
+      m_platformCode{platformCode},
+      m_platformMsg{std::string{"Platform error: "} + std::string{platformMsg}} {}
 
   [[nodiscard]] auto what() const noexcept -> const char* override { return m_platformMsg.c_str(); }
 

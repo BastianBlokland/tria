@@ -34,12 +34,12 @@ auto getRefTimeT(int year, int month, int day, int hour, int min, int sec) -> Ti
 
 } // namespace
 
-TEST_CASE("Log write param", "[log]") {
+TEST_CASE("[log] - Log parameters", "[log]") {
 
   using namespace std::chrono;
   using namespace std::literals;
 
-  SECTION("Pretty") {
+  SECTION("Parameters can be pretty printed") {
     CHECK(toStringPretty({"key", 42}) == "42");
     CHECK(toStringPretty({"key", 100'000'000}) == "100000000");
 
@@ -85,7 +85,7 @@ TEST_CASE("Log write param", "[log]") {
     CHECK(toStringPretty({"key", MemSize{424242}}) == "414.3 KiB");
   }
 
-  SECTION("Json") {
+  SECTION("Parameters can be json printed") {
     CHECK(toStringJson({"key", 42}) == "42");
     CHECK(toStringJson({"key", 100'000'000}) == "100000000");
 
