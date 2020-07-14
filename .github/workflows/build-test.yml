@@ -33,6 +33,12 @@ jobs:
         echo "Installing clang-tidy-9";   sudo apt install clang-tidy-9
         echo "clang-tidy-9 --version:";   clang-tidy-9 --version
 
+        echo "Add lunarg ppa"
+        wget -qO - http://packages.lunarg.com/lunarg-signing-key-pub.asc | sudo apt-key add -
+        sudo wget -qO /etc/apt/sources.list.d/lunarg-vulkan-1.2.141-xenial.list \
+          http://packages.lunarg.com/vulkan/1.2.141/lunarg-vulkan-1.2.141-xenial.list
+        echo "Installing vulkan sdk"; sudo apt update; sudo apt install vulkan-sdk
+
     - name: configure-unix
       run: ./scripts/configure.sh --type Release --tests --lint
 
