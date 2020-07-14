@@ -15,8 +15,11 @@ public:
   ~DatabaseImpl() = default;
 
   /* Get a pointer to an asset. Will either load it or return a previously loaded asset.
+   *
    * TODO(bastian): In the future this should probably return a 'smart-pointer'-like handle so we
    * can track who is using it so we can decide when to unload it.
+   *
+   * Throws if asset loading fails.
    */
   [[nodiscard]] auto get(const AssetId& id) -> const Asset*;
 

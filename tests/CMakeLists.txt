@@ -1,6 +1,6 @@
 include(FetchContent)
 
-# 'Catch2' testing framework.
+# External: 'Catch2' testing framework.
 message(STATUS "Fetching dependency: catch2")
 FetchContent_Declare(
   catch2
@@ -15,6 +15,7 @@ include(Catch)
 message(STATUS "Configuring tria_tests executable")
 add_executable(tria_tests
   tria/asset/database_test.cpp
+  tria/asset/graphic_test.cpp
   tria/asset/shader_test.cpp
   tria/asset/utils.cpp
 

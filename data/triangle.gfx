@@ -1,0 +1,4 @@
+{
+  "vertShader": "shaders/triangle.vert.spv",
+  "fragShader": "shaders/triangle.frag.spv"
+}

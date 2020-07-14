@@ -27,6 +27,7 @@ public:
   auto operator=(Database&& rhs) noexcept -> Database& = default;
 
   /* Load an asset with a given id.
+   * Throws if asset loading fails.
    * Is thread-safe.
    */
   [[nodiscard]] auto get(const AssetId& id) -> const Asset*;

@@ -1,3 +1,4 @@
+#pragma once
 #include "tria/asset/asset.hpp"
 #include <vector>
 

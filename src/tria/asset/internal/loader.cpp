@@ -3,6 +3,7 @@
 
 namespace tria::asset::internal {
 
+auto loadGraphic(AssetId, const fs::path&, RawData, DatabaseImpl*) -> AssetUnique;
 auto loadShader(AssetId, const fs::path&, RawData, DatabaseImpl*) -> AssetUnique;
 auto loadRawAsset(AssetId, const fs::path&, RawData, DatabaseImpl*) -> AssetUnique;
 
@@ -10,6 +11,7 @@ namespace {
 
 auto getLoader(const fs::path& path) -> AssetLoader {
   static const std::unordered_map<std::string, AssetLoader> table = {
+      {".gfx", loadGraphic},
       {".spv", loadShader},
   };
   auto itr = table.find(path.extension().string());
