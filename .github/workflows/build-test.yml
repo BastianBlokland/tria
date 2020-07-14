@@ -15,6 +15,15 @@ jobs:
             arch: x86_64,
             os: ubuntu,
             dist: xenial,
+            compiler: gcc7,
+            cc: gcc-7,
+            cxx: g++-7
+          }
+        - {
+            image: ubuntu-16.04,
+            arch: x86_64,
+            os: ubuntu,
+            dist: xenial,
             compiler: clang9,
             cc: clang-9,
             cxx: clang++-9
