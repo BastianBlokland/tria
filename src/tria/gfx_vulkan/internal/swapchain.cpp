@@ -74,8 +74,8 @@ namespace {
   createInfo.imageArrayLayers         = 1;
   createInfo.imageUsage               = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
 
-  std::array<uint32_t, 2> queueFamilyIndices = {device->getVkGraphicsQueueIdx(),
-                                                device->getVkPresentQueueIdx()};
+  std::array<uint32_t, 2> queueFamilyIndices = {
+      device->getVkGraphicsQueueIdx(), device->getVkPresentQueueIdx()};
   if (queueFamilyIndices[0] == queueFamilyIndices[1]) {
     createInfo.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
   } else {
@@ -90,7 +90,7 @@ namespace {
   createInfo.preTransform   = transformFlags;
   createInfo.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
   createInfo.presentMode    = presentMode;
-  createInfo.clipped        = VK_TRUE;
+  createInfo.clipped        = true;
   createInfo.oldSwapchain   = oldSwapchain;
 
   // Create a new swapchain.
@@ -196,7 +196,7 @@ auto Swapchain::acquireImage(VkRenderPass vkRenderPass, VkSemaphore imgAvailable
 
   uint32_t imgIndex;
   const auto result = vkAcquireNextImageKHR(
-      m_device->getVkDevice(), m_vkSwapchain, UINT64_MAX, imgAvailable, VK_NULL_HANDLE, &imgIndex);
+      m_device->getVkDevice(), m_vkSwapchain, UINT64_MAX, imgAvailable, nullptr, &imgIndex);
 
   switch (result) {
   case VK_ERROR_OUT_OF_DATE_KHR:

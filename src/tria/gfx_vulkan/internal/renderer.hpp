@@ -1,5 +1,6 @@
 #pragma once
 #include "device.hpp"
+#include "graphic.hpp"
 #include "tria/log/api.hpp"
 #include <vulkan/vulkan.h>
 
@@ -24,10 +25,18 @@ public:
    */
   [[nodiscard]] auto getImageFinished() const noexcept { return m_imgFinished; }
 
+  /* Wait until this rendering is ready to record a new frame.
+   */
+  auto waitUntilReady() -> void;
+
   /* Begin recording new draw commands to this renderer.
    * Note: Will block if the renderer is currently still rendering.
    */
   auto drawBegin(VkRenderPass vkRenderPass, VkFramebuffer vkFrameBuffer, VkExtent2D extent) -> void;
+
+  /* Record a single draw of the given graphic.
+   */
+  auto draw(const Graphic& graphic) -> void;
 
   /* Finish recordering draw commands and submit the work to the gpu.
    */

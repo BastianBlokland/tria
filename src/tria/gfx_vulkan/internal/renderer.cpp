@@ -102,6 +102,11 @@ Renderer::~Renderer() {
   vkDestroyFence(m_device->getVkDevice(), m_renderDone, nullptr);
 }
 
+auto Renderer::waitUntilReady() -> void {
+  // Wait for this renderer to be done executing on the gpu.
+  waitForDone();
+}
+
 auto Renderer::drawBegin(VkRenderPass vkRenderPass, VkFramebuffer vkFrameBuffer, VkExtent2D extent)
     -> void {
 
@@ -110,6 +115,12 @@ auto Renderer::drawBegin(VkRenderPass vkRenderPass, VkFramebuffer vkFrameBuffer,
 
   beginCommandBuffer(m_gfxVkCommandBuffer);
   beginRenderPass(m_gfxVkCommandBuffer, vkRenderPass, vkFrameBuffer, extent);
+}
+
+auto Renderer::draw(const Graphic& graphic) -> void {
+
+  vkCmdBindPipeline(m_gfxVkCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphic.getVkPipeline());
+  vkCmdDraw(m_gfxVkCommandBuffer, 3, 1, 0, 0);
 }
 
 auto Renderer::drawEnd() -> void {
@@ -122,13 +133,11 @@ auto Renderer::drawEnd() -> void {
 }
 
 auto Renderer::waitForDone() -> void {
-  std::array<VkFence, 1> fences = {m_renderDone};
-  vkWaitForFences(m_device->getVkDevice(), fences.size(), fences.data(), VK_TRUE, UINT64_MAX);
+  checkVkResult(vkWaitForFences(m_device->getVkDevice(), 1, &m_renderDone, true, UINT64_MAX));
 }
 
 auto Renderer::markNotDone() -> void {
-  std::array<VkFence, 1> fences = {m_renderDone};
-  vkResetFences(m_device->getVkDevice(), fences.size(), fences.data());
+  checkVkResult(vkResetFences(m_device->getVkDevice(), 1, &m_renderDone));
 }
 
 } // namespace tria::gfx::internal

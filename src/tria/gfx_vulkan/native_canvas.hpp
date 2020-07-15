@@ -1,5 +1,6 @@
 #pragma once
 #include "internal/device.hpp"
+#include "internal/graphic_manager.hpp"
 #include "internal/renderer.hpp"
 #include "internal/swapchain.hpp"
 #include "tria/log/api.hpp"
@@ -26,6 +27,10 @@ public:
    */
   [[nodiscard]] auto drawBegin() -> bool;
 
+  /* Record a draw with the given asset.
+   */
+  auto draw(const asset::Graphic* asset) -> void;
+
   /* Stop recording draw commands, execute the commands and present the result to the surface
    * (window).
    */
@@ -36,6 +41,7 @@ private:
   const NativeContext* m_context;
   const pal::Window* m_window;
   internal::DeviceUnique m_device;
+  internal::GraphicManagerUnique m_graphicManager;
   VkRenderPass m_vkRenderPass;
   internal::SwapchainUnique m_swapchain;
 

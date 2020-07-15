@@ -36,6 +36,8 @@ message(STATUS "Configuring gfx vulkan library")
 add_library(tria_gfx STATIC
   tria/gfx_vulkan/internal/debug_messenger.cpp
   tria/gfx_vulkan/internal/device.cpp
+  tria/gfx_vulkan/internal/graphic.cpp
+  tria/gfx_vulkan/internal/graphic_manager.cpp
   tria/gfx_vulkan/internal/renderer.cpp
   tria/gfx_vulkan/internal/swapchain.cpp
   tria/gfx_vulkan/internal/utils.cpp

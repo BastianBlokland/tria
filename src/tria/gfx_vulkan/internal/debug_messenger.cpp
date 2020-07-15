@@ -13,7 +13,7 @@ static auto vkDebugCallback(
 
   auto* messenger = static_cast<DebugMessenger*>(pUserData);
   messenger->handleMessage(messageSeverity, messageType, pCallbackData);
-  return VK_FALSE;
+  return false;
 }
 
 namespace {
