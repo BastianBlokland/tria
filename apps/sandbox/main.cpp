@@ -30,7 +30,7 @@ auto runApp(log::Logger& logger, pal::Platform& platform) -> int {
   auto assetDb    = asset::Database{&logger, pal::getCurExecutablePath().parent_path() / "data"};
   auto gfxContext = gfx::Context{&logger};
   auto mainWin    = platform.createWindow(512, 512);
-  auto mainCanvas = gfxContext.createCanvas(&mainWin, false);
+  auto mainCanvas = gfxContext.createCanvas(&mainWin, gfx::VSyncMode::Disable);
 
   const auto* triangle = assetDb.get("triangle.gfx")->downcast<asset::Graphic>();
   const auto* quad     = assetDb.get("quad.gfx")->downcast<asset::Graphic>();

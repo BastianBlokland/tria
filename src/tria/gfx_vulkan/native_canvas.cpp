@@ -62,7 +62,7 @@ namespace {
 } // namespace
 
 NativeCanvas::NativeCanvas(
-    log::Logger* logger, const NativeContext* context, const pal::Window* window, bool vSync) :
+    log::Logger* logger, const NativeContext* context, const pal::Window* window, VSyncMode vSync) :
     m_logger{logger},
     m_context{context},
     m_window{window},

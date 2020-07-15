@@ -4,6 +4,7 @@
 #include "internal/renderer.hpp"
 #include "internal/shader_manager.hpp"
 #include "internal/swapchain.hpp"
+#include "tria/gfx/context.hpp"
 #include "tria/log/api.hpp"
 #include "tria/pal/window.hpp"
 #include <array>
@@ -20,7 +21,10 @@ class NativeContext;
 class NativeCanvas final {
 public:
   NativeCanvas(
-      log::Logger* logger, const NativeContext* context, const pal::Window* window, bool vSync);
+      log::Logger* logger,
+      const NativeContext* context,
+      const pal::Window* window,
+      VSyncMode vSync);
   ~NativeCanvas();
 
   /* Begin recording draw commands.

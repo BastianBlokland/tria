@@ -1,4 +1,5 @@
 #pragma once
+#include "tria/gfx/context.hpp"
 #include "tria/log/api.hpp"
 #include <optional>
 #include <vector>
@@ -13,7 +14,7 @@ class Device;
  */
 class Swapchain final {
 public:
-  Swapchain(log::Logger* logger, const Device* device, bool vSync);
+  Swapchain(log::Logger* logger, const Device* device, VSyncMode vSync);
   ~Swapchain();
 
   [[nodiscard]] auto getExtent() const noexcept { return m_extent; }
@@ -40,7 +41,7 @@ public:
 private:
   log::Logger* m_logger;
   const Device* m_device;
-  bool m_vSync;
+  VSyncMode m_vSync;
   unsigned int m_imgCount;
   VkExtent2D m_extent;
   VkSwapchainKHR m_vkSwapchain;

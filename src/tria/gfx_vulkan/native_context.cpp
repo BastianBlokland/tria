@@ -108,7 +108,7 @@ NativeContext::~NativeContext() {
   LOG_I(m_logger, "Vulkan instance destroyed");
 }
 
-auto NativeContext::createCanvas(const pal::Window* window, bool vSync)
+auto NativeContext::createCanvas(const pal::Window* window, VSyncMode vSync)
     -> std::unique_ptr<NativeCanvas> {
   return std::make_unique<NativeCanvas>(m_logger, this, window, vSync);
 }

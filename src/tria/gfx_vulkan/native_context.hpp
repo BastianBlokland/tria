@@ -19,7 +19,7 @@ public:
 
   [[nodiscard]] auto getVkInstance() const noexcept { return m_vkInstance; }
 
-  [[nodiscard]] auto createCanvas(const pal::Window* window, bool vSync)
+  [[nodiscard]] auto createCanvas(const pal::Window* window, VSyncMode vSync)
       -> std::unique_ptr<NativeCanvas>;
 
 private:

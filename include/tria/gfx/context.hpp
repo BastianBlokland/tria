@@ -7,6 +7,8 @@ namespace tria::gfx {
 
 class NativeContext;
 
+enum class VSyncMode { Disable, Enable };
+
 /*
  * Abstraction over a graphics context.
  *
@@ -24,7 +26,7 @@ public:
 
   /* Create a canvas to render into that outputs to the given window.
    */
-  [[nodiscard]] auto createCanvas(const pal::Window* window, bool vSync) -> Canvas;
+  [[nodiscard]] auto createCanvas(const pal::Window* window, VSyncMode vSync) -> Canvas;
 
 private:
   std::unique_ptr<NativeContext> m_native;

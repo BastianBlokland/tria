@@ -34,10 +34,11 @@ namespace {
   }
 }
 
-[[nodiscard]] auto getPresentMode(const Device* device, bool vSync) noexcept -> VkPresentModeKHR {
+[[nodiscard]] auto getPresentMode(const Device* device, VSyncMode vSync) noexcept
+    -> VkPresentModeKHR {
   assert(device);
   const auto modes = getVkPresentModes(device->getVkPhysicalDevice(), device->getVkSurface());
-  if (!vSync) {
+  if (vSync == VSyncMode::Disable) {
     // Prefer mailbox.
     for (const auto& mode : modes) {
       if (mode == VK_PRESENT_MODE_MAILBOX_KHR) {
@@ -74,8 +75,8 @@ namespace {
   createInfo.imageArrayLayers         = 1;
   createInfo.imageUsage               = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
 
-  std::array<uint32_t, 2> queueFamilyIndices = {device->getVkGraphicsQueueIdx(),
-                                                device->getVkPresentQueueIdx()};
+  std::array<uint32_t, 2> queueFamilyIndices = {
+      device->getVkGraphicsQueueIdx(), device->getVkPresentQueueIdx()};
   if (queueFamilyIndices[0] == queueFamilyIndices[1]) {
     createInfo.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
   } else {
@@ -148,7 +149,7 @@ namespace {
 
 } // namespace
 
-Swapchain::Swapchain(log::Logger* logger, const Device* device, bool vSync) :
+Swapchain::Swapchain(log::Logger* logger, const Device* device, VSyncMode vSync) :
     m_logger{logger}, m_device{device}, m_vSync{vSync}, m_vkSwapchain{nullptr} {
   if (!m_device) {
     throw std::invalid_argument{"Device cannot be null"};
