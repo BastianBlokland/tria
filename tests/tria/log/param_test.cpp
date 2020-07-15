@@ -3,6 +3,10 @@
 #include <ctime>
 #include <string>
 
+#if defined(_WIN32)
+#define timezone _timezone
+#endif
+
 namespace tria::log::tests {
 
 namespace {
@@ -27,9 +31,7 @@ auto getRefTimeT(int year, int month, int day, int hour, int min, int sec) -> Ti
   t.tm_hour = hour;
   t.tm_min  = min;
   t.tm_sec  = sec;
-  auto time = std::mktime(&t);
-  std::localtime(&time);
-  return std::chrono::system_clock::from_time_t(time);
+  return std::chrono::system_clock::from_time_t(std::mktime(&t) - timezone);
 }
 
 } // namespace
@@ -63,13 +65,13 @@ TEST_CASE("[log] - Log parameters", "[log]") {
 
     CHECK(
         toStringPretty({"key", getRefTimeT(2020, 7, 13, 12, 36, 42)}) ==
-        "2020-07-13T10:36:42.000000Z");
+        "2020-07-13T12:36:42.000000Z");
     CHECK(
         toStringPretty({"key", getRefTimeT(2020, 7, 13, 12, 36, 42) + 1337ms}) ==
-        "2020-07-13T10:36:43.337000Z");
+        "2020-07-13T12:36:43.337000Z");
     CHECK(
         toStringPretty({"key", getRefTimeT(2020, 7, 13, 12, 36, 42) + 42us}) ==
-        "2020-07-13T10:36:42.000042Z");
+        "2020-07-13T12:36:42.000042Z");
 
     CHECK(toStringPretty({"key", MemSize{0}}) == "0 B");
     CHECK(toStringPretty({"key", MemSize{1024}}) == "1 KiB");
@@ -104,7 +106,7 @@ TEST_CASE("[log] - Log parameters", "[log]") {
 
     CHECK(
         toStringJson({"key", getRefTimeT(2020, 7, 13, 12, 36, 42)}) ==
-        "\"2020-07-13T10:36:42.000000Z\"");
+        "\"2020-07-13T12:36:42.000000Z\"");
 
     CHECK(toStringJson({"key", MemSize{1024UL * 1024}}) == "1048576");
   }

@@ -67,7 +67,7 @@ NativeCanvas::NativeCanvas(
   assert(m_context);
   assert(m_window);
 
-  m_device = getDevice(m_logger, context->getVkInstance(), window);
+  m_device = getDevice(m_logger, m_context->getVkInstance(), window);
   if (!m_device) {
     throw err::DriverErr{"No device found with vulkan support"};
   }

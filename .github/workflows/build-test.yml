@@ -1,0 +1,110 @@
+name: build-test
+
+on: [push]
+
+jobs:
+  build:
+    name: ${{matrix.config.image}}-${{matrix.config.arch}}-${{matrix.config.compiler}}
+    runs-on: ${{matrix.config.image}}
+    strategy:
+      fail-fast: false
+      matrix:
+        config:
+        - {
+            image: ubuntu-16.04,
+            arch: x86_64,
+            os: ubuntu,
+            dist: xenial,
+            compiler: gcc7,
+            cc: gcc-7,
+            cxx: g++-7
+          }
+        - {
+            image: ubuntu-16.04,
+            arch: x86_64,
+            os: ubuntu,
+            dist: xenial,
+            compiler: clang9,
+            cc: clang-9,
+            cxx: clang++-9
+          }
+        - {
+            image: windows-2019,
+            arch: x86_64,
+            os: windows,
+            compiler: vs2019,
+            generator: vs2019
+          }
+        - {
+            image: windows-2019,
+            arch: x86_64,
+            os: windows,
+            compiler: mingw-w64-7,
+            generator: MinGW
+          }
+    env:
+      CC: ${{matrix.config.cc}}
+      CXX: ${{matrix.config.cxx}}
+    steps:
+    - uses: actions/checkout@v1
+
+    - name: install-ubuntu
+      if: matrix.config.os == 'ubuntu'
+      run: |
+        readonly dist=${{matrix.config.dist}}
+        echo "Add llvm ppa";              sudo apt-add-repository \
+          "deb http://apt.llvm.org/${dist}/ llvm-toolchain-${dist}-9 main"
+        echo "Installing clang-tidy-9";   sudo apt install clang-tidy-9
+        echo "clang-tidy-9 --version:";   clang-tidy-9 --version
+
+        echo "Add lunarg ppa"
+        wget -qO - http://packages.lunarg.com/lunarg-signing-key-pub.asc | sudo apt-key add -
+        sudo wget -qO /etc/apt/sources.list.d/lunarg-vulkan-1.2.141-xenial.list \
+          http://packages.lunarg.com/vulkan/1.2.141/lunarg-vulkan-1.2.141-xenial.list
+        echo "Installing vulkan sdk"; sudo apt update; sudo apt install vulkan-sdk
+
+    - name: install-windows
+      if: matrix.config.os == 'windows'
+      run: |
+        echo "Installing Vulkan-Sdk"
+        choco install vulkan-sdk --version=1.2.141.0 --force --no-progress
+        echo "::set-env name=VULKAN_SDK::C:\\VulkanSDK\\1.2.141.0"
+        echo "::add-path::C:\\VulkanSDK\\1.2.141.0\Bin"
+
+    - name: install-mingw
+      if: matrix.config.generator == 'MinGW'
+      run: |
+        echo "Installing mingw-w64-7"
+        choco install mingw --version=7.3.0 --force --no-progress
+        echo "g++.exe --version:"
+        g++.exe --version
+
+    - name: configure-unix
+      if: matrix.config.os != 'windows'
+      run: ./scripts/configure.sh --type Release --tests --lint
+
+    - name: configure-windows
+      if: matrix.config.os == 'windows'
+      run: pwsh .\scripts\configure.ps1 -Gen ${{matrix.config.generator}} -Type Release -Tests
+
+    - name: build-unix
+      if: matrix.config.os != 'windows'
+      run: ./scripts/build.sh
+
+    - name: build-windows
+      if: matrix.config.os == 'windows'
+      run: pwsh .\scripts\build.ps1
+
+    - name: test-unix
+      if: matrix.config.os != 'windows'
+      run: ./scripts/test.sh
+
+    - name: test-windows
+      if: matrix.config.os == 'windows'
+      run: pwsh .\scripts\test.ps1
+
+    - name: archive
+      uses: actions/upload-artifact@v1
+      with:
+        name: ${{matrix.config.image}}-${{matrix.config.arch}}-${{matrix.config.compiler}}
+        path: bin
