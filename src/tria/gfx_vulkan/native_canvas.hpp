@@ -2,6 +2,7 @@
 #include "internal/device.hpp"
 #include "internal/graphic_manager.hpp"
 #include "internal/renderer.hpp"
+#include "internal/shader_manager.hpp"
 #include "internal/swapchain.hpp"
 #include "tria/log/api.hpp"
 #include "tria/pal/window.hpp"
@@ -41,6 +42,7 @@ private:
   const NativeContext* m_context;
   const pal::Window* m_window;
   internal::DeviceUnique m_device;
+  internal::ShaderManagerUnique m_shaderManager;
   internal::GraphicManagerUnique m_graphicManager;
   VkRenderPass m_vkRenderPass;
   internal::SwapchainUnique m_swapchain;

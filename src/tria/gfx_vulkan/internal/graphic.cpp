@@ -1,23 +1,13 @@
 #include "graphic.hpp"
-#include "renderer.hpp"
+#include "device.hpp"
+#include "shader_manager.hpp"
 #include "utils.hpp"
-#include "vulkan/vulkan_core.h"
 #include <array>
 #include <cassert>
 
 namespace tria::gfx::internal {
 
 namespace {
-
-[[nodiscard]] auto createShaderModule(VkDevice vkDevice, const asset::Shader& asset) {
-  VkShaderModuleCreateInfo createInfo = {};
-  createInfo.sType                    = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
-  createInfo.codeSize                 = asset.getSize();
-  createInfo.pCode                    = reinterpret_cast<const uint32_t*>(asset.getData());
-  VkShaderModule result;
-  checkVkResult(vkCreateShaderModule(vkDevice, &createInfo, nullptr, &result));
-  return result;
-}
 
 [[nodiscard]] auto createPipelineLayout(VkDevice vkDevice) {
   VkPipelineLayoutCreateInfo pipelineLayoutInfo = {};
@@ -32,23 +22,23 @@ namespace {
     VkDevice vkDevice,
     VkRenderPass vkRenderPass,
     VkPipelineLayout layout,
-    VkShaderModule vertShader,
-    VkShaderModule fragShader) {
+    const Shader& vertShader,
+    const Shader& fragShader) {
 
   VkPipelineShaderStageCreateInfo vertShaderStageInfo = {};
   vertShaderStageInfo.sType  = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
   vertShaderStageInfo.stage  = VK_SHADER_STAGE_VERTEX_BIT;
-  vertShaderStageInfo.module = vertShader;
+  vertShaderStageInfo.module = vertShader.getVkModule();
   vertShaderStageInfo.pName  = "main";
 
   VkPipelineShaderStageCreateInfo fragShaderStageInfo = {};
   fragShaderStageInfo.sType  = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
   fragShaderStageInfo.stage  = VK_SHADER_STAGE_FRAGMENT_BIT;
-  fragShaderStageInfo.module = fragShader;
+  fragShaderStageInfo.module = fragShader.getVkModule();
   fragShaderStageInfo.pName  = "main";
 
-  std::array<VkPipelineShaderStageCreateInfo, 2> shaderStages = {
-      vertShaderStageInfo, fragShaderStageInfo};
+  std::array<VkPipelineShaderStageCreateInfo, 2> shaderStages = {vertShaderStageInfo,
+                                                                 fragShaderStageInfo};
 
   VkPipelineVertexInputStateCreateInfo vertexInputInfo = {};
   vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
@@ -92,8 +82,8 @@ namespace {
   colorBlending.attachmentCount = 1;
   colorBlending.pAttachments    = &colorBlendAttachment;
 
-  std::array<VkDynamicState, 2> dynamicStates = {
-      VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR};
+  std::array<VkDynamicState, 2> dynamicStates       = {VK_DYNAMIC_STATE_VIEWPORT,
+                                                 VK_DYNAMIC_STATE_SCISSOR};
   VkPipelineDynamicStateCreateInfo dynamicStateInfo = {};
   dynamicStateInfo.sType             = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
   dynamicStateInfo.dynamicStateCount = dynamicStates.size();
@@ -125,31 +115,27 @@ namespace {
 Graphic::Graphic(
     log::Logger* logger,
     const Device* device,
+    ShaderManager* shaderManager,
     VkRenderPass vkRenderPass,
     const asset::Graphic* asset) :
     m_logger{logger}, m_device{device} {
   assert(device);
 
-  // Create shaders.
-  m_vertShader = createShaderModule(m_device->getVkDevice(), *asset->getVertShader());
-  m_fragShader = createShaderModule(m_device->getVkDevice(), *asset->getFragShader());
-
   // Create pipeline layout.
-  m_pipelineLayout = createPipelineLayout(m_device->getVkDevice());
+  m_vkPipelineLayout = createPipelineLayout(m_device->getVkDevice());
 
   // Create pipeline.
-  m_pipeline = createPipeline(
-      m_device->getVkDevice(), vkRenderPass, m_pipelineLayout, m_vertShader, m_fragShader);
+  const auto& vertShader = shaderManager->getShader(asset->getVertShader());
+  const auto& fragShader = shaderManager->getShader(asset->getFragShader());
+  m_vkPipeline           = createPipeline(
+      m_device->getVkDevice(), vkRenderPass, m_vkPipelineLayout, vertShader, fragShader);
 
   LOG_D(m_logger, "Graphic pipline created", {"asset", asset->getId()});
 }
 
 Graphic::~Graphic() {
-  vkDestroyPipeline(m_device->getVkDevice(), m_pipeline, nullptr);
-  vkDestroyPipelineLayout(m_device->getVkDevice(), m_pipelineLayout, nullptr);
-
-  vkDestroyShaderModule(m_device->getVkDevice(), m_vertShader, nullptr);
-  vkDestroyShaderModule(m_device->getVkDevice(), m_fragShader, nullptr);
+  vkDestroyPipeline(m_device->getVkDevice(), m_vkPipeline, nullptr);
+  vkDestroyPipelineLayout(m_device->getVkDevice(), m_vkPipelineLayout, nullptr);
 }
 
 } // namespace tria::gfx::internal

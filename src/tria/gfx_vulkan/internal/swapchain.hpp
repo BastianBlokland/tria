@@ -1,11 +1,12 @@
 #pragma once
-#include "device.hpp"
 #include "tria/log/api.hpp"
 #include <optional>
 #include <vector>
 #include <vulkan/vulkan.h>
 
 namespace tria::gfx::internal {
+
+class Device;
 
 /*
  * Swapchain is responsible for managing the images that are presented to the surface (window).

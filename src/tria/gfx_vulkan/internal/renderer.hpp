@@ -1,10 +1,11 @@
 #pragma once
-#include "device.hpp"
 #include "graphic.hpp"
 #include "tria/log/api.hpp"
 #include <vulkan/vulkan.h>
 
 namespace tria::gfx::internal {
+
+class Device;
 
 /*
  * Renderer is a handle to submit work to the gpu.

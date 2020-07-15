@@ -1,10 +1,10 @@
 #include "swapchain.hpp"
+#include "device.hpp"
 #include "utils.hpp"
 #include <array>
 #include <cassert>
 #include <cstdint>
 #include <stdexcept>
-#include <vulkan/vulkan_core.h>
 
 namespace tria::gfx::internal {
 
@@ -74,8 +74,8 @@ namespace {
   createInfo.imageArrayLayers         = 1;
   createInfo.imageUsage               = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
 
-  std::array<uint32_t, 2> queueFamilyIndices = {
-      device->getVkGraphicsQueueIdx(), device->getVkPresentQueueIdx()};
+  std::array<uint32_t, 2> queueFamilyIndices = {device->getVkGraphicsQueueIdx(),
+                                                device->getVkPresentQueueIdx()};
   if (queueFamilyIndices[0] == queueFamilyIndices[1]) {
     createInfo.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
   } else {

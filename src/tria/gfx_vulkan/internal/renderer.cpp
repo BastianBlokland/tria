@@ -1,4 +1,5 @@
 #include "renderer.hpp"
+#include "device.hpp"
 #include "utils.hpp"
 #include <array>
 #include <cassert>

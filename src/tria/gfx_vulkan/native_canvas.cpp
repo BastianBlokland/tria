@@ -76,7 +76,9 @@ NativeCanvas::NativeCanvas(
     throw err::DriverErr{"No device found with vulkan support"};
   }
 
-  m_graphicManager = std::make_unique<GraphicManager>(m_logger, m_device.get());
+  m_shaderManager = std::make_unique<ShaderManager>(m_logger, m_device.get());
+  m_graphicManager =
+      std::make_unique<GraphicManager>(m_logger, m_device.get(), m_shaderManager.get());
 
   m_vkRenderPass = createVkRenderPass(m_device.get());
 
@@ -92,6 +94,7 @@ NativeCanvas::~NativeCanvas() {
     m_renderers[i] = nullptr;
   }
   m_graphicManager = nullptr;
+  m_shaderManager  = nullptr;
   m_swapchain      = nullptr;
   vkDestroyRenderPass(m_device->getVkDevice(), m_vkRenderPass, nullptr);
   m_device = nullptr;
