@@ -67,13 +67,13 @@ jobs:
       if: matrix.config.os == 'windows'
       run: |
         echo "Installing Vulkan-Sdk"
-        choco install vulkan-sdk --version=1.2.141.0 --force
+        choco install vulkan-sdk --version=1.2.141.0 --force --no-progress
 
     - name: install-mingw
       if: matrix.config.generator == 'MinGW'
       run: |
         echo "Installing mingw-w64-7"
-        choco install mingw --version=7.3.0 --force
+        choco install mingw --version=7.3.0 --force --no-progress
         echo "g++.exe --version:"
         g++.exe --version
 
