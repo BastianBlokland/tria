@@ -138,13 +138,13 @@ auto NativeCanvas::drawBegin() -> bool {
   return true;
 }
 
-auto NativeCanvas::draw(const asset::Graphic* asset) -> void {
+auto NativeCanvas::draw(const asset::Graphic* asset, uint16_t vertexCount) -> void {
   if (!m_curSwapchainImgIdx) {
     throw err::SyncErr{"Unable record a draw: no draw active"};
   }
 
   const auto& graphic = m_graphicManager->getGraphic(asset, m_vkRenderPass);
-  getCurRenderer().draw(graphic);
+  getCurRenderer().draw(graphic, vertexCount);
 }
 
 auto NativeCanvas::drawEnd() -> void {

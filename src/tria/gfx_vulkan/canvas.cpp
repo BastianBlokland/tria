@@ -9,7 +9,9 @@ Canvas::~Canvas() = default;
 
 auto Canvas::drawBegin() -> bool { return m_native->drawBegin(); }
 
-auto Canvas::draw(const asset::Graphic* asset) -> void { m_native->draw(asset); }
+auto Canvas::draw(const asset::Graphic* asset, uint16_t vertexCount) -> void {
+  m_native->draw(asset, vertexCount);
+}
 
 auto Canvas::drawEnd() -> void { m_native->drawEnd(); }
 

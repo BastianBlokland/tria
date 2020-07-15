@@ -139,10 +139,10 @@ auto Renderer::drawBegin(VkRenderPass vkRenderPass, VkFramebuffer vkFrameBuffer,
   setScissor(m_gfxVkCommandBuffer, extent);
 }
 
-auto Renderer::draw(const Graphic& graphic) -> void {
+auto Renderer::draw(const Graphic& graphic, uint16_t vertexCount) -> void {
 
   vkCmdBindPipeline(m_gfxVkCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphic.getVkPipeline());
-  vkCmdDraw(m_gfxVkCommandBuffer, 3, 1, 0, 0);
+  vkCmdDraw(m_gfxVkCommandBuffer, vertexCount, 1, 0, 0);
 }
 
 auto Renderer::drawEnd() -> void {

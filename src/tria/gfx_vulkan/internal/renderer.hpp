@@ -37,7 +37,7 @@ public:
 
   /* Record a single draw of the given graphic.
    */
-  auto draw(const Graphic& graphic) -> void;
+  auto draw(const Graphic& graphic, uint16_t vertexCount) -> void;
 
   /* Finish recordering draw commands and submit the work to the gpu.
    */

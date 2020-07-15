@@ -33,6 +33,7 @@ auto runApp(log::Logger& logger, pal::Platform& platform) -> int {
   auto mainCanvas = gfxContext.createCanvas(&mainWin, false);
 
   const auto* triangle = assetDb.get("triangle.gfx")->downcast<asset::Graphic>();
+  const auto* quad     = assetDb.get("quad.gfx")->downcast<asset::Graphic>();
 
   auto frameBegin = Clock::now();
   while (!mainWin.getIsCloseRequested() && !pal::isInterruptRequested()) {
@@ -41,7 +42,8 @@ auto runApp(log::Logger& logger, pal::Platform& platform) -> int {
     platform.handleEvents();
 
     if (mainCanvas.drawBegin()) {
-      mainCanvas.draw(triangle);
+      mainCanvas.draw(triangle, 3);
+      mainCanvas.draw(quad, 6);
       mainCanvas.drawEnd();
     } else {
       // Unable to draw, possibly due to a minimized window.
