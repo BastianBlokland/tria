@@ -1,10 +1,10 @@
 #include "swapchain.hpp"
+#include "device.hpp"
 #include "utils.hpp"
 #include <array>
 #include <cassert>
 #include <cstdint>
 #include <stdexcept>
-#include <vulkan/vulkan_core.h>
 
 namespace tria::gfx::internal {
 
@@ -34,10 +34,11 @@ namespace {
   }
 }
 
-[[nodiscard]] auto getPresentMode(const Device* device, bool vSync) noexcept -> VkPresentModeKHR {
+[[nodiscard]] auto getPresentMode(const Device* device, VSyncMode vSync) noexcept
+    -> VkPresentModeKHR {
   assert(device);
   const auto modes = getVkPresentModes(device->getVkPhysicalDevice(), device->getVkSurface());
-  if (!vSync) {
+  if (vSync == VSyncMode::Disable) {
     // Prefer mailbox.
     for (const auto& mode : modes) {
       if (mode == VK_PRESENT_MODE_MAILBOX_KHR) {
@@ -74,8 +75,8 @@ namespace {
   createInfo.imageArrayLayers         = 1;
   createInfo.imageUsage               = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
 
-  std::array<uint32_t, 2> queueFamilyIndices = {device->getVkGraphicsQueueIdx(),
-                                                device->getVkPresentQueueIdx()};
+  std::array<uint32_t, 2> queueFamilyIndices = {
+      device->getVkGraphicsQueueIdx(), device->getVkPresentQueueIdx()};
   if (queueFamilyIndices[0] == queueFamilyIndices[1]) {
     createInfo.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
   } else {
@@ -90,7 +91,7 @@ namespace {
   createInfo.preTransform   = transformFlags;
   createInfo.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
   createInfo.presentMode    = presentMode;
-  createInfo.clipped        = VK_TRUE;
+  createInfo.clipped        = true;
   createInfo.oldSwapchain   = oldSwapchain;
 
   // Create a new swapchain.
@@ -148,7 +149,7 @@ namespace {
 
 } // namespace
 
-Swapchain::Swapchain(log::Logger* logger, const Device* device, bool vSync) :
+Swapchain::Swapchain(log::Logger* logger, const Device* device, VSyncMode vSync) :
     m_logger{logger}, m_device{device}, m_vSync{vSync}, m_vkSwapchain{nullptr} {
   if (!m_device) {
     throw std::invalid_argument{"Device cannot be null"};
@@ -194,9 +195,14 @@ auto Swapchain::acquireImage(VkRenderPass vkRenderPass, VkSemaphore imgAvailable
     }
   }
 
+  // Fail to acquire an image if the extent is 0 (can happen if the window is minized).
+  if (m_extent.width == 0 || m_extent.height == 0) {
+    return std::nullopt;
+  }
+
   uint32_t imgIndex;
   const auto result = vkAcquireNextImageKHR(
-      m_device->getVkDevice(), m_vkSwapchain, UINT64_MAX, imgAvailable, VK_NULL_HANDLE, &imgIndex);
+      m_device->getVkDevice(), m_vkSwapchain, UINT64_MAX, imgAvailable, nullptr, &imgIndex);
 
   switch (result) {
   case VK_ERROR_OUT_OF_DATE_KHR:

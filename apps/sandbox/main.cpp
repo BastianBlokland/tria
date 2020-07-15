@@ -1,3 +1,4 @@
+#include "tria/asset/database.hpp"
 #include "tria/gfx/context.hpp"
 #include "tria/log/api.hpp"
 #include "tria/pal/interrupt.hpp"
@@ -26,9 +27,13 @@ auto operator<<(std::ostream& out, const Duration& rhs) -> std::ostream& {
 
 auto runApp(log::Logger& logger, pal::Platform& platform) -> int {
 
+  auto assetDb    = asset::Database{&logger, pal::getCurExecutablePath().parent_path() / "data"};
   auto gfxContext = gfx::Context{&logger};
   auto mainWin    = platform.createWindow(512, 512);
-  auto mainCanvas = gfxContext.createCanvas(&mainWin, false);
+  auto mainCanvas = gfxContext.createCanvas(&mainWin, gfx::VSyncMode::Disable);
+
+  const auto* triangle = assetDb.get("triangle.gfx")->downcast<asset::Graphic>();
+  const auto* quad     = assetDb.get("quad.gfx")->downcast<asset::Graphic>();
 
   auto frameBegin = Clock::now();
   while (!mainWin.getIsCloseRequested() && !pal::isInterruptRequested()) {
@@ -37,7 +42,8 @@ auto runApp(log::Logger& logger, pal::Platform& platform) -> int {
     platform.handleEvents();
 
     if (mainCanvas.drawBegin()) {
-      // Do some actual drawing here :)
+      mainCanvas.draw(triangle, 3);
+      mainCanvas.draw(quad, 6);
       mainCanvas.drawEnd();
     } else {
       // Unable to draw, possibly due to a minimized window.

@@ -1,4 +1,5 @@
 #include "renderer.hpp"
+#include "device.hpp"
 #include "utils.hpp"
 #include <array>
 #include <cassert>
@@ -78,6 +79,24 @@ auto beginRenderPass(
   vkCmdBeginRenderPass(vkCommandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 }
 
+auto setViewport(VkCommandBuffer vkCommandBuffer, VkExtent2D extent) -> void {
+  VkViewport viewport = {};
+  viewport.x          = 0.0f;
+  viewport.y          = 0.0f;
+  viewport.width      = static_cast<float>(extent.width);
+  viewport.height     = static_cast<float>(extent.height);
+  viewport.minDepth   = 0.0f;
+  viewport.maxDepth   = 1.0f;
+  vkCmdSetViewport(vkCommandBuffer, 0, 1, &viewport);
+}
+
+auto setScissor(VkCommandBuffer vkCommandBuffer, VkExtent2D extent) -> void {
+  VkRect2D scissor = {};
+  scissor.offset   = {0, 0};
+  scissor.extent   = extent;
+  vkCmdSetScissor(vkCommandBuffer, 0, 1, &scissor);
+}
+
 } // namespace
 
 Renderer::Renderer(const Device* device) : m_device{device} {
@@ -102,6 +121,11 @@ Renderer::~Renderer() {
   vkDestroyFence(m_device->getVkDevice(), m_renderDone, nullptr);
 }
 
+auto Renderer::waitUntilReady() -> void {
+  // Wait for this renderer to be done executing on the gpu.
+  waitForDone();
+}
+
 auto Renderer::drawBegin(VkRenderPass vkRenderPass, VkFramebuffer vkFrameBuffer, VkExtent2D extent)
     -> void {
 
@@ -110,6 +134,15 @@ auto Renderer::drawBegin(VkRenderPass vkRenderPass, VkFramebuffer vkFrameBuffer,
 
   beginCommandBuffer(m_gfxVkCommandBuffer);
   beginRenderPass(m_gfxVkCommandBuffer, vkRenderPass, vkFrameBuffer, extent);
+
+  setViewport(m_gfxVkCommandBuffer, extent);
+  setScissor(m_gfxVkCommandBuffer, extent);
+}
+
+auto Renderer::draw(const Graphic& graphic, uint16_t vertexCount) -> void {
+
+  vkCmdBindPipeline(m_gfxVkCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphic.getVkPipeline());
+  vkCmdDraw(m_gfxVkCommandBuffer, vertexCount, 1, 0, 0);
 }
 
 auto Renderer::drawEnd() -> void {
@@ -122,13 +155,11 @@ auto Renderer::drawEnd() -> void {
 }
 
 auto Renderer::waitForDone() -> void {
-  std::array<VkFence, 1> fences = {m_renderDone};
-  vkWaitForFences(m_device->getVkDevice(), fences.size(), fences.data(), VK_TRUE, UINT64_MAX);
+  checkVkResult(vkWaitForFences(m_device->getVkDevice(), 1, &m_renderDone, true, UINT64_MAX));
 }
 
 auto Renderer::markNotDone() -> void {
-  std::array<VkFence, 1> fences = {m_renderDone};
-  vkResetFences(m_device->getVkDevice(), fences.size(), fences.data());
+  checkVkResult(vkResetFences(m_device->getVkDevice(), 1, &m_renderDone));
 }
 
 } // namespace tria::gfx::internal

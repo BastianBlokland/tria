@@ -1,7 +1,10 @@
 #pragma once
 #include "internal/device.hpp"
+#include "internal/graphic_manager.hpp"
 #include "internal/renderer.hpp"
+#include "internal/shader_manager.hpp"
 #include "internal/swapchain.hpp"
+#include "tria/gfx/context.hpp"
 #include "tria/log/api.hpp"
 #include "tria/pal/window.hpp"
 #include <array>
@@ -18,13 +21,20 @@ class NativeContext;
 class NativeCanvas final {
 public:
   NativeCanvas(
-      log::Logger* logger, const NativeContext* context, const pal::Window* window, bool vSync);
+      log::Logger* logger,
+      const NativeContext* context,
+      const pal::Window* window,
+      VSyncMode vSync);
   ~NativeCanvas();
 
   /* Begin recording draw commands.
    * Returns: false if we failed to begin recordering (for example because the window is minimized).
    */
   [[nodiscard]] auto drawBegin() -> bool;
+
+  /* Record a draw with the given asset.
+   */
+  auto draw(const asset::Graphic* asset, uint16_t vertexCount) -> void;
 
   /* Stop recording draw commands, execute the commands and present the result to the surface
    * (window).
@@ -36,6 +46,8 @@ private:
   const NativeContext* m_context;
   const pal::Window* m_window;
   internal::DeviceUnique m_device;
+  internal::ShaderManagerUnique m_shaderManager;
+  internal::GraphicManagerUnique m_graphicManager;
   VkRenderPass m_vkRenderPass;
   internal::SwapchainUnique m_swapchain;
 

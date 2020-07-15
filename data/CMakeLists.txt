@@ -54,13 +54,15 @@ endfunction(configure_plainfiles)
 # Shaders.
 message(STATUS "Configuring shaders")
 configure_shaders(
-  triangle.vert
-  triangle.frag)
+  plain.frag
+  quad.vert
+  triangle.vert)
 
 # Plain files
 message(STATUS "Configuring plain files")
 configure_plainfiles(
-  triangle.gfx)
+  triangle.gfx
+  quad.gfx)
 
 # Wrapper dependency that depends on all types of data.
 add_custom_target(tria_data)

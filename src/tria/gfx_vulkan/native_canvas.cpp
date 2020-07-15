@@ -62,8 +62,12 @@ namespace {
 } // namespace
 
 NativeCanvas::NativeCanvas(
-    log::Logger* logger, const NativeContext* context, const pal::Window* window, bool vSync) :
-    m_logger{logger}, m_context{context}, m_window{window}, m_curSwapchainImgIdx{std::nullopt} {
+    log::Logger* logger, const NativeContext* context, const pal::Window* window, VSyncMode vSync) :
+    m_logger{logger},
+    m_context{context},
+    m_window{window},
+    m_frontRenderer{false},
+    m_curSwapchainImgIdx{std::nullopt} {
   assert(m_context);
   assert(m_window);
 
@@ -71,6 +75,10 @@ NativeCanvas::NativeCanvas(
   if (!m_device) {
     throw err::DriverErr{"No device found with vulkan support"};
   }
+
+  m_shaderManager = std::make_unique<ShaderManager>(m_logger, m_device.get());
+  m_graphicManager =
+      std::make_unique<GraphicManager>(m_logger, m_device.get(), m_shaderManager.get());
 
   m_vkRenderPass = createVkRenderPass(m_device.get());
 
@@ -85,7 +93,9 @@ NativeCanvas::~NativeCanvas() {
   for (auto i = 0U; i != m_renderers.size(); ++i) {
     m_renderers[i] = nullptr;
   }
-  m_swapchain = nullptr;
+  m_graphicManager = nullptr;
+  m_shaderManager  = nullptr;
+  m_swapchain      = nullptr;
   vkDestroyRenderPass(m_device->getVkDevice(), m_vkRenderPass, nullptr);
   m_device = nullptr;
 }
@@ -108,6 +118,9 @@ auto NativeCanvas::drawBegin() -> bool {
   cycleRenderer();
   auto& curRenderer = getCurRenderer();
 
+  // Wait until this renderer is ready to record a new frame.
+  curRenderer.waitUntilReady();
+
   // Acquire an image to render into.
   const auto swapImgIdx =
       m_swapchain->acquireImage(m_vkRenderPass, curRenderer.getImageAvailable(), winHasResized);
@@ -123,6 +136,15 @@ auto NativeCanvas::drawBegin() -> bool {
       m_swapchain->getExtent());
 
   return true;
+}
+
+auto NativeCanvas::draw(const asset::Graphic* asset, uint16_t vertexCount) -> void {
+  if (!m_curSwapchainImgIdx) {
+    throw err::SyncErr{"Unable record a draw: no draw active"};
+  }
+
+  const auto& graphic = m_graphicManager->getGraphic(asset, m_vkRenderPass);
+  getCurRenderer().draw(graphic, vertexCount);
 }
 
 auto NativeCanvas::drawEnd() -> void {
