@@ -194,6 +194,11 @@ auto Swapchain::acquireImage(VkRenderPass vkRenderPass, VkSemaphore imgAvailable
     }
   }
 
+  // Fail to acquire an image if the extent is 0 (can happen if the window is minized).
+  if (m_extent.width == 0 || m_extent.height == 0) {
+    return std::nullopt;
+  }
+
   uint32_t imgIndex;
   const auto result = vkAcquireNextImageKHR(
       m_device->getVkDevice(), m_vkSwapchain, UINT64_MAX, imgAvailable, nullptr, &imgIndex);

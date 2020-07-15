@@ -1,6 +1,7 @@
 #include "graphic.hpp"
 #include "renderer.hpp"
 #include "utils.hpp"
+#include "vulkan/vulkan_core.h"
 #include <array>
 #include <cassert>
 
@@ -56,21 +57,9 @@ namespace {
   inputAssembly.sType    = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
   inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
 
+  // Note: viewport and scissor are set dynamically at draw time.
   VkViewport viewport = {};
-  viewport.x          = 0.0f;
-  viewport.y          = 0.0f;
-  viewport.width      = 512;
-  viewport.height     = 512;
-  viewport.minDepth   = 0.0f;
-  viewport.maxDepth   = 1.0f;
-
-  VkExtent2D extent = {};
-  extent.width      = 512;
-  extent.height     = 512;
-
-  VkRect2D scissor = {};
-  scissor.offset   = {0, 0};
-  scissor.extent   = extent;
+  VkRect2D scissor    = {};
 
   VkPipelineViewportStateCreateInfo viewportState = {};
   viewportState.sType         = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
@@ -103,6 +92,13 @@ namespace {
   colorBlending.attachmentCount = 1;
   colorBlending.pAttachments    = &colorBlendAttachment;
 
+  std::array<VkDynamicState, 2> dynamicStates = {
+      VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR};
+  VkPipelineDynamicStateCreateInfo dynamicStateInfo = {};
+  dynamicStateInfo.sType             = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
+  dynamicStateInfo.dynamicStateCount = dynamicStates.size();
+  dynamicStateInfo.pDynamicStates    = dynamicStates.data();
+
   VkGraphicsPipelineCreateInfo pipelineInfo = {};
   pipelineInfo.sType                        = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
   pipelineInfo.stageCount                   = shaderStages.size();
@@ -114,7 +110,7 @@ namespace {
   pipelineInfo.pMultisampleState            = &multisampling;
   pipelineInfo.pDepthStencilState           = nullptr;
   pipelineInfo.pColorBlendState             = &colorBlending;
-  pipelineInfo.pDynamicState                = nullptr;
+  pipelineInfo.pDynamicState                = &dynamicStateInfo;
   pipelineInfo.layout                       = layout;
   pipelineInfo.renderPass                   = vkRenderPass;
   pipelineInfo.subpass                      = 0;
