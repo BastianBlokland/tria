@@ -68,6 +68,8 @@ jobs:
       run: |
         echo "Installing Vulkan-Sdk"
         choco install vulkan-sdk --version=1.2.141.0 --force --no-progress
+        refreshenv
+        echo "VULKAN_SDK: $VULKAN_SDK"
 
     - name: install-mingw
       if: matrix.config.generator == 'MinGW'
