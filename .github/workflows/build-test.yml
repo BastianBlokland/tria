@@ -68,8 +68,8 @@ jobs:
       run: |
         echo "Installing Vulkan-Sdk"
         choco install vulkan-sdk --version=1.2.141.0 --force --no-progress
-        refreshenv
-        echo "VULKAN_SDK: $VULKAN_SDK"
+        echo "::set-env name=VULKAN_SDK::C:\\VulkanSDK\\1.2.141.0"
+        echo "::add-path::C:\\VulkanSDK\\1.2.141.0\Bin"
 
     - name: install-mingw
       if: matrix.config.generator == 'MinGW'
@@ -86,8 +86,6 @@ jobs:
     - name: configure-windows
       if: matrix.config.os == 'windows'
       run: pwsh .\scripts\configure.ps1 -Gen ${{matrix.config.generator}} -Type Release -Tests
-      env:
-        VULKAN_SDK: "C:\\VulkanSDK\\1.2.141.2"
 
     - name: build-unix
       if: matrix.config.os != 'windows'
