@@ -38,15 +38,16 @@ auto main(int /*unused*/, char* * /*unused*/) -> int {
   pal::setThreadName("tria_main_thread");
   pal::setupInterruptHandler();
 
-  auto logger   = log::Logger{log::makeConsolePrettySink(), log::makeFileJsonSink("sandbox.log")};
-  auto platform = pal::Platform{&logger};
-  auto db       = asset::Database{&logger, pal::getCurExecutablePath().parent_path() / "data"};
-  auto gfx      = gfx::Context{&logger};
-
-  LOG_I(&logger, "Sandbox startup");
+  auto logger = log::Logger{log::makeConsolePrettySink(), log::makeFileJsonSink("sandbox.log")};
 
   int ret;
   try {
+    auto platform = pal::Platform{&logger};
+    auto db       = asset::Database{&logger, pal::getCurExecutablePath().parent_path() / "data"};
+    auto gfx      = gfx::Context{&logger};
+
+    LOG_I(&logger, "Sandbox startup");
+
     ret = runApp(platform, db, gfx);
   } catch (const std::exception& e) {
     LOG_E(&logger, "Uncaught exception", {"what", e.what()});
