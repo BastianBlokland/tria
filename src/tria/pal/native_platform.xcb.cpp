@@ -46,16 +46,16 @@ auto NativePlatform::handleEvents() -> void {
         break;
       }
 
-      if (configMsg->width != winData->width || configMsg->height != winData->height) {
+      const auto newSize = WindowSize{configMsg->width, configMsg->height};
+      if (newSize != winData->size) {
         LOG_D(
             m_logger,
             "Window resized",
             {"id", configMsg->window},
-            {"width", configMsg->width},
-            {"height", configMsg->height});
+            {"width", newSize.x()},
+            {"height", newSize.y()});
       }
-      winData->width  = configMsg->width;
-      winData->height = configMsg->height;
+      winData->size = newSize;
     } break;
     default:
       // Unknown event.
@@ -65,18 +65,18 @@ auto NativePlatform::handleEvents() -> void {
   }
 }
 
-auto NativePlatform::createWindow(uint16_t width, uint16_t height) -> Window {
+auto NativePlatform::createWindow(WindowSize size) -> Window {
 
   const auto winId    = xcb_generate_id(m_xcbCon);
   const auto eventMsk = XCB_CW_BACK_PIXEL | XCB_CW_EVENT_MASK;
   const auto valList =
       std::array<uint32_t, 2>{m_xcbScreen->black_pixel, XCB_EVENT_MASK_STRUCTURE_NOTIFY};
 
-  if (width == 0) {
-    width = m_xcbScreen->width_in_pixels;
+  if (size.x() == 0) {
+    size.x() = m_xcbScreen->width_in_pixels;
   }
-  if (height == 0) {
-    height = m_xcbScreen->height_in_pixels;
+  if (size.y() == 0) {
+    size.y() = m_xcbScreen->height_in_pixels;
   }
 
   // Create a window on the xcb side.
@@ -87,8 +87,8 @@ auto NativePlatform::createWindow(uint16_t width, uint16_t height) -> Window {
       m_xcbScreen->root,
       0,
       0,
-      width,
-      height,
+      size.x(),
+      size.y(),
       0,
       XCB_WINDOW_CLASS_INPUT_OUTPUT,
       m_xcbScreen->root_visual,
@@ -103,10 +103,10 @@ auto NativePlatform::createWindow(uint16_t width, uint16_t height) -> Window {
   xcb_map_window(m_xcbCon, winId);
   xcb_flush(m_xcbCon);
 
-  LOG_I(m_logger, "Window created", {"id", winId}, {"width", width}, {"height", height});
+  LOG_I(m_logger, "Window created", {"id", winId}, {"width", size.x()}, {"height", size.y()});
 
   // Keep track of the window data.
-  m_windows.insert({winId, WindowData{winId, width, height}});
+  m_windows.insert({winId, WindowData{winId, size}});
 
   // Return a handle to the window.
   return Window{this, winId};
@@ -141,8 +141,8 @@ auto NativePlatform::setWinTitle(WindowId id, std::string_view title) noexcept -
   xcb_flush(m_xcbCon);
 }
 
-auto NativePlatform::setWinSize(WindowId id, uint16_t width, uint16_t height) noexcept -> void {
-  const auto valList = std::array<uint32_t, 2>{width, height};
+auto NativePlatform::setWinSize(WindowId id, const WindowSize size) noexcept -> void {
+  const auto valList = std::array<uint32_t, 2>{size.x(), size.y()};
   xcb_configure_window(
       m_xcbCon, id, XCB_CONFIG_WINDOW_WIDTH | XCB_CONFIG_WINDOW_HEIGHT, valList.data());
 
@@ -151,8 +151,7 @@ auto NativePlatform::setWinSize(WindowId id, uint16_t width, uint16_t height) no
   // Update local information immediately.
   auto* win = getWindow(id);
   assert(win);
-  win->width  = width;
-  win->height = height;
+  win->size = size;
 }
 
 auto NativePlatform::xcbSetup() -> void {

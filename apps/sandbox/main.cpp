@@ -1,5 +1,6 @@
 #include "tria/asset/database.hpp"
 #include "tria/gfx/context.hpp"
+#include "tria/math/vec.hpp"
 #include "tria/pal/interrupt.hpp"
 #include "tria/pal/platform.hpp"
 #include "tria/pal/utils.hpp"
@@ -10,7 +11,7 @@ using namespace tria;
 
 auto runApp(pal::Platform& platform, asset::Database& db, gfx::Context& gfx) {
 
-  auto win    = platform.createWindow(512, 512);
+  auto win    = platform.createWindow({512, 512});
   auto canvas = gfx.createCanvas(&win, gfx::VSyncMode::Disable);
 
   const auto* triangle = db.get("triangle.gfx")->downcast<asset::Graphic>();
@@ -19,7 +20,7 @@ auto runApp(pal::Platform& platform, asset::Database& db, gfx::Context& gfx) {
   while (!win.getIsCloseRequested() && !pal::isInterruptRequested()) {
     platform.handleEvents();
 
-    if (canvas.drawBegin()) {
+    if (canvas.drawBegin(math::color::olive())) {
       canvas.draw(triangle, 3);
       canvas.draw(quad, 6);
       canvas.drawEnd();

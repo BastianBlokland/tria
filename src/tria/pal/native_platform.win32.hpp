@@ -17,23 +17,16 @@ struct WindowData {
   HWND handle;
   std::string className;
   DWORD dwStyle;
-  uint16_t width;
-  uint16_t height;
+  WindowSize size;
   bool isCloseRequested;
 
   WindowData(
-      WindowId id,
-      HWND handle,
-      std::string className,
-      DWORD dwStyle,
-      uint16_t width,
-      uint16_t height) noexcept :
+      WindowId id, HWND handle, std::string className, DWORD dwStyle, WindowSize size) noexcept :
       id{id},
       handle{handle},
       className{std::move(className)},
       dwStyle{dwStyle},
-      width{width},
-      height{height},
+      size{size},
       isCloseRequested{false} {}
 };
 
@@ -56,29 +49,23 @@ public:
     return win->isCloseRequested;
   }
 
-  [[nodiscard]] auto getWinWidth(WindowId id) const noexcept -> uint16_t {
+  [[nodiscard]] auto getWinSize(WindowId id) const noexcept -> WindowSize {
     auto* win = getWindow(id);
     assert(win);
-    return win->width;
-  }
-
-  [[nodiscard]] auto getWinHeight(WindowId id) const noexcept -> uint16_t {
-    auto* win = getWindow(id);
-    assert(win);
-    return win->height;
+    return win->size;
   }
 
   [[nodiscard]] auto getHWnd(WindowId id) const noexcept -> HWND { return getWindow(id)->handle; }
 
   auto handleEvents() -> void;
 
-  auto createWindow(uint16_t width, uint16_t height) -> Window;
+  auto createWindow(WindowSize size) -> Window;
 
   auto destroyWindow(WindowId id) noexcept -> void;
 
   auto setWinTitle(WindowId id, std::string_view title) noexcept -> void;
 
-  auto setWinSize(WindowId id, uint16_t width, uint16_t height) noexcept -> void;
+  auto setWinSize(WindowId id, WindowSize size) noexcept -> void;
 
 private:
   log::Logger* m_logger;

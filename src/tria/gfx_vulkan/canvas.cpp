@@ -7,7 +7,7 @@ Canvas::Canvas(std::unique_ptr<NativeCanvas> native) : m_native{std::move(native
 
 Canvas::~Canvas() = default;
 
-auto Canvas::drawBegin() -> bool { return m_native->drawBegin(); }
+auto Canvas::drawBegin(math::Color clearCol) -> bool { return m_native->drawBegin(clearCol); }
 
 auto Canvas::draw(const asset::Graphic* asset, uint16_t vertexCount) -> void {
   m_native->draw(asset, vertexCount);

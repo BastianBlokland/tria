@@ -30,7 +30,7 @@ public:
   /* Begin recording draw commands.
    * Returns: false if we failed to begin recordering (for example because the window is minimized).
    */
-  [[nodiscard]] auto drawBegin() -> bool;
+  [[nodiscard]] auto drawBegin(math::Color clearCol) -> bool;
 
   /* Record a draw with the given asset.
    */
@@ -55,8 +55,7 @@ private:
   std::array<internal::RendererUnique, 2> m_renderers;
   bool m_frontRenderer; // Are we using renderer 0 or 1 atm to record.
 
-  uint16_t m_lastWinWidth;
-  uint16_t m_lastWinHeight;
+  pal::WindowSize m_lastWinSize;
 
   std::optional<uint32_t> m_curSwapchainImgIdx;
 

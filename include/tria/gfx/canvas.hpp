@@ -1,5 +1,6 @@
 #pragma once
 #include "tria/asset/graphic.hpp"
+#include "tria/math/vec.hpp"
 #include <cstdint>
 #include <memory>
 
@@ -28,7 +29,7 @@ public:
    * Note: Has to be followed with a call to 'drawEnd' before calling 'drawBegin' again.
    * Returns: false if we failed to begin drawing (for example because the window is minimized).
    */
-  [[nodiscard]] auto drawBegin() -> bool;
+  [[nodiscard]] auto drawBegin(math::Color clearCol) -> bool;
 
   /* Draw a single instance of the given graphic.
    */

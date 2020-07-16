@@ -80,7 +80,7 @@ auto NativePlatform::handleEvents() -> void {
   }
 }
 
-auto NativePlatform::createWindow(uint16_t width, uint16_t height) -> Window {
+auto NativePlatform::createWindow(const WindowSize size) -> Window {
   auto winId = m_nextWinId++;
 
   // Create a unique class-name for this window class.
@@ -108,8 +108,8 @@ auto NativePlatform::createWindow(uint16_t width, uint16_t height) -> Window {
 
   // Calculate the size of the window (because we give width and height of the content area).
   RECT winRect   = {};
-  winRect.right  = static_cast<long>(width);
-  winRect.bottom = static_cast<long>(height);
+  winRect.right  = static_cast<long>(size.x());
+  winRect.bottom = static_cast<long>(size.y());
   AdjustWindowRect(&winRect, dwStyle, false);
 
   // Create a new window.
@@ -141,11 +141,10 @@ auto NativePlatform::createWindow(uint16_t width, uint16_t height) -> Window {
   SetForegroundWindow(winHandle);
   SetFocus(winHandle);
 
-  LOG_I(m_logger, "Window created", {"id", winId}, {"width", width}, {"height", height});
+  LOG_I(m_logger, "Window created", {"id", winId}, {"width", size.x()}, {"height", size.y()});
 
   // Keep track of the window data.
-  m_windows.insert(
-      {winId, WindowData{winId, winHandle, std::move(className), dwStyle, width, height}});
+  m_windows.insert({winId, WindowData{winId, winHandle, std::move(className), dwStyle, size}});
 
   // Return a handle to the window.
   return Window{this, winId};
@@ -176,14 +175,14 @@ auto NativePlatform::setWinTitle(WindowId id, std::string_view title) noexcept -
   SetWindowText(winData->handle, title.data());
 }
 
-auto NativePlatform::setWinSize(WindowId id, uint16_t width, uint16_t height) noexcept -> void {
+auto NativePlatform::setWinSize(WindowId id, const WindowSize size) noexcept -> void {
   auto* winData = getWindow(id);
   assert(winData);
 
   // Calculate the size of the window (because we give width and height of the content area).
   RECT winRect   = {};
-  winRect.right  = static_cast<long>(width);
-  winRect.bottom = static_cast<long>(height);
+  winRect.right  = static_cast<long>(size.x());
+  winRect.bottom = static_cast<long>(size.y());
   AdjustWindowRect(&winRect, winData->dwStyle, false);
 
   // Set the window size.
@@ -226,7 +225,8 @@ auto NativePlatform::handleEvent(HWND hWnd, UINT msg, WPARAM /*unused*/, LPARAM 
     if (window) {
       const auto newWidth  = LOWORD(lParam);
       const auto newHeight = HIWORD(lParam);
-      if (newWidth != window->width || newHeight != window->height) {
+      const auto newSize   = WindowSize{newWidth, newHeight};
+      if (newSize != window->size) {
         LOG_D(
             m_logger,
             "Window resized",
@@ -234,8 +234,7 @@ auto NativePlatform::handleEvent(HWND hWnd, UINT msg, WPARAM /*unused*/, LPARAM 
             {"width", newWidth},
             {"height", newHeight});
       }
-      window->width  = newWidth;
-      window->height = newHeight;
+      window->size = newSize;
       return true;
     }
     return false;

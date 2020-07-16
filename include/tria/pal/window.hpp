@@ -1,4 +1,5 @@
 #pragma once
+#include "tria/math/vec.hpp"
 #include <cassert>
 #include <cstdint>
 #include <string_view>
@@ -6,6 +7,8 @@
 namespace tria::pal {
 
 class NativePlatform;
+
+using WindowSize = math::Vec<uint16_t, 2>;
 
 /* Handle to a native window.
  * When handle is destroyed the native window is also closed. Supports moving ownership.
@@ -42,11 +45,10 @@ public:
    */
   [[nodiscard]] auto getIsCloseRequested() const noexcept -> bool;
 
-  [[nodiscard]] auto getWidth() const noexcept -> uint16_t;
-  [[nodiscard]] auto getHeight() const noexcept -> uint16_t;
+  [[nodiscard]] auto getSize() const noexcept -> WindowSize;
 
   auto setTitle(std::string_view title) -> void;
-  auto setSize(uint16_t width, uint16_t height) -> void;
+  auto setSize(WindowSize size) -> void;
 
   [[nodiscard]] auto getNativePlatformPtr() const noexcept { return m_platform; }
   [[nodiscard]] auto getWindowId() const noexcept { return m_id; }
