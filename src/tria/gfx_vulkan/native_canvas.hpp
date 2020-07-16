@@ -55,8 +55,7 @@ private:
   std::array<internal::RendererUnique, 2> m_renderers;
   bool m_frontRenderer; // Are we using renderer 0 or 1 atm to record.
 
-  uint16_t m_lastWinWidth;
-  uint16_t m_lastWinHeight;
+  pal::WindowSize m_lastWinSize;
 
   std::optional<uint32_t> m_curSwapchainImgIdx;
 

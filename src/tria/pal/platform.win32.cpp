@@ -8,8 +8,8 @@ Platform::~Platform() = default;
 
 auto Platform::handleEvents() -> void { m_native->handleEvents(); }
 
-auto Platform::createWindow(uint16_t width, uint16_t height) -> Window {
-  return m_native->createWindow(width, height);
+auto Platform::createWindow(const WindowSize size) -> Window {
+  return m_native->createWindow(size);
 }
 
 } // namespace tria::pal

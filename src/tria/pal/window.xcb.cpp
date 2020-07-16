@@ -15,14 +15,9 @@ auto Window::getIsCloseRequested() const noexcept -> bool {
   return m_platform->getIsWinCloseRequested(m_id);
 }
 
-auto Window::getWidth() const noexcept -> uint16_t {
+auto Window::getSize() const noexcept -> WindowSize {
   assert(m_alive);
-  return m_platform->getWinWidth(m_id);
-}
-
-auto Window::getHeight() const noexcept -> uint16_t {
-  assert(m_alive);
-  return m_platform->getWinHeight(m_id);
+  return m_platform->getWinSize(m_id);
 }
 
 auto Window::setTitle(std::string_view title) -> void {
@@ -30,9 +25,9 @@ auto Window::setTitle(std::string_view title) -> void {
   m_platform->setWinTitle(m_id, title);
 }
 
-auto Window::setSize(uint16_t width, uint16_t height) -> void {
+auto Window::setSize(WindowSize size) -> void {
   assert(m_alive);
-  m_platform->setWinSize(m_id, width, height);
+  m_platform->setWinSize(m_id, size);
 }
 
 } // namespace tria::pal

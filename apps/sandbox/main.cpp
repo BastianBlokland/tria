@@ -10,7 +10,7 @@ using namespace tria;
 
 auto runApp(pal::Platform& platform, asset::Database& db, gfx::Context& gfx) {
 
-  auto win    = platform.createWindow(512, 512);
+  auto win    = platform.createWindow({512, 512});
   auto canvas = gfx.createCanvas(&win, gfx::VSyncMode::Disable);
 
   const auto* triangle = db.get("triangle.gfx")->downcast<asset::Graphic>();

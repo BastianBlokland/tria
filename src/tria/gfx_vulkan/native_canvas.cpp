@@ -107,11 +107,9 @@ auto NativeCanvas::drawBegin() -> bool {
 
   // Detect if the window has been resized, if so force recreate the swapchain. This is required as
   // not all drivers report an out-of-date swapchain if the size does not match the window anymore.
-  const auto winHasResized =
-      m_window->getWidth() != m_lastWinWidth || m_window->getHeight() != m_lastWinHeight;
+  const auto winHasResized = m_window->getSize() != m_lastWinSize;
   if (winHasResized) {
-    m_lastWinWidth  = m_window->getWidth();
-    m_lastWinHeight = m_window->getHeight();
+    m_lastWinSize = m_window->getSize();
   }
 
   // Pick the next renderer (so we can record while the previous is still rendering on the gpu).
