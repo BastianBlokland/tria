@@ -100,7 +100,7 @@ NativeCanvas::~NativeCanvas() {
   m_device = nullptr;
 }
 
-auto NativeCanvas::drawBegin() -> bool {
+auto NativeCanvas::drawBegin(math::Color clearCol) -> bool {
   if (m_curSwapchainImgIdx) {
     throw err::SyncErr{"Unable to begin a draw: draw already active"};
   }
@@ -131,7 +131,8 @@ auto NativeCanvas::drawBegin() -> bool {
   curRenderer.drawBegin(
       m_vkRenderPass,
       m_swapchain->getVkFramebuffer(*m_curSwapchainImgIdx),
-      m_swapchain->getExtent());
+      m_swapchain->getExtent(),
+      clearCol);
 
   return true;
 }

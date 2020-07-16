@@ -1,5 +1,6 @@
 #include "tria/asset/database.hpp"
 #include "tria/gfx/context.hpp"
+#include "tria/math/vec.hpp"
 #include "tria/pal/interrupt.hpp"
 #include "tria/pal/platform.hpp"
 #include "tria/pal/utils.hpp"
@@ -19,7 +20,7 @@ auto runApp(pal::Platform& platform, asset::Database& db, gfx::Context& gfx) {
   while (!win.getIsCloseRequested() && !pal::isInterruptRequested()) {
     platform.handleEvents();
 
-    if (canvas.drawBegin()) {
+    if (canvas.drawBegin(math::color::olive())) {
       canvas.draw(triangle, 3);
       canvas.draw(quad, 6);
       canvas.drawEnd();

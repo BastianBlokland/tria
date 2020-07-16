@@ -30,7 +30,7 @@ public:
   /* Begin recording draw commands.
    * Returns: false if we failed to begin recordering (for example because the window is minimized).
    */
-  [[nodiscard]] auto drawBegin() -> bool;
+  [[nodiscard]] auto drawBegin(math::Color clearCol) -> bool;
 
   /* Record a draw with the given asset.
    */

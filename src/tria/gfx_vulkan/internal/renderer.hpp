@@ -1,6 +1,7 @@
 #pragma once
 #include "graphic.hpp"
 #include "tria/log/api.hpp"
+#include "tria/math/vec.hpp"
 #include <vulkan/vulkan.h>
 
 namespace tria::gfx::internal {
@@ -33,7 +34,11 @@ public:
   /* Begin recording new draw commands to this renderer.
    * Note: Will block if the renderer is currently still rendering.
    */
-  auto drawBegin(VkRenderPass vkRenderPass, VkFramebuffer vkFrameBuffer, VkExtent2D extent) -> void;
+  auto drawBegin(
+      VkRenderPass vkRenderPass,
+      VkFramebuffer vkFrameBuffer,
+      VkExtent2D extent,
+      math::Color clearCol) -> void;
 
   /* Record a single draw of the given graphic.
    */

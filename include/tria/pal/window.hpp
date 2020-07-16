@@ -8,7 +8,7 @@ namespace tria::pal {
 
 class NativePlatform;
 
-using WindowSize = math::Vec<2, uint16_t>;
+using WindowSize = math::Vec<uint16_t, 2>;
 
 /* Handle to a native window.
  * When handle is destroyed the native window is also closed. Supports moving ownership.

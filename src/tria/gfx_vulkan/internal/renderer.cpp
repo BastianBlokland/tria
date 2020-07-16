@@ -58,13 +58,13 @@ auto beginRenderPass(
     VkCommandBuffer vkCommandBuffer,
     VkRenderPass vkRenderPass,
     VkFramebuffer vkFramebuffer,
-    VkExtent2D extent) -> void {
+    VkExtent2D extent,
+    math::Color clearCol) -> void {
 
+  static_assert(clearCol.getSize() == 4);
   VkClearColorValue clearColorValue;
-  clearColorValue.float32[0]              = 1.0f;
-  clearColorValue.float32[1]              = 1.0f;
-  clearColorValue.float32[2]              = 1.0f;
-  clearColorValue.float32[3]              = 1.0f;
+  clearCol.memcpy(clearColorValue.float32);
+
   std::array<VkClearValue, 1> clearValues = {VkClearValue{clearColorValue}};
 
   VkRenderPassBeginInfo renderPassInfo = {};
@@ -126,14 +126,15 @@ auto Renderer::waitUntilReady() -> void {
   waitForDone();
 }
 
-auto Renderer::drawBegin(VkRenderPass vkRenderPass, VkFramebuffer vkFrameBuffer, VkExtent2D extent)
+auto Renderer::drawBegin(
+    VkRenderPass vkRenderPass, VkFramebuffer vkFrameBuffer, VkExtent2D extent, math::Color clearCol)
     -> void {
 
   // Wait for this renderer to be done executing on the gpu.
   waitForDone();
 
   beginCommandBuffer(m_gfxVkCommandBuffer);
-  beginRenderPass(m_gfxVkCommandBuffer, vkRenderPass, vkFrameBuffer, extent);
+  beginRenderPass(m_gfxVkCommandBuffer, vkRenderPass, vkFrameBuffer, extent, clearCol);
 
   setViewport(m_gfxVkCommandBuffer, extent);
   setScissor(m_gfxVkCommandBuffer, extent);
