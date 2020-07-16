@@ -13,62 +13,22 @@ public:
   template <typename... Components>
   constexpr Vec(const Components&... comps) noexcept : m_comps{static_cast<Type>(comps)...} {}
 
-  [[nodiscard]] constexpr auto operator==(const Vec<Count, Type>& rhs) const noexcept -> bool {
-    return m_comps == rhs.m_comps;
-  }
-
-  [[nodiscard]] constexpr auto operator!=(const Vec<Count, Type>& rhs) const noexcept -> bool {
-    return m_comps != rhs.m_comps;
-  }
-
-  [[nodiscard]] constexpr auto operator+(const Vec<Count, Type>& rhs) const noexcept
-      -> Vec<Count, Type> {
-    auto res = *this;
-    for (auto i = 0U; i != Count; ++i) {
-      res[i] += rhs[i];
-    }
-    return res;
-  }
-
-  [[nodiscard]] constexpr auto operator-(const Vec<Count, Type>& rhs) const noexcept
-      -> Vec<Count, Type> {
-    auto res = *this;
-    for (auto i = 0U; i != Count; ++i) {
-      res[i] -= rhs[i];
-    }
-    return res;
-  }
-
-  [[nodiscard]] constexpr auto operator-() const noexcept -> Vec<Count, Type> {
-    auto res = *this;
-    for (auto i = 0U; i != Count; ++i) {
-      res[i] *= -1;
-    }
-    return res;
-  }
-
-  [[nodiscard]] constexpr auto operator*(const Type& rhs) const noexcept -> Vec<Count, Type> {
-    auto res = *this;
-    for (auto i = 0U; i != Count; ++i) {
-      res[i] *= rhs;
-    }
-    return res;
-  }
-
-  [[nodiscard]] constexpr auto operator/(const Type& rhs) const noexcept -> Vec<Count, Type> {
-    auto res = *this;
-    for (auto i = 0U; i != Count; ++i) {
-      res[i] /= rhs;
-    }
-    return res;
-  }
-
   [[nodiscard]] constexpr auto operator[](unsigned int idx) noexcept -> Type& {
     return m_comps[idx];
   }
 
   [[nodiscard]] constexpr auto operator[](unsigned int idx) const noexcept -> const Type& {
     return m_comps[idx];
+  }
+
+  template <size_t N>
+  [[nodiscard]] constexpr auto get() noexcept -> Type& {
+    return m_comps[N];
+  }
+
+  template <size_t N>
+  [[nodiscard]] constexpr auto get() const noexcept -> const Type& {
+    return m_comps[N];
   }
 
   template <unsigned int C = Count, typename = std::enable_if_t<C >= 1>>
@@ -151,6 +111,56 @@ public:
     return m_comps[3];
   }
 
+  [[nodiscard]] constexpr auto operator==(const Vec<Count, Type>& rhs) const noexcept -> bool {
+    return m_comps == rhs.m_comps;
+  }
+
+  [[nodiscard]] constexpr auto operator!=(const Vec<Count, Type>& rhs) const noexcept -> bool {
+    return m_comps != rhs.m_comps;
+  }
+
+  [[nodiscard]] constexpr auto operator+(const Vec<Count, Type>& rhs) const noexcept
+      -> Vec<Count, Type> {
+    auto res = *this;
+    for (auto i = 0U; i != Count; ++i) {
+      res[i] += rhs[i];
+    }
+    return res;
+  }
+
+  [[nodiscard]] constexpr auto operator-(const Vec<Count, Type>& rhs) const noexcept
+      -> Vec<Count, Type> {
+    auto res = *this;
+    for (auto i = 0U; i != Count; ++i) {
+      res[i] -= rhs[i];
+    }
+    return res;
+  }
+
+  [[nodiscard]] constexpr auto operator-() const noexcept -> Vec<Count, Type> {
+    auto res = *this;
+    for (auto i = 0U; i != Count; ++i) {
+      res[i] *= -1;
+    }
+    return res;
+  }
+
+  [[nodiscard]] constexpr auto operator*(const Type& rhs) const noexcept -> Vec<Count, Type> {
+    auto res = *this;
+    for (auto i = 0U; i != Count; ++i) {
+      res[i] *= rhs;
+    }
+    return res;
+  }
+
+  [[nodiscard]] constexpr auto operator/(const Type& rhs) const noexcept -> Vec<Count, Type> {
+    auto res = *this;
+    for (auto i = 0U; i != Count; ++i) {
+      res[i] /= rhs;
+    }
+    return res;
+  }
+
   /* Calculate the magnitude of the vector squared.
    */
   [[nodiscard]] constexpr auto getSqrMag() const noexcept -> Type {
@@ -230,3 +240,17 @@ namespace color {
 } // namespace color
 
 } // namespace tria::math
+
+/* Specialize tuple_size and tuple_element so we can use structured bindings for Vec.
+ */
+namespace std {
+
+template <unsigned int Count, typename Type>
+struct tuple_size<tria::math::Vec<Count, Type>> : std::integral_constant<size_t, Count> {};
+
+template <std::size_t N, unsigned int Count, typename Type>
+struct tuple_element<N, tria::math::Vec<Count, Type>> {
+  using type = Type;
+};
+
+} // namespace std

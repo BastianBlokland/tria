@@ -44,6 +44,28 @@ TEST_CASE("[math] - Vec", "[math]") {
     CHECK(v5.z() == 0);
   }
 
+  SECTION("Vectors can be decomposed using structured bindings") {
+    auto [x1, y1, z1] = Vec3i{1, 2, 3};
+    CHECK(x1 == 1);
+    CHECK(y1 == 2);
+    CHECK(z1 == 3);
+
+    const auto vec2   = Vec3i{1, 2, 3};
+    auto [x2, y2, z2] = vec2;
+    CHECK(x2 == 1);
+    CHECK(y2 == 2);
+    CHECK(z2 == 3);
+
+    auto vec3          = Vec3i{1, 2, 3};
+    auto& [x3, y3, z3] = vec3;
+    x3                 = 42;
+    y3                 = 1337;
+    CHECK(vec3.x() == 42);
+    CHECK(vec3.y() == 1337);
+    CHECK(z3 == 3);
+    CHECK(vec3.z() == 3);
+  }
+
   SECTION("Component aliases represent the same value") {
     auto vf = Vec4i{};
     CHECK(vf[0] == 0);
