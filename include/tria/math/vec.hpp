@@ -232,61 +232,60 @@ using Color = Vec<float, 4>;
 
 namespace position {
 
-[[nodiscard]] constexpr inline auto zero() noexcept { return Vec3f{0.0, 0.0, 0.0}; }
-[[nodiscard]] constexpr inline auto one() noexcept { return Vec3f{1.0, 1.0, 1.0}; }
+[[nodiscard]] constexpr auto zero() noexcept { return Vec3f{0.0, 0.0, 0.0}; }
+[[nodiscard]] constexpr auto one() noexcept { return Vec3f{1.0, 1.0, 1.0}; }
 
 } // namespace position
 
 namespace direction {
 
-[[nodiscard]] constexpr inline auto up() noexcept { return Vec3f{0.0, 1.0, 0.0}; }
-[[nodiscard]] constexpr inline auto down() noexcept { return Vec3f{0.0, -1.0, 0.0}; }
-[[nodiscard]] constexpr inline auto right() noexcept { return Vec3f{1.0, 0.0, 0.0}; }
-[[nodiscard]] constexpr inline auto left() noexcept { return Vec3f{-1.0, 0.0, 0.0}; }
-[[nodiscard]] constexpr inline auto forward() noexcept { return Vec3f{0.0, 0.0, 1.0}; }
-[[nodiscard]] constexpr inline auto backward() noexcept { return Vec3f{0.0, 0.0, -1.0}; }
+[[nodiscard]] constexpr auto up() noexcept { return Vec3f{0.0, 1.0, 0.0}; }
+[[nodiscard]] constexpr auto down() noexcept { return Vec3f{0.0, -1.0, 0.0}; }
+[[nodiscard]] constexpr auto right() noexcept { return Vec3f{1.0, 0.0, 0.0}; }
+[[nodiscard]] constexpr auto left() noexcept { return Vec3f{-1.0, 0.0, 0.0}; }
+[[nodiscard]] constexpr auto forward() noexcept { return Vec3f{0.0, 0.0, 1.0}; }
+[[nodiscard]] constexpr auto backward() noexcept { return Vec3f{0.0, 0.0, -1.0}; }
 
 } // namespace direction
 
 namespace color {
 
-[[nodiscard]] constexpr inline auto white() noexcept { return Color{1.0, 1.0, 1.0, 1.0}; }
-[[nodiscard]] constexpr inline auto black() noexcept { return Color{0.0, 0.0, 0.0, 1.0}; }
-[[nodiscard]] constexpr inline auto clear() noexcept { return Color{0.0, 0.0, 0.0, 0.0}; }
+[[nodiscard]] constexpr auto white() noexcept { return Color{1.0, 1.0, 1.0, 1.0}; }
+[[nodiscard]] constexpr auto black() noexcept { return Color{0.0, 0.0, 0.0, 1.0}; }
+[[nodiscard]] constexpr auto clear() noexcept { return Color{0.0, 0.0, 0.0, 0.0}; }
 
-[[nodiscard]] constexpr inline auto silver() noexcept { return Color{0.75, 0.75, 0.75, 1.0}; }
-[[nodiscard]] constexpr inline auto gray() noexcept { return Color{0.5, 0.5, 0.5, 1.0}; }
-[[nodiscard]] constexpr inline auto red() noexcept { return Color{1.0, 0.0, 0.0, 1.0}; }
-[[nodiscard]] constexpr inline auto maroon() noexcept { return Color{0.5, 0.0, 0.0, 1.0}; }
-[[nodiscard]] constexpr inline auto yellow() noexcept { return Color{1.0, 1.0, 0.0, 1.0}; }
-[[nodiscard]] constexpr inline auto olive() noexcept { return Color{0.5, 0.5, 0.0, 1.0}; }
-[[nodiscard]] constexpr inline auto lime() noexcept { return Color{0.0, 1.0, 0.0, 1.0}; }
-[[nodiscard]] constexpr inline auto green() noexcept { return Color{0.0, 0.5, 0.0, 1.0}; }
-[[nodiscard]] constexpr inline auto aqua() noexcept { return Color{0.0, 1.0, 1.0, 1.0}; }
-[[nodiscard]] constexpr inline auto teal() noexcept { return Color{0.0, 0.5, 0.5, 1.0}; }
-[[nodiscard]] constexpr inline auto blue() noexcept { return Color{0.0, 0.0, 1.0, 1.0}; }
-[[nodiscard]] constexpr inline auto navy() noexcept { return Color{0.0, 0.0, 0.5, 1.0}; }
-[[nodiscard]] constexpr inline auto fuchsia() noexcept { return Color{1.0, 0.0, 1.0, 1.0}; }
-[[nodiscard]] constexpr inline auto purple() noexcept { return Color{0.5, 0.0, 0.5, 1.0}; }
+[[nodiscard]] constexpr auto silver() noexcept { return Color{0.75, 0.75, 0.75, 1.0}; }
+[[nodiscard]] constexpr auto gray() noexcept { return Color{0.5, 0.5, 0.5, 1.0}; }
+[[nodiscard]] constexpr auto red() noexcept { return Color{1.0, 0.0, 0.0, 1.0}; }
+[[nodiscard]] constexpr auto maroon() noexcept { return Color{0.5, 0.0, 0.0, 1.0}; }
+[[nodiscard]] constexpr auto yellow() noexcept { return Color{1.0, 1.0, 0.0, 1.0}; }
+[[nodiscard]] constexpr auto olive() noexcept { return Color{0.5, 0.5, 0.0, 1.0}; }
+[[nodiscard]] constexpr auto lime() noexcept { return Color{0.0, 1.0, 0.0, 1.0}; }
+[[nodiscard]] constexpr auto green() noexcept { return Color{0.0, 0.5, 0.0, 1.0}; }
+[[nodiscard]] constexpr auto aqua() noexcept { return Color{0.0, 1.0, 1.0, 1.0}; }
+[[nodiscard]] constexpr auto teal() noexcept { return Color{0.0, 0.5, 0.5, 1.0}; }
+[[nodiscard]] constexpr auto blue() noexcept { return Color{0.0, 0.0, 1.0, 1.0}; }
+[[nodiscard]] constexpr auto navy() noexcept { return Color{0.0, 0.0, 0.5, 1.0}; }
+[[nodiscard]] constexpr auto fuchsia() noexcept { return Color{1.0, 0.0, 1.0, 1.0}; }
+[[nodiscard]] constexpr auto purple() noexcept { return Color{0.5, 0.0, 0.5, 1.0}; }
 
 /* Get a color based on a unsigned integer, usefull for getting a color in debug code.
  */
-[[nodiscard]] constexpr inline auto get(unsigned int i) noexcept -> Color {
-  constexpr auto generators = std::array<Color (*)(), 14>{
-      silver,
-      gray,
-      red,
-      maroon,
-      yellow,
-      olive,
-      lime,
-      green,
-      aqua,
-      teal,
-      blue,
-      navy,
-      fuchsia,
-      purple};
+[[nodiscard]] constexpr auto get(unsigned int i) noexcept -> Color {
+  constexpr auto generators = std::array<Color (*)(), 14>{silver,
+                                                          gray,
+                                                          red,
+                                                          maroon,
+                                                          yellow,
+                                                          olive,
+                                                          lime,
+                                                          green,
+                                                          aqua,
+                                                          teal,
+                                                          blue,
+                                                          navy,
+                                                          fuchsia,
+                                                          purple};
   return generators[i % generators.size()]();
 }
 

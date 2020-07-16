@@ -15,27 +15,27 @@ enum class Level : uint8_t {
 
 /* Mask that lets all logging levels go through.
  */
-[[nodiscard]] inline constexpr auto allLevelMask() noexcept -> LevelMask {
+[[nodiscard]] constexpr auto allLevelMask() noexcept -> LevelMask {
   return ~static_cast<uint8_t>(0U);
 }
 
 /* Mask that blocks all logging levels.
  */
-[[nodiscard]] inline constexpr auto noneLevelMask() noexcept -> LevelMask { return 0U; }
+[[nodiscard]] constexpr auto noneLevelMask() noexcept -> LevelMask { return 0U; }
 
-[[nodiscard]] inline constexpr auto levelMask(Level lvl) noexcept -> LevelMask {
+[[nodiscard]] constexpr auto levelMask(Level lvl) noexcept -> LevelMask {
   return static_cast<LevelMask>(lvl);
 }
 
-[[nodiscard]] inline constexpr auto operator|(Level lhs, Level rhs) noexcept -> LevelMask {
+[[nodiscard]] constexpr auto operator|(Level lhs, Level rhs) noexcept -> LevelMask {
   return levelMask(lhs) | levelMask(rhs);
 }
 
-[[nodiscard]] inline constexpr auto operator|(LevelMask lhs, Level rhs) noexcept -> LevelMask {
+[[nodiscard]] constexpr auto operator|(LevelMask lhs, Level rhs) noexcept -> LevelMask {
   return lhs | levelMask(rhs);
 }
 
-[[nodiscard]] inline constexpr auto isInMask(LevelMask mask, Level lvl) noexcept {
+[[nodiscard]] constexpr auto isInMask(LevelMask mask, Level lvl) noexcept {
   return (mask & static_cast<uint8_t>(lvl)) != 0;
 }
 
