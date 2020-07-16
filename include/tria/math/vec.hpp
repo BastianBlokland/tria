@@ -2,6 +2,7 @@
 #include "tria/math/utils.hpp"
 #include <array>
 #include <cassert>
+#include <cstring>
 #include <type_traits>
 
 namespace tria::math {
@@ -198,7 +199,7 @@ public:
    */
   constexpr auto memcpy(Type* outPtr) const noexcept -> Type* {
     assert(outPtr);
-    ::memcpy(outPtr, begin(), sizeof(Type) * Size);
+    std::memcpy(outPtr, begin(), sizeof(Type) * Size);
     return outPtr;
   }
 
