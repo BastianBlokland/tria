@@ -237,9 +237,11 @@ namespace direction {
 namespace color {
 
 [[nodiscard]] constexpr inline auto white() { return Color{1.0, 1.0, 1.0, 1.0}; }
+[[nodiscard]] constexpr inline auto black() { return Color{0.0, 0.0, 0.0, 1.0}; }
+[[nodiscard]] constexpr inline auto clear() { return Color{0.0, 0.0, 0.0, 0.0}; }
+
 [[nodiscard]] constexpr inline auto silver() { return Color{0.75, 0.75, 0.75, 1.0}; }
 [[nodiscard]] constexpr inline auto gray() { return Color{0.5, 0.5, 0.5, 1.0}; }
-[[nodiscard]] constexpr inline auto black() { return Color{0.0, 0.0, 0.0, 1.0}; }
 [[nodiscard]] constexpr inline auto red() { return Color{1.0, 0.0, 0.0, 1.0}; }
 [[nodiscard]] constexpr inline auto maroon() { return Color{0.5, 0.0, 0.0, 1.0}; }
 [[nodiscard]] constexpr inline auto yellow() { return Color{1.0, 1.0, 0.0, 1.0}; }
@@ -252,6 +254,27 @@ namespace color {
 [[nodiscard]] constexpr inline auto navy() { return Color{0.0, 0.0, 0.5, 1.0}; }
 [[nodiscard]] constexpr inline auto fuchsia() { return Color{1.0, 0.0, 1.0, 1.0}; }
 [[nodiscard]] constexpr inline auto purple() { return Color{0.5, 0.0, 0.5, 1.0}; }
+
+/* Get a color based on a unsigned integer, usefull for getting a color in debug code.
+ */
+[[nodiscard]] constexpr inline auto get(unsigned int i) -> Color {
+  constexpr auto generators = std::array<Color (*)(), 14>{
+      silver,
+      gray,
+      red,
+      maroon,
+      yellow,
+      olive,
+      lime,
+      green,
+      aqua,
+      teal,
+      blue,
+      navy,
+      fuchsia,
+      purple};
+  return generators[i % generators.size()]();
+}
 
 } // namespace color
 

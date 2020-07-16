@@ -175,6 +175,20 @@ TEST_CASE("[math] - Vec", "[math]") {
     const auto vec2 = Vec3f{1337.0f, 42.0f, -42.0f};
     CHECK(approx(vec2.getNorm().getMag(), 1.0f));
   }
+
+  SECTION("Integers can be converted to colors") {
+    // At runtime.
+    for (auto i = 0U; i != 100; ++i) {
+      auto col = color::get(i);
+      CHECK((col.r() > 0 || col.g() > 0 || col.b() > 0));
+      CHECK(approx(col.a(), 1.0f));
+    }
+
+    // Or at compiletime.
+    constexpr auto col = color::get(42);
+    CHECK((col.r() > 0 || col.g() > 0 || col.b() > 0));
+    CHECK(approx(col.a(), 1.0f));
+  }
 }
 
 } // namespace tria::math::tests
