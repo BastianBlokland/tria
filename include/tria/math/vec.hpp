@@ -206,6 +206,19 @@ private:
   std::array<Type, Size> m_comps;
 };
 
+/* Return the linearly interpolated vector from x to y at time t.
+ * Note: Does not clamp t (so can extrapolate too).
+ */
+template <typename T, size_t Size>
+[[nodiscard]] constexpr auto lerp(Vec<T, Size> x, Vec<T, Size> y, float t) noexcept
+    -> Vec<T, Size> {
+  Vec<T, Size> res = {};
+  for (auto i = 0U; i != Size; ++i) {
+    res[i] = lerp(x[i], y[i], t);
+  }
+  return res;
+}
+
 using Vec2f = Vec<float, 2>;
 using Vec3f = Vec<float, 3>;
 using Vec4f = Vec<float, 4>;
@@ -218,46 +231,46 @@ using Color = Vec<float, 4>;
 
 namespace position {
 
-[[nodiscard]] constexpr inline auto zero() { return Vec3f{0.0, 0.0, 0.0}; }
-[[nodiscard]] constexpr inline auto one() { return Vec3f{1.0, 1.0, 1.0}; }
+[[nodiscard]] constexpr inline auto zero() noexcept { return Vec3f{0.0, 0.0, 0.0}; }
+[[nodiscard]] constexpr inline auto one() noexcept { return Vec3f{1.0, 1.0, 1.0}; }
 
 } // namespace position
 
 namespace direction {
 
-[[nodiscard]] constexpr inline auto up() { return Vec3f{0.0, 1.0, 0.0}; }
-[[nodiscard]] constexpr inline auto down() { return Vec3f{0.0, -1.0, 0.0}; }
-[[nodiscard]] constexpr inline auto right() { return Vec3f{1.0, 0.0, 0.0}; }
-[[nodiscard]] constexpr inline auto left() { return Vec3f{-1.0, 0.0, 0.0}; }
-[[nodiscard]] constexpr inline auto forward() { return Vec3f{0.0, 0.0, 1.0}; }
-[[nodiscard]] constexpr inline auto backward() { return Vec3f{0.0, 0.0, -1.0}; }
+[[nodiscard]] constexpr inline auto up() noexcept { return Vec3f{0.0, 1.0, 0.0}; }
+[[nodiscard]] constexpr inline auto down() noexcept { return Vec3f{0.0, -1.0, 0.0}; }
+[[nodiscard]] constexpr inline auto right() noexcept { return Vec3f{1.0, 0.0, 0.0}; }
+[[nodiscard]] constexpr inline auto left() noexcept { return Vec3f{-1.0, 0.0, 0.0}; }
+[[nodiscard]] constexpr inline auto forward() noexcept { return Vec3f{0.0, 0.0, 1.0}; }
+[[nodiscard]] constexpr inline auto backward() noexcept { return Vec3f{0.0, 0.0, -1.0}; }
 
 } // namespace direction
 
 namespace color {
 
-[[nodiscard]] constexpr inline auto white() { return Color{1.0, 1.0, 1.0, 1.0}; }
-[[nodiscard]] constexpr inline auto black() { return Color{0.0, 0.0, 0.0, 1.0}; }
-[[nodiscard]] constexpr inline auto clear() { return Color{0.0, 0.0, 0.0, 0.0}; }
+[[nodiscard]] constexpr inline auto white() noexcept { return Color{1.0, 1.0, 1.0, 1.0}; }
+[[nodiscard]] constexpr inline auto black() noexcept { return Color{0.0, 0.0, 0.0, 1.0}; }
+[[nodiscard]] constexpr inline auto clear() noexcept { return Color{0.0, 0.0, 0.0, 0.0}; }
 
-[[nodiscard]] constexpr inline auto silver() { return Color{0.75, 0.75, 0.75, 1.0}; }
-[[nodiscard]] constexpr inline auto gray() { return Color{0.5, 0.5, 0.5, 1.0}; }
-[[nodiscard]] constexpr inline auto red() { return Color{1.0, 0.0, 0.0, 1.0}; }
-[[nodiscard]] constexpr inline auto maroon() { return Color{0.5, 0.0, 0.0, 1.0}; }
-[[nodiscard]] constexpr inline auto yellow() { return Color{1.0, 1.0, 0.0, 1.0}; }
-[[nodiscard]] constexpr inline auto olive() { return Color{0.5, 0.5, 0.0, 1.0}; }
-[[nodiscard]] constexpr inline auto lime() { return Color{0.0, 1.0, 0.0, 1.0}; }
-[[nodiscard]] constexpr inline auto green() { return Color{0.0, 0.5, 0.0, 1.0}; }
-[[nodiscard]] constexpr inline auto aqua() { return Color{0.0, 1.0, 1.0, 1.0}; }
-[[nodiscard]] constexpr inline auto teal() { return Color{0.0, 0.5, 0.5, 1.0}; }
-[[nodiscard]] constexpr inline auto blue() { return Color{0.0, 0.0, 1.0, 1.0}; }
-[[nodiscard]] constexpr inline auto navy() { return Color{0.0, 0.0, 0.5, 1.0}; }
-[[nodiscard]] constexpr inline auto fuchsia() { return Color{1.0, 0.0, 1.0, 1.0}; }
-[[nodiscard]] constexpr inline auto purple() { return Color{0.5, 0.0, 0.5, 1.0}; }
+[[nodiscard]] constexpr inline auto silver() noexcept { return Color{0.75, 0.75, 0.75, 1.0}; }
+[[nodiscard]] constexpr inline auto gray() noexcept { return Color{0.5, 0.5, 0.5, 1.0}; }
+[[nodiscard]] constexpr inline auto red() noexcept { return Color{1.0, 0.0, 0.0, 1.0}; }
+[[nodiscard]] constexpr inline auto maroon() noexcept { return Color{0.5, 0.0, 0.0, 1.0}; }
+[[nodiscard]] constexpr inline auto yellow() noexcept { return Color{1.0, 1.0, 0.0, 1.0}; }
+[[nodiscard]] constexpr inline auto olive() noexcept { return Color{0.5, 0.5, 0.0, 1.0}; }
+[[nodiscard]] constexpr inline auto lime() noexcept { return Color{0.0, 1.0, 0.0, 1.0}; }
+[[nodiscard]] constexpr inline auto green() noexcept { return Color{0.0, 0.5, 0.0, 1.0}; }
+[[nodiscard]] constexpr inline auto aqua() noexcept { return Color{0.0, 1.0, 1.0, 1.0}; }
+[[nodiscard]] constexpr inline auto teal() noexcept { return Color{0.0, 0.5, 0.5, 1.0}; }
+[[nodiscard]] constexpr inline auto blue() noexcept { return Color{0.0, 0.0, 1.0, 1.0}; }
+[[nodiscard]] constexpr inline auto navy() noexcept { return Color{0.0, 0.0, 0.5, 1.0}; }
+[[nodiscard]] constexpr inline auto fuchsia() noexcept { return Color{1.0, 0.0, 1.0, 1.0}; }
+[[nodiscard]] constexpr inline auto purple() noexcept { return Color{0.5, 0.0, 0.5, 1.0}; }
 
 /* Get a color based on a unsigned integer, usefull for getting a color in debug code.
  */
-[[nodiscard]] constexpr inline auto get(unsigned int i) -> Color {
+[[nodiscard]] constexpr inline auto get(unsigned int i) noexcept -> Color {
   constexpr auto generators = std::array<Color (*)(), 14>{
       silver,
       gray,

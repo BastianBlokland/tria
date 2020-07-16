@@ -176,6 +176,10 @@ TEST_CASE("[math] - Vec", "[math]") {
     CHECK(approx(vec2.getNorm().getMag(), 1.0f));
   }
 
+  SECTION("lerp at value 0.5 returns the vector in the middle of x and y") {
+    CHECK(lerp(Vec3i{10, 20, 10}, Vec3i{20, 40, 20}, 0.5) == Vec3i{15, 30, 15});
+  }
+
   SECTION("Integers can be converted to colors") {
     // At runtime.
     for (auto i = 0U; i != 100; ++i) {
