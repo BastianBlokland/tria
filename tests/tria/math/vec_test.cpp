@@ -5,6 +5,34 @@ namespace tria::math::tests {
 
 TEST_CASE("[math] - Vec", "[math]") {
 
+  SECTION("Vectors are fixed size") {
+    auto vf = Vec3f{};
+    CHECK(vf.getSize() == 3);
+    CHECK(vf.getByteSize() == sizeof(float) * 3);
+
+    auto vc = Vec<char, 16>{};
+    CHECK(vc.getSize() == 16);
+    CHECK(vc.getByteSize() == sizeof(char) * 16);
+  }
+
+  SECTION("Vector can be reassigned") {
+    auto vec = Vec3i{1, 2, 3};
+    vec      = {2, 3, 4};
+    CHECK(vec.x() == 2);
+    CHECK(vec.y() == 3);
+    CHECK(vec.z() == 4);
+  }
+
+  SECTION("Vector can be mem-copied") {
+    const auto vec = Vec3i{4, 42, 1337};
+
+    auto arr = std::array<int, 3>{};
+    vec.memcpy(arr.data());
+    CHECK(arr[0] == 4);
+    CHECK(arr[1] == 42);
+    CHECK(arr[2] == 1337);
+  }
+
   SECTION("Vectors are constructed from their components") {
     const auto vf = Vec3f{1.0, 2.0, 3.0};
     CHECK(vf.x() == 1.0);
@@ -64,6 +92,16 @@ TEST_CASE("[math] - Vec", "[math]") {
     CHECK(vec3.y() == 1337);
     CHECK(z3 == 3);
     CHECK(vec3.z() == 3);
+  }
+
+  SECTION("Vectors can be iterated") {
+    const auto vf = Vec3f{1.0, 2.0, 3.0};
+
+    auto result = std::vector<float>{};
+    for (float f : vf) {
+      result.push_back(f);
+    }
+    CHECK(result == std::vector<float>{1.0, 2.0, 3.0});
   }
 
   SECTION("Component aliases represent the same value") {

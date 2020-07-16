@@ -1,11 +1,12 @@
 #pragma once
 #include "tria/math/utils.hpp"
 #include <array>
+#include <cassert>
 #include <type_traits>
 
 namespace tria::math {
 
-template <unsigned int Count, typename Type>
+template <typename Type, size_t Size>
 class Vec final {
   static_assert(std::is_arithmetic<Type>::value, "Type has to be arithmetic");
 
@@ -13,11 +14,17 @@ public:
   template <typename... Components>
   constexpr Vec(const Components&... comps) noexcept : m_comps{static_cast<Type>(comps)...} {}
 
-  [[nodiscard]] constexpr auto operator[](unsigned int idx) noexcept -> Type& {
-    return m_comps[idx];
-  }
+  [[nodiscard]] constexpr auto getSize() noexcept -> size_t { return Size; }
+  [[nodiscard]] constexpr auto getByteSize() noexcept -> size_t { return sizeof(Type) * Size; };
 
-  [[nodiscard]] constexpr auto operator[](unsigned int idx) const noexcept -> const Type& {
+  [[nodiscard]] constexpr auto begin() noexcept -> Type* { return m_comps.begin(); }
+  [[nodiscard]] constexpr auto begin() const noexcept -> const Type* { return m_comps.begin(); }
+  [[nodiscard]] constexpr auto end() noexcept -> Type* { return m_comps.end(); }
+  [[nodiscard]] constexpr auto end() const noexcept -> const Type* { return m_comps.end(); }
+
+  [[nodiscard]] constexpr auto operator[](size_t idx) noexcept -> Type& { return m_comps[idx]; }
+
+  [[nodiscard]] constexpr auto operator[](size_t idx) const noexcept -> const Type& {
     return m_comps[idx];
   }
 
@@ -31,131 +38,131 @@ public:
     return m_comps[N];
   }
 
-  template <unsigned int C = Count, typename = std::enable_if_t<C >= 1>>
+  template <size_t S = Size, typename = std::enable_if_t<S >= 1>>
   [[nodiscard]] constexpr auto x() noexcept -> Type& {
     return m_comps[0];
   }
 
-  template <unsigned int C = Count, typename = std::enable_if_t<C >= 1>>
+  template <size_t S = Size, typename = std::enable_if_t<S >= 1>>
   [[nodiscard]] constexpr auto x() const noexcept -> const Type& {
     return m_comps[0];
   }
 
-  template <unsigned int C = Count, typename = std::enable_if_t<C >= 1>>
+  template <size_t S = Size, typename = std::enable_if_t<S >= 1>>
   [[nodiscard]] constexpr auto r() noexcept -> Type& {
     return m_comps[0];
   }
 
-  template <unsigned int C = Count, typename = std::enable_if_t<C >= 1>>
+  template <size_t S = Size, typename = std::enable_if_t<S >= 1>>
   [[nodiscard]] constexpr auto r() const noexcept -> const Type& {
     return m_comps[0];
   }
 
-  template <unsigned int C = Count, typename = std::enable_if_t<C >= 2>>
+  template <size_t S = Size, typename = std::enable_if_t<S >= 2>>
   [[nodiscard]] constexpr auto y() noexcept -> Type& {
     return m_comps[1];
   }
 
-  template <unsigned int C = Count, typename = std::enable_if_t<C >= 2>>
+  template <size_t S = Size, typename = std::enable_if_t<S >= 2>>
   [[nodiscard]] constexpr auto y() const noexcept -> const Type& {
     return m_comps[1];
   }
 
-  template <unsigned int C = Count, typename = std::enable_if_t<C >= 2>>
+  template <size_t S = Size, typename = std::enable_if_t<S >= 2>>
   [[nodiscard]] constexpr auto g() noexcept -> Type& {
     return m_comps[1];
   }
 
-  template <unsigned int C = Count, typename = std::enable_if_t<C >= 2>>
+  template <size_t S = Size, typename = std::enable_if_t<S >= 2>>
   [[nodiscard]] constexpr auto g() const noexcept -> const Type& {
     return m_comps[1];
   }
 
-  template <unsigned int C = Count, typename = std::enable_if_t<C >= 3>>
+  template <size_t S = Size, typename = std::enable_if_t<S >= 3>>
   [[nodiscard]] constexpr auto z() noexcept -> Type& {
     return m_comps[2];
   }
 
-  template <unsigned int C = Count, typename = std::enable_if_t<C >= 3>>
+  template <size_t S = Size, typename = std::enable_if_t<S >= 3>>
   [[nodiscard]] constexpr auto z() const noexcept -> const Type& {
     return m_comps[2];
   }
 
-  template <unsigned int C = Count, typename = std::enable_if_t<C >= 3>>
+  template <size_t S = Size, typename = std::enable_if_t<S >= 3>>
   [[nodiscard]] constexpr auto b() noexcept -> Type& {
     return m_comps[2];
   }
 
-  template <unsigned int C = Count, typename = std::enable_if_t<C >= 3>>
+  template <size_t S = Size, typename = std::enable_if_t<S >= 3>>
   [[nodiscard]] constexpr auto b() const noexcept -> const Type& {
     return m_comps[2];
   }
 
-  template <unsigned int C = Count, typename = std::enable_if_t<C >= 4>>
+  template <size_t S = Size, typename = std::enable_if_t<S >= 4>>
   [[nodiscard]] constexpr auto w() noexcept -> Type& {
     return m_comps[3];
   }
 
-  template <unsigned int C = Count, typename = std::enable_if_t<C >= 4>>
+  template <size_t S = Size, typename = std::enable_if_t<S >= 4>>
   [[nodiscard]] constexpr auto w() const noexcept -> const Type& {
     return m_comps[3];
   }
 
-  template <unsigned int C = Count, typename = std::enable_if_t<C >= 4>>
+  template <size_t S = Size, typename = std::enable_if_t<S >= 4>>
   [[nodiscard]] constexpr auto a() noexcept -> Type& {
     return m_comps[3];
   }
 
-  template <unsigned int C = Count, typename = std::enable_if_t<C >= 4>>
+  template <size_t S = Size, typename = std::enable_if_t<S >= 4>>
   [[nodiscard]] constexpr auto a() const noexcept -> const Type& {
     return m_comps[3];
   }
 
-  [[nodiscard]] constexpr auto operator==(const Vec<Count, Type>& rhs) const noexcept -> bool {
+  [[nodiscard]] constexpr auto operator==(const Vec<Type, Size>& rhs) const noexcept -> bool {
     return m_comps == rhs.m_comps;
   }
 
-  [[nodiscard]] constexpr auto operator!=(const Vec<Count, Type>& rhs) const noexcept -> bool {
+  [[nodiscard]] constexpr auto operator!=(const Vec<Type, Size>& rhs) const noexcept -> bool {
     return m_comps != rhs.m_comps;
   }
 
-  [[nodiscard]] constexpr auto operator+(const Vec<Count, Type>& rhs) const noexcept
-      -> Vec<Count, Type> {
+  [[nodiscard]] constexpr auto operator+(const Vec<Type, Size>& rhs) const noexcept
+      -> Vec<Type, Size> {
     auto res = *this;
-    for (auto i = 0U; i != Count; ++i) {
+    for (auto i = 0U; i != Size; ++i) {
       res[i] += rhs[i];
     }
     return res;
   }
 
-  [[nodiscard]] constexpr auto operator-(const Vec<Count, Type>& rhs) const noexcept
-      -> Vec<Count, Type> {
+  [[nodiscard]] constexpr auto operator-(const Vec<Type, Size>& rhs) const noexcept
+      -> Vec<Type, Size> {
     auto res = *this;
-    for (auto i = 0U; i != Count; ++i) {
+    for (auto i = 0U; i != Size; ++i) {
       res[i] -= rhs[i];
     }
     return res;
   }
 
-  [[nodiscard]] constexpr auto operator-() const noexcept -> Vec<Count, Type> {
+  [[nodiscard]] constexpr auto operator-() const noexcept -> Vec<Type, Size> {
     auto res = *this;
-    for (auto i = 0U; i != Count; ++i) {
+    for (auto i = 0U; i != Size; ++i) {
       res[i] *= -1;
     }
     return res;
   }
 
-  [[nodiscard]] constexpr auto operator*(const Type& rhs) const noexcept -> Vec<Count, Type> {
+  [[nodiscard]] constexpr auto operator*(const Type& rhs) const noexcept -> Vec<Type, Size> {
     auto res = *this;
-    for (auto i = 0U; i != Count; ++i) {
+    for (auto i = 0U; i != Size; ++i) {
       res[i] *= rhs;
     }
     return res;
   }
 
-  [[nodiscard]] constexpr auto operator/(const Type& rhs) const noexcept -> Vec<Count, Type> {
+  [[nodiscard]] constexpr auto operator/(const Type& rhs) const noexcept -> Vec<Type, Size> {
     auto res = *this;
-    for (auto i = 0U; i != Count; ++i) {
+    for (auto i = 0U; i != Size; ++i) {
       res[i] /= rhs;
     }
     return res;
@@ -165,7 +172,7 @@ public:
    */
   [[nodiscard]] constexpr auto getSqrMag() const noexcept -> Type {
     Type res = {};
-    for (auto i = 0U; i != Count; ++i) {
+    for (auto i = 0U; i != Size; ++i) {
       res += m_comps[i] * m_comps[i];
     }
     return res;
@@ -181,24 +188,33 @@ public:
   /* Calculate a normalized version of this vector (unit vector).
    * Note: If magnitude is 0 then call this function results in undefined behaviour.
    */
-  [[nodiscard]] constexpr auto getNorm() const noexcept -> Vec<Count, Type> {
+  [[nodiscard]] constexpr auto getNorm() const noexcept -> Vec<Type, Size> {
     auto mag = getMag();
     return *this / mag;
   }
 
+  /* Mem-copy the values to a destination pointer.
+   * Note: care must be taken that the output buffer is at least 'getSize()' elements big.
+   */
+  constexpr auto memcpy(Type* outPtr) const noexcept -> Type* {
+    assert(outPtr);
+    ::memcpy(outPtr, begin(), sizeof(Type) * Size);
+    return outPtr;
+  }
+
 private:
-  std::array<Type, Count> m_comps;
+  std::array<Type, Size> m_comps;
 };
 
-using Vec2f = Vec<2, float>;
-using Vec3f = Vec<3, float>;
-using Vec4f = Vec<4, float>;
+using Vec2f = Vec<float, 2>;
+using Vec3f = Vec<float, 3>;
+using Vec4f = Vec<float, 4>;
 
-using Vec2i = Vec<2, int>;
-using Vec3i = Vec<3, int>;
-using Vec4i = Vec<4, int>;
+using Vec2i = Vec<int, 2>;
+using Vec3i = Vec<int, 3>;
+using Vec4i = Vec<int, 4>;
 
-using Color = Vec<4, float>;
+using Color = Vec<float, 4>;
 
 namespace position {
 
@@ -245,11 +261,11 @@ namespace color {
  */
 namespace std {
 
-template <unsigned int Count, typename Type>
-struct tuple_size<tria::math::Vec<Count, Type>> : std::integral_constant<size_t, Count> {};
+template <typename Type, size_t Size>
+struct tuple_size<tria::math::Vec<Type, Size>> : std::integral_constant<size_t, Size> {};
 
-template <std::size_t N, unsigned int Count, typename Type>
-struct tuple_element<N, tria::math::Vec<Count, Type>> {
+template <std::size_t N, typename Type, size_t Size>
+struct tuple_element<N, tria::math::Vec<Type, Size>> {
   using type = Type;
 };
 
