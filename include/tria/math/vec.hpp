@@ -18,10 +18,10 @@ public:
   [[nodiscard]] constexpr auto getSize() noexcept -> size_t { return Size; }
   [[nodiscard]] constexpr auto getByteSize() noexcept -> size_t { return sizeof(Type) * Size; };
 
-  [[nodiscard]] constexpr auto begin() noexcept -> Type* { return m_comps.begin(); }
-  [[nodiscard]] constexpr auto begin() const noexcept -> const Type* { return m_comps.begin(); }
-  [[nodiscard]] constexpr auto end() noexcept -> Type* { return m_comps.end(); }
-  [[nodiscard]] constexpr auto end() const noexcept -> const Type* { return m_comps.end(); }
+  [[nodiscard]] constexpr auto begin() noexcept -> Type* { return m_comps.data(); }
+  [[nodiscard]] constexpr auto begin() const noexcept -> const Type* { return m_comps.data(); }
+  [[nodiscard]] constexpr auto end() noexcept -> Type* { return m_comps.data() + Size; }
+  [[nodiscard]] constexpr auto end() const noexcept -> const Type* { return m_comps.data() + Size; }
 
   [[nodiscard]] constexpr auto operator[](size_t idx) noexcept -> Type& { return m_comps[idx]; }
 
