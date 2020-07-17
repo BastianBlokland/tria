@@ -56,7 +56,7 @@ public:
         m_buffer.append(itr->getKey());
         m_buffer.append("\": ");
 
-        itr->writeValue(&m_buffer, Param::WriteMode::Json);
+        itr->writeValue(&m_buffer, ParamWriteMode::Json);
 
         auto isLast = itr == msg.end() - 1;
         if (!isLast) {

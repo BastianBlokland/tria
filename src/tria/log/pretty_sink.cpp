@@ -96,7 +96,7 @@ public:
 
         appendStyle(ansiBold());
 
-        param.writeValue(&m_buffer, Param::WriteMode::Pretty);
+        param.writeValue(&m_buffer, ParamWriteMode::Pretty);
         m_buffer.append("\n");
 
         appendStyle(ansiReset());

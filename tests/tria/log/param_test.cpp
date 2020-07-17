@@ -13,13 +13,13 @@ namespace {
 
 auto toStringPretty(const Param& param) {
   auto str = std::string{};
-  param.writeValue(&str, Param::WriteMode::Pretty);
+  param.writeValue(&str, ParamWriteMode::Pretty);
   return str;
 }
 
 auto toStringJson(const Param& param) {
   auto str = std::string{};
-  param.writeValue(&str, Param::WriteMode::Json);
+  param.writeValue(&str, ParamWriteMode::Json);
   return str;
 }
 
@@ -85,6 +85,11 @@ TEST_CASE("[log] - Log parameters", "[log]") {
     CHECK(toStringPretty({"key", MemSize{42}}) == "42 B");
     CHECK(toStringPretty({"key", MemSize{4242}}) == "4.1 KiB");
     CHECK(toStringPretty({"key", MemSize{424242}}) == "414.3 KiB");
+
+    CHECK(toStringPretty({"key", 1, 2, 3}) == "1, 2, 3");
+    CHECK(
+        toStringPretty({"key", 1, MemSize{424242}, 42ms, "Hello World"}) ==
+        "1, 414.3 KiB, 42 ms, Hello World");
   }
 
   SECTION("Parameters can be json printed") {
@@ -109,6 +114,11 @@ TEST_CASE("[log] - Log parameters", "[log]") {
         "\"2020-07-13T12:36:42.000000Z\"");
 
     CHECK(toStringJson({"key", MemSize{1024UL * 1024}}) == "1048576");
+
+    CHECK(toStringJson({"key", 1, 2, 3}) == "[1, 2, 3]");
+    CHECK(
+        toStringJson({"key", 1, MemSize{4242}, 42us, "Hello World"}) ==
+        "[1, 4242, 42000, \"Hello World\"]");
   }
 }
 
