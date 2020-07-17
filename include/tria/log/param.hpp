@@ -101,9 +101,12 @@ private:
 /* Factory that constructs a Value (or a std::vector<Value>) from an arbitrary type.
  * Designed to be an extension point by specializing for a custom type.
  */
-template <typename Type>
+template <typename T>
 struct ValueFactory final {
-  [[nodiscard]] auto operator()(Type&& t) const noexcept -> Value { return Value{std::move(t)}; }
+  template <typename U>
+  [[nodiscard]] auto operator()(U&& raw) const noexcept -> Value {
+    return Value{std::forward<U>(raw)};
+  }
 };
 
 /* Parameter of a log message.
@@ -115,7 +118,7 @@ public:
   Param() = delete;
 
   template <typename T>
-  Param(std::string_view key, T&& rawValue, ValueFactory<T> factory = {}) noexcept :
+  Param(std::string_view key, T&& rawValue, ValueFactory<std::decay_t<T>> factory = {}) noexcept :
       m_key{key}, m_value{factory(std::forward<T>(rawValue))} {}
 
   template <typename... RawValues>

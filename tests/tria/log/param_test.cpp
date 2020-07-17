@@ -52,14 +52,14 @@ struct CustomType2 final {
  */
 template <>
 struct ValueFactory<CustomType1> {
-  auto operator()(CustomType1&& t) const noexcept -> Value { return {t.field}; }
+  auto operator()(CustomType1 t) const noexcept -> Value { return {t.field}; }
 };
 
 /* Specialization of a value-factory for our CustomType2.
  */
 template <>
 struct ValueFactory<CustomType2> {
-  auto operator()(CustomType2&& t) const noexcept -> std::vector<Value> {
+  auto operator()(CustomType2 t) const noexcept -> std::vector<Value> {
     return {t.field, 42, "Hello World"};
   }
 };
@@ -117,7 +117,12 @@ TEST_CASE("[log] - Log parameters", "[log]") {
     CHECK(toStringPretty({"key", MemSize{424242}}) == "414.3 KiB");
 
     CHECK(toStringPretty({"key", CustomType1{1337}}) == "1337");
+    const auto ct1 = CustomType1{1337};
+    CHECK(toStringPretty({"key", ct1}) == "1337");
+
     CHECK(toStringPretty({"key", CustomType2{1337}}) == "1337, 42, Hello World");
+    const auto ct2 = CustomType2{1337};
+    CHECK(toStringPretty({"key", ct2}) == "1337, 42, Hello World");
 
     CHECK(toStringPretty({"key", 1, 2, 3}) == "1, 2, 3");
     CHECK(
