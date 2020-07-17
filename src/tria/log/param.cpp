@@ -36,16 +36,13 @@ End:
 template <typename>
 constexpr bool falseValue = false;
 
-Param::Param(std::string_view key, std::string value) noexcept :
-    m_key{key}, m_value{escape(std::move(value))} {}
+Value::Value(std::string value) noexcept : m_val{escape(std::move(value))} {}
 
-auto Param::operator==(const Param& rhs) const noexcept -> bool {
-  return m_key == rhs.m_key && m_value == rhs.m_value;
-}
+auto Value::operator==(const Value& rhs) const noexcept -> bool { return m_val == rhs.m_val; }
 
-auto Param::operator!=(const Param& rhs) const noexcept -> bool { return !Param::operator==(rhs); }
+auto Value::operator!=(const Value& rhs) const noexcept -> bool { return !Value::operator==(rhs); }
 
-auto Param::writeValue(std::string* tgtStr, WriteMode mode) const noexcept -> void {
+auto Value::write(std::string* tgtStr, ParamWriteMode mode) const noexcept -> void {
   assert(tgtStr);
   std::visit(
       [tgtStr, mode](auto&& arg) {
@@ -64,47 +61,85 @@ auto Param::writeValue(std::string* tgtStr, WriteMode mode) const noexcept -> vo
         }
         // NOLINTNEXTLINE(bugprone-branch-clone)
         else if constexpr (std::is_same_v<T, std::string>) {
-          if (mode == WriteMode::Json) {
+          if (mode == ParamWriteMode::Json) {
             tgtStr->append("\"");
           }
           tgtStr->append(arg);
-          if (mode == WriteMode::Json) {
+          if (mode == ParamWriteMode::Json) {
             tgtStr->append("\"");
           }
         }
         // NOLINTNEXTLINE(bugprone-branch-clone)
         else if constexpr (std::is_same_v<T, Duration>) {
           switch (mode) {
-          case WriteMode::Json: {
+          case ParamWriteMode::Json: {
             // In json write the elapsed nanoseconds.
             auto nanoSec = std::chrono::duration_cast<std::chrono::nanoseconds>(arg).count();
             internal::writeInt(tgtStr, nanoSec);
           } break;
-          case WriteMode::Pretty:
+          case ParamWriteMode::Pretty:
             internal::writePrettyDuration(tgtStr, arg);
             break;
           }
         } else if constexpr (std::is_same_v<T, TimePoint>) {
-          if (mode == WriteMode::Json) {
+          if (mode == ParamWriteMode::Json) {
             tgtStr->append("\"");
           }
           internal::writeIsoTime(tgtStr, arg);
-          if (mode == WriteMode::Json) {
+          if (mode == ParamWriteMode::Json) {
             tgtStr->append("\"");
           }
         }
         // NOLINTNEXTLINE(bugprone-branch-clone)
         else if constexpr (std::is_same_v<T, MemSize>)
           switch (mode) {
-          case WriteMode::Json:
+          case ParamWriteMode::Json:
             // In json just write the size in bytes.
             internal::writeInt(tgtStr, arg.getSize());
             break;
-          case WriteMode::Pretty:
+          case ParamWriteMode::Pretty:
             internal::writePrettyMemSize(tgtStr, arg.getSize());
             break;
           }
         else {
+          static_assert(falseValue<T>, "Non exhaustive write-value routine");
+        }
+      },
+      m_val);
+}
+
+auto Param::operator==(const Param& rhs) const noexcept -> bool {
+  return m_key == rhs.m_key && m_value == rhs.m_value;
+}
+
+auto Param::operator!=(const Param& rhs) const noexcept -> bool { return !Param::operator==(rhs); }
+
+auto Param::writeValue(std::string* tgtStr, ParamWriteMode mode) const noexcept -> void {
+  assert(tgtStr);
+  std::visit(
+      [tgtStr, mode](const auto& arg) {
+        using T = std::decay_t<decltype(arg)>;
+        if constexpr (std::is_same_v<T, Value>) {
+
+          arg.write(tgtStr, mode);
+
+        } else if constexpr (std::is_same_v<T, std::vector<Value>>) {
+
+          if (mode == ParamWriteMode::Json) {
+            tgtStr->append("[");
+          }
+          for (auto itr = arg.begin(); itr != arg.end(); ++itr) {
+            itr->write(tgtStr, mode);
+            auto isLast = itr == arg.end() - 1;
+            if (!isLast) {
+              tgtStr->append(", ");
+            }
+          }
+          if (mode == ParamWriteMode::Json) {
+            tgtStr->append("]");
+          }
+
+        } else {
           static_assert(falseValue<T>, "Non exhaustive write-value routine");
         }
       },

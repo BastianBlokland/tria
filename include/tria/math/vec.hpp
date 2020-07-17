@@ -1,4 +1,5 @@
 #pragma once
+#include "tria/log/param.hpp"
 #include "tria/math/utils.hpp"
 #include <array>
 #include <cassert>
@@ -272,20 +273,21 @@ namespace color {
 /* Get a color based on a unsigned integer, usefull for getting a color in debug code.
  */
 [[nodiscard]] constexpr auto get(unsigned int i) noexcept -> Color {
-  constexpr auto generators = std::array<Color (*)(), 14>{silver,
-                                                          gray,
-                                                          red,
-                                                          maroon,
-                                                          yellow,
-                                                          olive,
-                                                          lime,
-                                                          green,
-                                                          aqua,
-                                                          teal,
-                                                          blue,
-                                                          navy,
-                                                          fuchsia,
-                                                          purple};
+  constexpr auto generators = std::array<Color (*)(), 14>{
+      silver,
+      gray,
+      red,
+      maroon,
+      yellow,
+      olive,
+      lime,
+      green,
+      aqua,
+      teal,
+      blue,
+      navy,
+      fuchsia,
+      purple};
   return generators[i % generators.size()]();
 }
 
@@ -293,7 +295,7 @@ namespace color {
 
 } // namespace tria::math
 
-/* Specialize tuple_size and tuple_element so we can use structured bindings for Vec.
+/* Specialize std::tuple_size and std::tuple_element so we can use structured bindings for vectors.
  */
 namespace std {
 
@@ -306,3 +308,21 @@ struct tuple_element<N, tria::math::Vec<Type, Size>> {
 };
 
 } // namespace std
+
+/* Specialize tria::log::ValueFactory so vectors can be used as log parameters.
+ */
+namespace tria::log {
+
+template <typename Type, size_t Size>
+struct ValueFactory<math::Vec<Type, Size>> {
+  auto operator()(math::Vec<Type, Size> vec) const noexcept -> std::vector<Value> {
+    auto res = std::vector<Value>{};
+    res.reserve(Size);
+    for (auto i = 0U; i != Size; ++i) {
+      res.emplace_back(vec[i]);
+    }
+    return res;
+  }
+};
+
+} // namespace tria::log

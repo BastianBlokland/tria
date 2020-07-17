@@ -4,6 +4,7 @@
 #include <string_view>
 #include <type_traits>
 #include <variant>
+#include <vector>
 
 namespace tria::log {
 
@@ -30,7 +31,14 @@ private:
   size_t m_size;
 };
 
-/* Runtime parameter to a log message.
+/* Supported output mode for writing a value.
+ */
+enum class ParamWriteMode {
+  Pretty,
+  Json,
+};
+
+/* Value of a log parameter.
  * Supported types:
  * - Integer types (stored in a signed/unsigned 64 bit integer).
  * - Floating point types (float and double, stored as a double).
@@ -40,45 +48,82 @@ private:
  * - TimePoint (std::chrono::system_clock::time_point).
  * - MemSize (wrapper around size_t).
  *
- * Note: Keys should be literals or strings that have a longer lifetime then the logger.
  * Note: Because it can store std::string it should be moved whenever possible.
  */
-class Param final {
+class Value final {
 public:
-  enum class WriteMode {
-    Pretty,
-    Json,
-  };
-
-  Param() = delete;
+  Value() = delete;
 
   template <
       typename T,
       std::enable_if_t<std::is_integral<T>::value && std::is_signed<T>::value, void*> = nullptr>
-  Param(std::string_view key, T value) noexcept :
-      m_key{key}, m_value{static_cast<int64_t>(value)} {}
+  Value(T value) noexcept : m_val{static_cast<int64_t>(value)} {}
 
   template <
       typename T,
       std::enable_if_t<std::is_integral<T>::value && std::is_unsigned<T>::value, void*> = nullptr>
-  Param(std::string_view key, T value) noexcept :
-      m_key{key}, m_value{static_cast<uint64_t>(value)} {}
+  Value(T value) noexcept : m_val{static_cast<uint64_t>(value)} {}
 
-  Param(std::string_view key, bool value) noexcept : m_key{key}, m_value{value} {}
+  Value(bool value) noexcept : m_val{value} {}
 
-  Param(std::string_view key, double value) noexcept : m_key{key}, m_value{value} {}
+  Value(double value) noexcept : m_val{value} {}
 
-  Param(std::string_view key, const char* value) noexcept : Param(key, std::string(value)) {}
+  Value(const char* value) noexcept : Value(std::string(value)) {}
 
-  Param(std::string_view key, std::string_view value) noexcept : Param(key, std::string(value)) {}
+  Value(std::string_view value) noexcept : Value(std::string(value)) {}
 
-  Param(std::string_view key, std::string value) noexcept;
+  Value(std::string value) noexcept;
 
-  Param(std::string_view key, Duration value) noexcept : m_key{key}, m_value{value} {}
+  Value(Duration value) noexcept : m_val{value} {}
 
-  Param(std::string_view key, TimePoint value) noexcept : m_key{key}, m_value{value} {}
+  Value(TimePoint value) noexcept : m_val{value} {}
 
-  Param(std::string_view key, MemSize value) noexcept : m_key{key}, m_value{value} {}
+  Value(MemSize value) noexcept : m_val{value} {}
+
+  Value(const Value& rhs)     = default;
+  Value(Value&& rhs) noexcept = default;
+
+  auto operator=(const Value& rhs) -> Value& = default;
+  auto operator=(Value&& rhs) noexcept -> Value& = default;
+
+  auto operator==(const Value& rhs) const noexcept -> bool;
+  auto operator!=(const Value& rhs) const noexcept -> bool;
+
+  auto write(std::string* tgtStr, ParamWriteMode mode) const noexcept -> void;
+
+private:
+  using ValueType =
+      std::variant<int64_t, uint64_t, double, bool, std::string, Duration, TimePoint, MemSize>;
+
+  ValueType m_val;
+};
+
+/* Factory that constructs a Value (or a std::vector<Value>) from an arbitrary type.
+ * Designed to be an extension point by specializing for a custom type.
+ */
+template <typename T>
+struct ValueFactory final {
+  template <typename U>
+  [[nodiscard]] auto operator()(U&& raw) const noexcept -> Value {
+    return Value{std::forward<U>(raw)};
+  }
+};
+
+/* Parameter of a log message.
+ * Note: Keys should be literals or strings that have a longer lifetime then the logger.
+ * Note: Because it can store strings or vectors it should be moved whenever possible.
+ */
+class Param final {
+public:
+  Param() = delete;
+
+  template <typename T>
+  Param(std::string_view key, T&& rawValue, ValueFactory<std::decay_t<T>> factory = {}) noexcept :
+      m_key{key}, m_value{factory(std::forward<T>(rawValue))} {}
+
+  template <typename... RawValues>
+  Param(std::string_view key, RawValues&&... rawValues) noexcept :
+      m_key{key}, m_value{std::vector<Value>{Value{std::forward<RawValues>(rawValues)}...}} {}
 
   Param(const Param& rhs)     = default;
   Param(Param&& rhs) noexcept = default;
@@ -91,11 +136,10 @@ public:
 
   [[nodiscard]] constexpr auto getKey() const noexcept { return m_key; }
 
-  auto writeValue(std::string* tgtStr, WriteMode mode) const noexcept -> void;
+  auto writeValue(std::string* tgtStr, ParamWriteMode mode) const noexcept -> void;
 
 private:
-  using ValueType =
-      std::variant<int64_t, uint64_t, double, bool, std::string, Duration, TimePoint, MemSize>;
+  using ValueType = std::variant<Value, std::vector<Value>>;
 
   std::string_view m_key;
   ValueType m_value;
