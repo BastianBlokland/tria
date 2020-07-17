@@ -10,7 +10,7 @@ namespace tria::math {
 
 template <typename Type, size_t Size>
 class Vec final {
-  static_assert(std::is_arithmetic<Type>::value, "Type has to be arithmetic");
+  static_assert(std::is_arithmetic_v<Type>, "Type has to be arithmetic");
 
 public:
   template <typename... Components>

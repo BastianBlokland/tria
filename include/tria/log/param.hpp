@@ -56,12 +56,12 @@ public:
 
   template <
       typename T,
-      std::enable_if_t<std::is_integral<T>::value && std::is_signed<T>::value, void*> = nullptr>
+      std::enable_if_t<std::is_integral_v<T> && std::is_signed_v<T>, void*> = nullptr>
   Value(T value) noexcept : m_val{static_cast<int64_t>(value)} {}
 
   template <
       typename T,
-      std::enable_if_t<std::is_integral<T>::value && std::is_unsigned<T>::value, void*> = nullptr>
+      std::enable_if_t<std::is_integral_v<T> && std::is_unsigned_v<T>, void*> = nullptr>
   Value(T value) noexcept : m_val{static_cast<uint64_t>(value)} {}
 
   Value(bool value) noexcept : m_val{value} {}

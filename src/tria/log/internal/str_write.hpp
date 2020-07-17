@@ -14,17 +14,17 @@ constexpr bool falseValue = false;
 
 template <typename T>
 constexpr auto getIntFormatSpecifier() noexcept -> const char* {
-  if constexpr (std::is_same<T, int>::value) {
+  if constexpr (std::is_same_v<T, int>) {
     return "%d";
-  } else if constexpr (std::is_same<T, unsigned int>::value) {
+  } else if constexpr (std::is_same_v<T, unsigned int>) {
     return "%u";
-  } else if constexpr (std::is_same<T, long>::value) {
+  } else if constexpr (std::is_same_v<T, long>) {
     return "%ld";
-  } else if constexpr (std::is_same<T, unsigned long>::value) {
+  } else if constexpr (std::is_same_v<T, unsigned long>) {
     return "%lu";
-  } else if constexpr (std::is_same<T, long long>::value) {
+  } else if constexpr (std::is_same_v<T, long long>) {
     return "%lld";
-  } else if constexpr (std::is_same<T, unsigned long long>::value) {
+  } else if constexpr (std::is_same_v<T, unsigned long long>) {
     return "%llu";
   } else {
     static_assert(falseValue<T>, "Unsupported type");
@@ -34,11 +34,11 @@ constexpr auto getIntFormatSpecifier() noexcept -> const char* {
 
 template <typename T>
 constexpr auto getSecondsFracFormatSpecifier() noexcept -> const char* {
-  if constexpr (std::is_same<T, int>::value) {
+  if constexpr (std::is_same_v<T, int>) {
     return "%06d";
-  } else if constexpr (std::is_same<T, long>::value) {
+  } else if constexpr (std::is_same_v<T, long>) {
     return "%06ld";
-  } else if constexpr (std::is_same<T, long long>::value) {
+  } else if constexpr (std::is_same_v<T, long long>) {
     return "%06lld";
   } else {
     static_assert(falseValue<T>, "Unsupported type");
