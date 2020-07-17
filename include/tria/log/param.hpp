@@ -98,6 +98,14 @@ private:
   ValueType m_val;
 };
 
+/* Factory that constructs a Value (or a std::vector<Value>) from an arbitrary type.
+ * Designed to be an extension point by specializing for a custom type.
+ */
+template <typename Type>
+struct ValueFactory final {
+  [[nodiscard]] auto operator()(Type&& t) const noexcept -> Value { return Value{std::move(t)}; }
+};
+
 /* Parameter of a log message.
  * Note: Keys should be literals or strings that have a longer lifetime then the logger.
  * Note: Because it can store strings or vectors it should be moved whenever possible.
@@ -106,9 +114,9 @@ class Param final {
 public:
   Param() = delete;
 
-  template <typename RawValue>
-  Param(std::string_view key, RawValue&& rawValue) noexcept :
-      m_key{key}, m_value{Value{std::forward<RawValue>(rawValue)}} {}
+  template <typename T>
+  Param(std::string_view key, T&& rawValue, ValueFactory<T> factory = {}) noexcept :
+      m_key{key}, m_value{factory(std::forward<T>(rawValue))} {}
 
   template <typename... RawValues>
   Param(std::string_view key, RawValues&&... rawValues) noexcept :

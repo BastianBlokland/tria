@@ -7,7 +7,7 @@
 #define timezone _timezone
 #endif
 
-namespace tria::log::tests {
+namespace tria::log {
 
 namespace {
 
@@ -34,7 +34,37 @@ auto getRefTimeT(int year, int month, int day, int hour, int min, int sec) -> Ti
   return std::chrono::system_clock::from_time_t(std::mktime(&t) - timezone);
 }
 
+/* Type to test logging custom types.
+ */
+struct CustomType1 final {
+  int field;
+};
+
+/* Type to test logging custom types.
+ */
+struct CustomType2 final {
+  int field;
+};
+
 } // namespace
+
+/* Specialization of a value-factory for our CustomType1.
+ */
+template <>
+struct ValueFactory<CustomType1> {
+  auto operator()(CustomType1&& t) const noexcept -> Value { return {t.field}; }
+};
+
+/* Specialization of a value-factory for our CustomType2.
+ */
+template <>
+struct ValueFactory<CustomType2> {
+  auto operator()(CustomType2&& t) const noexcept -> std::vector<Value> {
+    return {t.field, 42, "Hello World"};
+  }
+};
+
+namespace tests {
 
 TEST_CASE("[log] - Log parameters", "[log]") {
 
@@ -86,6 +116,9 @@ TEST_CASE("[log] - Log parameters", "[log]") {
     CHECK(toStringPretty({"key", MemSize{4242}}) == "4.1 KiB");
     CHECK(toStringPretty({"key", MemSize{424242}}) == "414.3 KiB");
 
+    CHECK(toStringPretty({"key", CustomType1{1337}}) == "1337");
+    CHECK(toStringPretty({"key", CustomType2{1337}}) == "1337, 42, Hello World");
+
     CHECK(toStringPretty({"key", 1, 2, 3}) == "1, 2, 3");
     CHECK(
         toStringPretty({"key", 1, MemSize{424242}, 42ms, "Hello World"}) ==
@@ -115,6 +148,9 @@ TEST_CASE("[log] - Log parameters", "[log]") {
 
     CHECK(toStringJson({"key", MemSize{1024UL * 1024}}) == "1048576");
 
+    CHECK(toStringJson({"key", CustomType1{1337}}) == "1337");
+    CHECK(toStringJson({"key", CustomType2{1337}}) == "[1337, 42, \"Hello World\"]");
+
     CHECK(toStringJson({"key", 1, 2, 3}) == "[1, 2, 3]");
     CHECK(
         toStringJson({"key", 1, MemSize{4242}, 42us, "Hello World"}) ==
@@ -122,4 +158,6 @@ TEST_CASE("[log] - Log parameters", "[log]") {
   }
 }
 
-} // namespace tria::log::tests
+} // namespace tests
+
+} // namespace tria::log
