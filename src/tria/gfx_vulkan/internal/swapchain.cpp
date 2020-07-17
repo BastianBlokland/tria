@@ -296,8 +296,7 @@ auto Swapchain::initSwapchain(VkRenderPass vkRenderPass) -> bool {
       "Swapchain created",
       {"presentMode", getVkPresentModeString(presentMode)},
       {"imageCount", m_imgCount},
-      {"width", m_extent.width},
-      {"height", m_extent.height});
+      {"size", m_extent.width, m_extent.height});
 
   m_swapchainOutOfDate = false;
   return true;

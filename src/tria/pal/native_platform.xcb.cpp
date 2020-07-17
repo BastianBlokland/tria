@@ -48,12 +48,7 @@ auto NativePlatform::handleEvents() -> void {
 
       const auto newSize = WindowSize{configMsg->width, configMsg->height};
       if (newSize != winData->size) {
-        LOG_D(
-            m_logger,
-            "Window resized",
-            {"id", configMsg->window},
-            {"width", newSize.x()},
-            {"height", newSize.y()});
+        LOG_D(m_logger, "Window resized", {"id", configMsg->window}, {"size", newSize});
       }
       winData->size = newSize;
     } break;
@@ -103,7 +98,7 @@ auto NativePlatform::createWindow(WindowSize size) -> Window {
   xcb_map_window(m_xcbCon, winId);
   xcb_flush(m_xcbCon);
 
-  LOG_I(m_logger, "Window created", {"id", winId}, {"width", size.x()}, {"height", size.y()});
+  LOG_I(m_logger, "Window created", {"id", winId}, {"size", size});
 
   // Keep track of the window data.
   m_windows.insert({winId, WindowData{winId, size}});
@@ -176,8 +171,7 @@ auto NativePlatform::xcbSetup() -> void {
       m_logger,
       "Xcb connected",
       {"screenNum", screenNum},
-      {"screenWidth", m_xcbScreen->width_in_pixels},
-      {"screenHeight", m_xcbScreen->height_in_pixels});
+      {"screenSize", m_xcbScreen->width_in_pixels, m_xcbScreen->height_in_pixels});
 }
 
 auto NativePlatform::xcbTeardown() noexcept -> void {

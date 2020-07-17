@@ -20,7 +20,7 @@ auto runApp(pal::Platform& platform, asset::Database& db, gfx::Context& gfx) {
   while (!win.getIsCloseRequested() && !pal::isInterruptRequested()) {
     platform.handleEvents();
 
-    if (canvas.drawBegin(math::color::olive())) {
+    if (canvas.drawBegin(math::color::gray())) {
       canvas.draw(triangle, 3);
       canvas.draw(quad, 6);
       canvas.drawEnd();

@@ -141,7 +141,7 @@ auto NativePlatform::createWindow(const WindowSize size) -> Window {
   SetForegroundWindow(winHandle);
   SetFocus(winHandle);
 
-  LOG_I(m_logger, "Window created", {"id", winId}, {"width", size.x()}, {"height", size.y()});
+  LOG_I(m_logger, "Window created", {"id", winId}, {"size", size});
 
   // Keep track of the window data.
   m_windows.insert({winId, WindowData{winId, winHandle, std::move(className), dwStyle, size}});
@@ -205,8 +205,7 @@ auto NativePlatform::win32Setup() -> void {
   LOG_I(
       m_logger,
       "Win32 init",
-      {"screenWidth", GetSystemMetrics(SM_CXSCREEN)},
-      {"screenHeight", GetSystemMetrics(SM_CYSCREEN)});
+      {"screenSize", GetSystemMetrics(SM_CXSCREEN), GetSystemMetrics(SM_CYSCREEN)});
 }
 
 auto NativePlatform::handleEvent(HWND hWnd, UINT msg, WPARAM /*unused*/, LPARAM lParam) noexcept
@@ -227,12 +226,7 @@ auto NativePlatform::handleEvent(HWND hWnd, UINT msg, WPARAM /*unused*/, LPARAM 
       const auto newHeight = HIWORD(lParam);
       const auto newSize   = WindowSize{newWidth, newHeight};
       if (newSize != window->size) {
-        LOG_D(
-            m_logger,
-            "Window resized",
-            {"id", window->id},
-            {"width", newWidth},
-            {"height", newHeight});
+        LOG_D(m_logger, "Window resized", {"id", window->id}, {"size", newSize});
       }
       window->size = newSize;
       return true;

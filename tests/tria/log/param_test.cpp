@@ -1,5 +1,6 @@
 #include "catch2/catch.hpp"
 #include "tria/log/param.hpp"
+#include "tria/math/vec.hpp"
 #include <ctime>
 #include <string>
 
@@ -116,6 +117,12 @@ TEST_CASE("[log] - Log parameters", "[log]") {
     CHECK(toStringPretty({"key", MemSize{4242}}) == "4.1 KiB");
     CHECK(toStringPretty({"key", MemSize{424242}}) == "414.3 KiB");
 
+    CHECK(toStringPretty({"key", math::color::red()}) == "1, 0, 0, 1");
+    CHECK(toStringPretty({"key", math::Vec2i{42, 1337}}) == "42, 1337");
+
+    const auto vec3 = math::Vec3i{1, 2, 3};
+    CHECK(toStringPretty({"key", vec3}) == "1, 2, 3");
+
     CHECK(toStringPretty({"key", CustomType1{1337}}) == "1337");
     const auto ct1 = CustomType1{1337};
     CHECK(toStringPretty({"key", ct1}) == "1337");
@@ -152,6 +159,9 @@ TEST_CASE("[log] - Log parameters", "[log]") {
         "\"2020-07-13T12:36:42.000000Z\"");
 
     CHECK(toStringJson({"key", MemSize{1024UL * 1024}}) == "1048576");
+
+    CHECK(toStringJson({"key", math::color::red()}) == "[1, 0, 0, 1]");
+    CHECK(toStringJson({"key", math::Vec2i{42, 1337}}) == "[42, 1337]");
 
     CHECK(toStringJson({"key", CustomType1{1337}}) == "1337");
     CHECK(toStringJson({"key", CustomType2{1337}}) == "[1337, 42, \"Hello World\"]");
