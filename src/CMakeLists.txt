@@ -1,20 +1,3 @@
-include(FetchContent)
-
-# External: 'simdjson' json parsing library.
-message(STATUS "Fetching dependency: simdjson")
-FetchContent_Declare(
-  simdjson
-  GIT_REPOSITORY https://github.com/simdjson/simdjson.git
-  GIT_TAG v0.4.6
-  GIT_SHALLOW TRUE)
-set(SIMDJSON_JUST_LIBRARY ON CACHE INTERNAL "")
-set(SIMDJSON_BUILD_STATIC ON CACHE INTERNAL "")
-set(SIMDJSON_COMPETITION OFF CACHE INTERNAL "")
-FetchContent_MakeAvailable(simdjson)
-
-# Enable linting, add external code above this line.
-enable_linting()
-
 # Asset (asset loading library).
 message(STATUS "Configuring asset library")
 add_library(tria_asset STATIC
@@ -28,6 +11,7 @@ add_library(tria_asset STATIC
 target_compile_features(tria_asset PRIVATE cxx_std_17)
 target_include_directories(tria_asset PUBLIC ${PROJECT_SOURCE_DIR}/include)
 target_link_libraries(tria_asset PRIVATE simdjson)
+target_link_libraries(tria_asset PRIVATE tinyobjloader)
 target_link_libraries(tria_asset PRIVATE tria_log)
 target_link_libraries(tria_asset PRIVATE Threads::Threads)
 

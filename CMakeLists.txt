@@ -74,26 +74,53 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 # reason is that MinGW does not respect that file.
 set(CMAKE_CXX_USE_RESPONSE_FILE_FOR_INCLUDES OFF)
 
-# Define a function that can be used to enable linting tools.
-# Reason why not to just enable it here is that we don't want to run it on external code.
-function(enable_linting)
-  if(LINTING)
-    # Use the clang-tidy linter if installed.
-    find_program(CLANG_TIDY_BIN NAMES "clang-tidy" "clang-tidy-9")
-    if(CLANG_TIDY_BIN)
-      message(STATUS "Enabling clang-tidy linter")
-      set(CMAKE_CXX_CLANG_TIDY ${CLANG_TIDY_BIN})
-    endif()
-  endif()
-endfunction()
-
 # Replace config variables in the config header.
 configure_file("include/tria/config.hpp.in" "${PROJECT_SOURCE_DIR}/include/tria/config.hpp")
 
-# Older version of libstdc++ require linking against the std::filesystem library manually.
-if((UNIX AND NOT APPLE) OR MINGW)
-  message(STATUS "Add linking to stdc++fs (filesystem library)")
-  link_libraries(stdc++fs)
+# Set a define that is the length of the path to the root directory. Usefull to make absolute paths
+# inside the project relative to the root in a cheap way.
+string(LENGTH "${CMAKE_SOURCE_DIR}/" SRC_PATH_LENGTH)
+add_definitions("-DSRC_PATH_LENGTH=${SRC_PATH_LENGTH}")
+
+include(FetchContent)
+
+# External: 'simdjson' json parsing library.
+message(STATUS "Fetching dependency: simdjson")
+FetchContent_Declare(
+  simdjson
+  GIT_REPOSITORY https://github.com/simdjson/simdjson.git
+  GIT_TAG v0.4.6
+  GIT_SHALLOW TRUE)
+set(SIMDJSON_JUST_LIBRARY ON CACHE INTERNAL "")
+set(SIMDJSON_BUILD_STATIC ON CACHE INTERNAL "")
+set(SIMDJSON_COMPETITION OFF CACHE INTERNAL "")
+FetchContent_MakeAvailable(simdjson)
+
+# External: 'tinyobjloader' wavefront obj loader.
+message(STATUS "Fetching dependency: tinyobjloader")
+FetchContent_Declare(
+  tinyobjloader
+  GIT_REPOSITORY https://github.com/tinyobjloader/tinyobjloader.git
+  GIT_TAG v1.0.6
+  GIT_SHALLOW TRUE)
+FetchContent_MakeAvailable(tinyobjloader)
+
+if(BUILD_TESTING)
+  # Enable 'CTest' testing.
+  message(STATUS "Enable CTest dependency")
+  include(CTest)
+  enable_testing()
+
+  # External: 'Catch2' testing framework.
+  message(STATUS "Fetching dependency: catch2")
+  FetchContent_Declare(
+    catch2
+    GIT_REPOSITORY https://github.com/catchorg/Catch2.git
+    GIT_TAG v2.12.3
+    GIT_SHALLOW TRUE)
+  FetchContent_MakeAvailable(catch2)
+  list(APPEND CMAKE_MODULE_PATH ${catch2_SOURCE_DIR}/contrib)
+  include(Catch)
 endif()
 
 # Add dependency to the threads package.
@@ -101,21 +128,25 @@ message(STATUS "Finding threads package")
 set(CMAKE_THREAD_PREFER_PTHREAD On)
 find_package(Threads REQUIRED)
 
-# Set a define that is the length of the path to the root directory. Usefull to make absolute paths
-# inside the project relative to the root in a cheap way.
-string(LENGTH "${CMAKE_SOURCE_DIR}/" SRC_PATH_LENGTH)
-add_definitions("-DSRC_PATH_LENGTH=${SRC_PATH_LENGTH}")
+# Older version of libstdc++ require linking against the std::filesystem library manually.
+if((UNIX AND NOT APPLE) OR MINGW)
+  message(STATUS "Add linking to stdc++fs (filesystem library)")
+  link_libraries(stdc++fs)
+endif()
+
+if(LINTING)
+  # Use the clang-tidy linter if installed.
+  find_program(CLANG_TIDY_BIN NAMES "clang-tidy" "clang-tidy-9")
+  if(CLANG_TIDY_BIN)
+    message(STATUS "Enabling clang-tidy linter")
+    set(CMAKE_CXX_CLANG_TIDY ${CLANG_TIDY_BIN})
+  endif()
+endif()
 
 # Add child cmake files.
 add_subdirectory(src)
 add_subdirectory(apps)
 add_subdirectory(data)
 if(BUILD_TESTING)
-
-  # Enable 'CTest' testing.
-  message(STATUS "Enable CTest dependency")
-  include(CTest)
-  enable_testing()
-
   add_subdirectory(tests)
 endif()
