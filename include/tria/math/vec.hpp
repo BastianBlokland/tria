@@ -273,21 +273,20 @@ namespace color {
 /* Get a color based on a unsigned integer, usefull for getting a color in debug code.
  */
 [[nodiscard]] constexpr auto get(unsigned int i) noexcept -> Color {
-  constexpr auto generators = std::array<Color (*)(), 14>{
-      silver,
-      gray,
-      red,
-      maroon,
-      yellow,
-      olive,
-      lime,
-      green,
-      aqua,
-      teal,
-      blue,
-      navy,
-      fuchsia,
-      purple};
+  constexpr auto generators = std::array<Color (*)(), 14>{silver,
+                                                          gray,
+                                                          red,
+                                                          maroon,
+                                                          yellow,
+                                                          olive,
+                                                          lime,
+                                                          green,
+                                                          aqua,
+                                                          teal,
+                                                          blue,
+                                                          navy,
+                                                          fuchsia,
+                                                          purple};
   return generators[i % generators.size()]();
 }
 
@@ -314,8 +313,8 @@ struct tuple_element<N, tria::math::Vec<Type, Size>> {
 namespace tria::log {
 
 template <typename Type, size_t Size>
-struct ValueFactory<math::Vec<Type, Size>> {
-  auto operator()(math::Vec<Type, Size> vec) const noexcept -> std::vector<Value> {
+struct ValueFactory<math::Vec<Type, Size>> final {
+  [[nodiscard]] auto operator()(math::Vec<Type, Size> vec) const noexcept -> std::vector<Value> {
     auto res = std::vector<Value>{};
     res.reserve(Size);
     for (auto i = 0U; i != Size; ++i) {

@@ -109,6 +109,21 @@ struct ValueFactory final {
   }
 };
 
+/* Specialized ValueFactory for lists of values.
+ */
+template <typename T>
+struct ValueFactory<std::vector<T>> final {
+  // TODO(bastian): Implement this for any iterable type instead of just vectors.
+  [[nodiscard]] auto operator()(const std::vector<T>& vec) const noexcept -> std::vector<Value> {
+    auto result = std::vector<Value>{};
+    result.reserve(vec.size());
+    for (const T& v : vec) {
+      result.emplace_back(v);
+    }
+    return result;
+  }
+};
+
 /* Parameter of a log message.
  * Note: Keys should be literals or strings that have a longer lifetime then the logger.
  * Note: Because it can store strings or vectors it should be moved whenever possible.

@@ -120,6 +120,17 @@ TEST_CASE("[log] - Log parameters", "[log]") {
     CHECK(toStringPretty({"key", math::color::red()}) == "1, 0, 0, 1");
     CHECK(toStringPretty({"key", math::Vec2i{42, 1337}}) == "42, 1337");
 
+    const auto ints = std::vector{1, 2, 3};
+    CHECK(toStringPretty({"key", ints}) == "1, 2, 3");
+
+    const auto strings = std::vector{"Hello", "Good", "World"};
+    CHECK(toStringPretty({"key", strings}) == "Hello, Good, World");
+
+    const auto timestamps = std::vector<log::Duration>{1s, 42ms, 7us};
+    CHECK(toStringPretty({"key", timestamps}) == "1 sec, 42 ms, 7 us");
+
+    CHECK(toStringPretty({"key", std::vector{"Hello"}}) == "Hello");
+
     const auto vec3 = math::Vec3i{1, 2, 3};
     CHECK(toStringPretty({"key", vec3}) == "1, 2, 3");
 
@@ -159,6 +170,11 @@ TEST_CASE("[log] - Log parameters", "[log]") {
         "\"2020-07-13T12:36:42.000000Z\"");
 
     CHECK(toStringJson({"key", MemSize{1024UL * 1024}}) == "1048576");
+
+    const auto ints = std::vector{1, 2, 3};
+    CHECK(toStringJson({"key", ints}) == "[1, 2, 3]");
+
+    CHECK(toStringJson({"key", std::vector{"Hello"}}) == "[\"Hello\"]");
 
     CHECK(toStringJson({"key", math::color::red()}) == "[1, 0, 0, 1]");
     CHECK(toStringJson({"key", math::Vec2i{42, 1337}}) == "[42, 1337]");
