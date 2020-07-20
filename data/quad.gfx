@@ -1,4 +1,5 @@
 {
   "vertShader": "shaders/quad.vert.spv",
-  "fragShader": "shaders/plain.frag.spv"
+  "fragShader": "shaders/plain.frag.spv",
+  "mesh": "models/quad.obj"
 }

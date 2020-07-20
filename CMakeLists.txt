@@ -89,7 +89,7 @@ message(STATUS "Fetching dependency: simdjson")
 FetchContent_Declare(
   simdjson
   GIT_REPOSITORY https://github.com/simdjson/simdjson.git
-  GIT_TAG v0.4.6
+  GIT_TAG v0.4.7
   GIT_SHALLOW TRUE)
 set(SIMDJSON_JUST_LIBRARY ON CACHE INTERNAL "")
 set(SIMDJSON_BUILD_STATIC ON CACHE INTERNAL "")
@@ -101,7 +101,7 @@ message(STATUS "Fetching dependency: tinyobjloader")
 FetchContent_Declare(
   tinyobjloader
   GIT_REPOSITORY https://github.com/tinyobjloader/tinyobjloader.git
-  GIT_TAG v1.0.6
+  GIT_TAG v2.0.0rc6
   GIT_SHALLOW TRUE)
 FetchContent_MakeAvailable(tinyobjloader)
 

@@ -26,8 +26,13 @@ auto endsWith(const std::string& str, const std::string_view suffix) noexcept {
 
 } // namespace
 
-auto loadShader(AssetId id, const fs::path& path, RawData raw, DatabaseImpl * /*unused*/)
-    -> AssetUnique {
+auto loadShader(
+    log::Logger* /*unused*/,
+    DatabaseImpl* /*unused*/,
+    AssetId id,
+    const fs::path& path,
+    RawData raw) -> AssetUnique {
+
   auto shaderKind = getShaderKind(path);
   if (!shaderKind) {
     throw err::AssetLoadErr{path, "Unable to determine shader type"};

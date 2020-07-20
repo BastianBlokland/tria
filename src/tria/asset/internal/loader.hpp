@@ -4,10 +4,9 @@
 
 namespace tria::asset::internal {
 
-using RawData     = std::vector<char>;
-using AssetLoader = AssetUnique (*)(AssetId id, const fs::path& path, RawData, DatabaseImpl*);
+using RawData = std::vector<char>;
 
-[[nodiscard]] auto loadAsset(AssetId id, const fs::path& path, RawData raw, DatabaseImpl* db)
+[[nodiscard]] auto loadAsset(log::Logger*, DatabaseImpl*, AssetId, const fs::path&, RawData)
     -> AssetUnique;
 
 } // namespace tria::asset::internal

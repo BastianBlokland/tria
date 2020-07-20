@@ -4,12 +4,14 @@ add_library(tria_asset STATIC
   tria/asset/internal/graphic_loader.cpp
   tria/asset/internal/json.cpp
   tria/asset/internal/loader.cpp
+  tria/asset/internal/mesh_obj_loader.cpp
   tria/asset/internal/raw_asset_loader.cpp
   tria/asset/internal/shader_loader.cpp
   tria/asset/database.cpp
   tria/asset/database_impl.cpp)
 target_compile_features(tria_asset PRIVATE cxx_std_17)
 target_include_directories(tria_asset PUBLIC ${PROJECT_SOURCE_DIR}/include)
+target_include_directories(tria_asset PRIVATE ${tinyobjloader_INCLUDE_DIRS})
 target_link_libraries(tria_asset PRIVATE simdjson)
 target_link_libraries(tria_asset PRIVATE tinyobjloader)
 target_link_libraries(tria_asset PRIVATE tria_log)

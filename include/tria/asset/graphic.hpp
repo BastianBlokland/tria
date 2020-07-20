@@ -1,5 +1,7 @@
 #pragma once
+#include "tria/asset/mesh.hpp"
 #include "tria/asset/shader.hpp"
+#include <cassert>
 
 namespace tria::asset {
 
@@ -8,8 +10,15 @@ namespace tria::asset {
  */
 class Graphic final : public Asset {
 public:
-  Graphic(AssetId id, const Shader* vertShader, const Shader* fragShader) :
-      Asset{std::move(id), getKind()}, m_vertShader{vertShader}, m_fragShader{fragShader} {}
+  Graphic(AssetId id, const Shader* vertShader, const Shader* fragShader, const Mesh* mesh) :
+      Asset{std::move(id), getKind()},
+      m_vertShader{vertShader},
+      m_fragShader{fragShader},
+      m_mesh{mesh} {
+    assert(m_vertShader);
+    assert(m_fragShader);
+    assert(m_mesh);
+  }
   Graphic(const Graphic& rhs) = delete;
   Graphic(Graphic&& rhs)      = delete;
   ~Graphic() noexcept         = default;
@@ -21,10 +30,12 @@ public:
 
   [[nodiscard]] auto getVertShader() const noexcept { return m_vertShader; }
   [[nodiscard]] auto getFragShader() const noexcept { return m_fragShader; }
+  [[nodiscard]] auto getMesh() const noexcept { return m_mesh; }
 
 private:
   const Shader* m_vertShader;
   const Shader* m_fragShader;
+  const Mesh* m_mesh;
 };
 
 } // namespace tria::asset
