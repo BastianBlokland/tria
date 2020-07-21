@@ -21,8 +21,8 @@ auto runApp(pal::Platform& platform, asset::Database& db, gfx::Context& gfx) {
     platform.handleEvents();
 
     if (canvas.drawBegin(math::color::gray())) {
-      canvas.draw(triangle, 3);
-      canvas.draw(quad, 6);
+      canvas.draw(triangle);
+      canvas.draw(quad);
       canvas.drawEnd();
     } else {
       // Unable to draw, possibly due to a minimized window.

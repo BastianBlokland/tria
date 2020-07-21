@@ -5,6 +5,9 @@
 
 namespace tria::asset {
 
+/*
+ * Per vertex data.
+ */
 struct Vertex final {
   math::Vec3f position;
   math::Color color;
@@ -20,6 +23,9 @@ struct Vertex final {
   }
 };
 
+/*
+ * Asset containing geometry data (vertices).
+ */
 class Mesh final : public Asset {
 public:
   Mesh(AssetId id, std::vector<Vertex> vertices) :

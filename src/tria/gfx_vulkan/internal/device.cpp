@@ -138,6 +138,7 @@ Device::Device(
   // Query supported properties and supported features.
   vkGetPhysicalDeviceProperties(m_vkPhysicalDevice, &m_properties);
   vkGetPhysicalDeviceFeatures(vkPhysicalDevice, &m_features);
+  vkGetPhysicalDeviceMemoryProperties(vkPhysicalDevice, &m_memProperties);
 
   // Create a vulkan surface targetting the given window.
   m_vkSurface                   = createVkSurfaceKhr(vkInstance, window);
@@ -197,6 +198,17 @@ auto Device::queryVkSurfaceCapabilities() const -> VkSurfaceCapabilitiesKHR {
   checkVkResult(
       vkGetPhysicalDeviceSurfaceCapabilitiesKHR(m_vkPhysicalDevice, m_vkSurface, &result));
   return result;
+}
+
+auto Device::getMemoryType(VkMemoryPropertyFlags properties, uint32_t supportedTypesFilter) const
+    -> uint32_t {
+  for (uint32_t i = 0; i < m_memProperties.memoryTypeCount; i++) {
+    if ((supportedTypesFilter & (1U << i)) &&
+        (m_memProperties.memoryTypes[i].propertyFlags & properties) == properties) {
+      return i;
+    }
+  }
+  throw err::DriverErr{"Device has no memory type that satisfies required properties"};
 }
 
 [[nodiscard]] auto getDevice(log::Logger* logger, VkInstance vkInstance, const pal::Window* window)

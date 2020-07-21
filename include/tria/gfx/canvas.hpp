@@ -33,7 +33,7 @@ public:
 
   /* Draw a single instance of the given graphic.
    */
-  auto draw(const asset::Graphic* asset, uint16_t vertexCount) -> void;
+  auto draw(const asset::Graphic* asset) -> void;
 
   /* End drawing and present the result to the window.
    * Note: Has to be preceeded by a call to 'drawBegin'

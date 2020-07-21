@@ -9,9 +9,7 @@ Canvas::~Canvas() = default;
 
 auto Canvas::drawBegin(math::Color clearCol) -> bool { return m_native->drawBegin(clearCol); }
 
-auto Canvas::draw(const asset::Graphic* asset, uint16_t vertexCount) -> void {
-  m_native->draw(asset, vertexCount);
-}
+auto Canvas::draw(const asset::Graphic* asset) -> void { m_native->draw(asset); }
 
 auto Canvas::drawEnd() -> void { m_native->drawEnd(); }
 

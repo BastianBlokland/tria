@@ -55,9 +55,8 @@ endfunction(configure_plainfiles)
 # Shaders.
 message(STATUS "Configuring shaders")
 configure_shaders(
-  shaders/plain.frag
-  shaders/quad.vert
-  shaders/triangle.vert)
+  shaders/plain.vert
+  shaders/plain.frag)
 
 # Plain files
 message(STATUS "Configuring plain files")

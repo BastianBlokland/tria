@@ -1,15 +1,18 @@
 #pragma once
 #include "tria/asset/shader.hpp"
 #include "tria/log/api.hpp"
-#include <memory>
 #include <vulkan/vulkan.h>
 
 namespace tria::gfx::internal {
 
 class Device;
 
+/* Shader resource.
+ */
 class Shader final {
 public:
+  using AssetType = asset::Shader;
+
   Shader(log::Logger* logger, const Device* device, const asset::Shader* asset);
   Shader(const Shader& rhs) = delete;
   Shader(Shader&& rhs)      = delete;
