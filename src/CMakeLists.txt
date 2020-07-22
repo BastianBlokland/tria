@@ -23,6 +23,7 @@ add_library(tria_gfx STATIC
   tria/gfx_vulkan/internal/debug_messenger.cpp
   tria/gfx_vulkan/internal/device.cpp
   tria/gfx_vulkan/internal/graphic.cpp
+  tria/gfx_vulkan/internal/memory_pool.cpp
   tria/gfx_vulkan/internal/mesh.cpp
   tria/gfx_vulkan/internal/renderer.cpp
   tria/gfx_vulkan/internal/shader.cpp

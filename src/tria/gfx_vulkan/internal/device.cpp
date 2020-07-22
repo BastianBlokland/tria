@@ -173,9 +173,13 @@ Device::Device(
   // Create a command-pool to create graphics command-buffers from.
   m_graphicsVkCommandPool = createVkCommandPool(m_vkDevice, m_graphicsQueueIdx);
 
+  // Create a global memory pool to allocate from.
+  m_memory =
+      std::make_unique<MemoryPool>(m_logger, m_vkDevice, m_memProperties, m_properties.limits);
+
   LOG_I(
       m_logger,
-      "Device created",
+      "Vulkan device created",
       {"deviceId", m_properties.deviceID},
       {"deviceName", m_properties.deviceName},
       {"graphicsQueueIdx", m_graphicsQueueIdx},
@@ -188,6 +192,7 @@ Device::~Device() {
   // Wait for all rendering to be done before destroying the device.
   vkDeviceWaitIdle(m_vkDevice);
 
+  m_memory = nullptr;
   vkDestroyCommandPool(m_vkDevice, m_graphicsVkCommandPool, nullptr);
   vkDestroyDevice(m_vkDevice, nullptr);
   vkDestroySurfaceKHR(m_vkInstance, m_vkSurface, nullptr);
@@ -198,17 +203,6 @@ auto Device::queryVkSurfaceCapabilities() const -> VkSurfaceCapabilitiesKHR {
   checkVkResult(
       vkGetPhysicalDeviceSurfaceCapabilitiesKHR(m_vkPhysicalDevice, m_vkSurface, &result));
   return result;
-}
-
-auto Device::getMemoryType(VkMemoryPropertyFlags properties, uint32_t supportedTypesFilter) const
-    -> uint32_t {
-  for (uint32_t i = 0; i < m_memProperties.memoryTypeCount; i++) {
-    if ((supportedTypesFilter & (1U << i)) &&
-        (m_memProperties.memoryTypes[i].propertyFlags & properties) == properties) {
-      return i;
-    }
-  }
-  throw err::DriverErr{"Device has no memory type that satisfies required properties"};
 }
 
 [[nodiscard]] auto getDevice(log::Logger* logger, VkInstance vkInstance, const pal::Window* window)
@@ -241,7 +235,7 @@ auto Device::getMemoryType(VkMemoryPropertyFlags properties, uint32_t supportedT
 
     LOG_D(
         logger,
-        "Found physical device",
+        "Found Vulkan physical device",
         {"deviceId", properties.deviceID},
         {"deviceName", properties.deviceName},
         {"deviceType", getVkDeviceTypeString(properties.deviceType)},

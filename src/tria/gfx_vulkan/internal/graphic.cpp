@@ -146,7 +146,7 @@ Graphic::Graphic(
       m_device->getVkDevice(), vkRenderPass, m_vkPipelineLayout, vertShader, fragShader, mesh);
 
   m_mesh = mesh;
-  LOG_D(m_logger, "Graphic pipline created", {"asset", asset->getId()});
+  LOG_D(m_logger, "Vulkan pipline created", {"asset", asset->getId()});
 }
 
 Graphic::~Graphic() {
