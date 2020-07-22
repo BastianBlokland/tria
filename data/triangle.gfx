@@ -1,4 +1,5 @@
 {
-  "vertShader": "shaders/triangle.vert.spv",
-  "fragShader": "shaders/plain.frag.spv"
+  "vertShader": "shaders/plain.vert.spv",
+  "fragShader": "shaders/plain.frag.spv",
+  "mesh": "models/triangle.obj"
 }

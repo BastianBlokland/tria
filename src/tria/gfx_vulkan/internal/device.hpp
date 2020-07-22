@@ -40,12 +40,17 @@ public:
 
   [[nodiscard]] auto queryVkSurfaceCapabilities() const -> VkSurfaceCapabilitiesKHR;
 
+  [[nodiscard]] auto
+  getMemoryType(VkMemoryPropertyFlags properties, uint32_t supportedTypesFilter = ~0U) const
+      -> uint32_t;
+
 private:
   log::Logger* m_logger;
   VkInstance m_vkInstance;
   VkPhysicalDevice m_vkPhysicalDevice;
   VkPhysicalDeviceProperties m_properties;
   VkPhysicalDeviceFeatures m_features;
+  VkPhysicalDeviceMemoryProperties m_memProperties;
 
   VkSurfaceKHR m_vkSurface;
   VkSurfaceFormatKHR m_surfaceFormat;

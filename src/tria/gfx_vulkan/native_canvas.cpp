@@ -76,9 +76,9 @@ NativeCanvas::NativeCanvas(
     throw err::DriverErr{"No device found with vulkan support"};
   }
 
-  m_shaderManager = std::make_unique<ShaderManager>(m_logger, m_device.get());
-  m_graphicManager =
-      std::make_unique<GraphicManager>(m_logger, m_device.get(), m_shaderManager.get());
+  m_shaders  = std::make_unique<AssetResource<Shader>>(m_logger, m_device.get());
+  m_meshes   = std::make_unique<AssetResource<Mesh>>(m_logger, m_device.get());
+  m_graphics = std::make_unique<AssetResource<Graphic>>(m_logger, m_device.get());
 
   m_vkRenderPass = createVkRenderPass(m_device.get());
 
@@ -93,9 +93,10 @@ NativeCanvas::~NativeCanvas() {
   for (auto i = 0U; i != m_renderers.size(); ++i) {
     m_renderers[i] = nullptr;
   }
-  m_graphicManager = nullptr;
-  m_shaderManager  = nullptr;
-  m_swapchain      = nullptr;
+  m_graphics  = nullptr;
+  m_shaders   = nullptr;
+  m_meshes    = nullptr;
+  m_swapchain = nullptr;
   vkDestroyRenderPass(m_device->getVkDevice(), m_vkRenderPass, nullptr);
   m_device = nullptr;
 }
@@ -137,13 +138,13 @@ auto NativeCanvas::drawBegin(math::Color clearCol) -> bool {
   return true;
 }
 
-auto NativeCanvas::draw(const asset::Graphic* asset, uint16_t vertexCount) -> void {
+auto NativeCanvas::draw(const asset::Graphic* asset) -> void {
   if (!m_curSwapchainImgIdx) {
     throw err::SyncErr{"Unable record a draw: no draw active"};
   }
 
-  const auto& graphic = m_graphicManager->getGraphic(asset, m_vkRenderPass);
-  getCurRenderer().draw(graphic, vertexCount);
+  const auto* graphic = m_graphics->get(asset, m_shaders.get(), m_meshes.get(), m_vkRenderPass);
+  getCurRenderer().draw(graphic);
 }
 
 auto NativeCanvas::drawEnd() -> void {

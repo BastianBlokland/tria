@@ -5,15 +5,16 @@ function(configure_shaders)
   endif()
   message(STATUS "Found glslc: ${glslcPath}")
 
-  set(shaderSrcDir ${CMAKE_CURRENT_SOURCE_DIR}/shaders)
-  set(shaderDstDir ${EXECUTABLE_OUTPUT_PATH}/data/shaders)
-
-  # Create output directory.
-  file(MAKE_DIRECTORY ${shaderDstDir})
+  set(shaderSrcDir ${CMAKE_CURRENT_SOURCE_DIR})
+  set(shaderDstDir ${EXECUTABLE_OUTPUT_PATH}/data)
 
   foreach(file IN LISTS ARGN)
     set(fileSrc ${shaderSrcDir}/${file})
     set(fileDst ${shaderDstDir}/${file}.spv)
+
+    # Create output directory.
+    get_filename_component(parentDir ${fileDst} DIRECTORY)
+    file(MAKE_DIRECTORY ${parentDir})
 
     # Create a custom command to compile each shader to spir-v using glslc.
     add_custom_command(
@@ -54,15 +55,16 @@ endfunction(configure_plainfiles)
 # Shaders.
 message(STATUS "Configuring shaders")
 configure_shaders(
-  plain.frag
-  quad.vert
-  triangle.vert)
+  shaders/plain.vert
+  shaders/plain.frag)
 
 # Plain files
 message(STATUS "Configuring plain files")
 configure_plainfiles(
   triangle.gfx
-  quad.gfx)
+  quad.gfx
+  models/triangle.obj
+  models/quad.obj)
 
 # Wrapper dependency that depends on all types of data.
 add_custom_target(tria_data)

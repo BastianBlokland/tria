@@ -1,24 +1,9 @@
-include(FetchContent)
-
-# External: 'Catch2' testing framework.
-message(STATUS "Fetching dependency: catch2")
-FetchContent_Declare(
-  catch2
-  GIT_REPOSITORY https://github.com/catchorg/Catch2.git
-  GIT_TAG v2.12.3
-  GIT_SHALLOW TRUE)
-FetchContent_MakeAvailable(catch2)
-list(APPEND CMAKE_MODULE_PATH ${catch2_SOURCE_DIR}/contrib)
-include(Catch)
-
-# Enable linting, add external code above this line.
-enable_linting()
-
 # 'tria_tests' executable.
 message(STATUS "Configuring tria_tests executable")
 add_executable(tria_tests
   tria/asset/database_test.cpp
   tria/asset/graphic_test.cpp
+  tria/asset/mesh_obj_test.cpp
   tria/asset/shader_test.cpp
   tria/asset/utils.cpp
 

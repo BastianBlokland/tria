@@ -13,16 +13,35 @@ using Clock   = std::chrono::high_resolution_clock;
 
 namespace {
 
+// Pad every file buffer with this amount of zero bytes at the end, parsers can rely on this fact
+// and try to read atleast this amount 'past' the file.
+constexpr size_t g_fileBufferPadding = 32;
+
+// Maximum file size we support, guard against allocating huge amounts of memory.
+constexpr size_t g_maxFileSize = 512 * 1024 * 1024;
+
 auto loadRaw(const fs::path& path) -> RawData {
+  if (!fs::is_regular_file(path)) {
+    throw err::AssetLoadErr(path, "Path is not a file");
+  }
   auto file = std::ifstream{path.string(), std::ios::ate | std::ios::binary};
   if (!file.is_open()) {
     throw err::AssetLoadErr(path, "Failed to open file");
   }
-  const auto fileSize = static_cast<size_t>(file.tellg());
-  auto buffer         = std::vector<char>(fileSize);
+  const auto fileSize = file.tellg();
+  if (fileSize < 0) {
+    throw err::AssetLoadErr(path, "Failed to open file");
+  }
+  if (static_cast<size_t>(fileSize) > g_maxFileSize) {
+    throw err::AssetLoadErr(path, "File too big");
+  }
+  auto buffer = std::vector<char>(static_cast<size_t>(fileSize) + g_fileBufferPadding);
   file.seekg(0);
   file.read(buffer.data(), fileSize);
   file.close();
+  // Make the buffer size match the actual file size, note: this will not remove the zero padding we
+  // added after the file.
+  buffer.resize(fileSize);
   return buffer;
 }
 
@@ -46,7 +65,7 @@ auto DatabaseImpl::get(const AssetId& id) -> const Asset* {
     auto rawData        = loadRaw(path);
     const auto dataSize = rawData.size();
 
-    asset = internal::loadAsset(id, path, std::move(rawData), this);
+    asset = internal::loadAsset(m_logger, this, id, path, std::move(rawData));
     assert(asset);
 
     LOG_I(

@@ -6,7 +6,9 @@
 
 namespace tria::asset::internal {
 
-auto loadGraphic(AssetId id, const fs::path& path, RawData raw, DatabaseImpl* db) -> AssetUnique {
+auto loadGraphic(
+    log::Logger* /*unused*/, DatabaseImpl* db, AssetId id, const fs::path& path, RawData raw)
+    -> AssetUnique {
 
   simdjson::dom::object obj;
   auto err = parseJson(raw).get(obj);
@@ -19,7 +21,7 @@ auto loadGraphic(AssetId id, const fs::path& path, RawData raw, DatabaseImpl* db
   if (obj.at("vertShader").get(vertShaderId)) {
     throw err::AssetLoadErr{path, "No 'vertShader' field found on graphic"};
   }
-  auto vertShader = db->get(AssetId{vertShaderId})->downcast<Shader>();
+  auto* vertShader = db->get(AssetId{vertShaderId})->downcast<Shader>();
   if (vertShader->getShaderKind() != ShaderKind::SpvVertex) {
     throw err::AssetLoadErr{path, "Invalid vertex shader"};
   }
@@ -29,12 +31,19 @@ auto loadGraphic(AssetId id, const fs::path& path, RawData raw, DatabaseImpl* db
   if (obj.at("fragShader").get(fragShaderId)) {
     throw err::AssetLoadErr{path, "No 'fragShader' field found on graphic"};
   }
-  auto fragShader = db->get(AssetId{fragShaderId})->downcast<Shader>();
+  auto* fragShader = db->get(AssetId{fragShaderId})->downcast<Shader>();
   if (fragShader->getShaderKind() != ShaderKind::SpvFragment) {
     throw err::AssetLoadErr{path, "Invalid fragment shader"};
   }
 
-  return std::make_unique<Graphic>(std::move(id), vertShader, fragShader);
+  // Mesh.
+  std::string_view meshId;
+  if (obj.at("mesh").get(meshId)) {
+    throw err::AssetLoadErr{path, "No 'mesh' field found on graphic"};
+  }
+  auto* mesh = db->get(AssetId{meshId})->downcast<Mesh>();
+
+  return std::make_unique<Graphic>(std::move(id), vertShader, fragShader, mesh);
 }
 
 } // namespace tria::asset::internal

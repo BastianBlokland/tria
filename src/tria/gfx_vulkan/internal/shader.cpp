@@ -22,6 +22,7 @@ namespace {
 Shader::Shader(log::Logger* logger, const Device* device, const asset::Shader* asset) :
     m_logger{logger}, m_device{device} {
   assert(device);
+  assert(asset);
 
   m_vkModule = createShaderModule(m_device->getVkDevice(), *asset);
 

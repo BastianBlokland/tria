@@ -1,5 +1,6 @@
 #include "renderer.hpp"
 #include "device.hpp"
+#include "mesh.hpp"
 #include "utils.hpp"
 #include <array>
 #include <cassert>
@@ -140,10 +141,22 @@ auto Renderer::drawBegin(
   setScissor(m_gfxVkCommandBuffer, extent);
 }
 
-auto Renderer::draw(const Graphic& graphic, uint16_t vertexCount) -> void {
+auto Renderer::draw(const Graphic* graphic) -> void {
+  const auto* mesh = graphic->getMesh();
 
-  vkCmdBindPipeline(m_gfxVkCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphic.getVkPipeline());
-  vkCmdDraw(m_gfxVkCommandBuffer, vertexCount, 1, 0, 0);
+  vkCmdBindPipeline(
+      m_gfxVkCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphic->getVkPipeline());
+
+  std::array<VkBuffer, 1> vertexBuffers           = {mesh->getVkVertexBuffer()};
+  std::array<VkDeviceSize, 1> vertexBufferOffsets = {0};
+  vkCmdBindVertexBuffers(
+      m_gfxVkCommandBuffer,
+      0,
+      vertexBuffers.size(),
+      vertexBuffers.data(),
+      vertexBufferOffsets.data());
+
+  vkCmdDraw(m_gfxVkCommandBuffer, mesh->getVertexCount(), 1, 0, 0);
 }
 
 auto Renderer::drawEnd() -> void {

@@ -1,6 +1,7 @@
 #include "graphic.hpp"
 #include "device.hpp"
-#include "shader_manager.hpp"
+#include "mesh.hpp"
+#include "shader.hpp"
 #include "utils.hpp"
 #include <array>
 #include <cassert>
@@ -22,26 +23,38 @@ namespace {
     VkDevice vkDevice,
     VkRenderPass vkRenderPass,
     VkPipelineLayout layout,
-    const Shader& vertShader,
-    const Shader& fragShader) {
+    const Shader* vertShader,
+    const Shader* fragShader,
+    const Mesh* mesh) {
+
+  assert(vertShader);
+  assert(fragShader);
+  assert(mesh);
 
   VkPipelineShaderStageCreateInfo vertShaderStageInfo = {};
   vertShaderStageInfo.sType  = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
   vertShaderStageInfo.stage  = VK_SHADER_STAGE_VERTEX_BIT;
-  vertShaderStageInfo.module = vertShader.getVkModule();
+  vertShaderStageInfo.module = vertShader->getVkModule();
   vertShaderStageInfo.pName  = "main";
 
   VkPipelineShaderStageCreateInfo fragShaderStageInfo = {};
   fragShaderStageInfo.sType  = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
   fragShaderStageInfo.stage  = VK_SHADER_STAGE_FRAGMENT_BIT;
-  fragShaderStageInfo.module = fragShader.getVkModule();
+  fragShaderStageInfo.module = fragShader->getVkModule();
   fragShaderStageInfo.pName  = "main";
 
   std::array<VkPipelineShaderStageCreateInfo, 2> shaderStages = {vertShaderStageInfo,
                                                                  fragShaderStageInfo};
 
+  auto vertexBindingDescriptions   = mesh->getVkVertexBindingDescriptions();
+  auto vertexAttributeDescriptions = mesh->getVkVertexAttributeDescriptions();
+
   VkPipelineVertexInputStateCreateInfo vertexInputInfo = {};
   vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
+  vertexInputInfo.vertexBindingDescriptionCount   = vertexBindingDescriptions.size();
+  vertexInputInfo.vertexAttributeDescriptionCount = vertexAttributeDescriptions.size();
+  vertexInputInfo.pVertexBindingDescriptions      = vertexBindingDescriptions.data();
+  vertexInputInfo.pVertexAttributeDescriptions    = vertexAttributeDescriptions.data();
 
   VkPipelineInputAssemblyStateCreateInfo inputAssembly = {};
   inputAssembly.sType    = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
@@ -115,9 +128,10 @@ namespace {
 Graphic::Graphic(
     log::Logger* logger,
     const Device* device,
-    ShaderManager* shaderManager,
-    VkRenderPass vkRenderPass,
-    const asset::Graphic* asset) :
+    const asset::Graphic* asset,
+    AssetResource<Shader>* shaders,
+    AssetResource<Mesh>* meshes,
+    VkRenderPass vkRenderPass) :
     m_logger{logger}, m_device{device} {
   assert(device);
 
@@ -125,11 +139,13 @@ Graphic::Graphic(
   m_vkPipelineLayout = createPipelineLayout(m_device->getVkDevice());
 
   // Create pipeline.
-  const auto& vertShader = shaderManager->getShader(asset->getVertShader());
-  const auto& fragShader = shaderManager->getShader(asset->getFragShader());
+  const auto* vertShader = shaders->get(asset->getVertShader());
+  const auto* fragShader = shaders->get(asset->getFragShader());
+  const auto* mesh       = meshes->get(asset->getMesh());
   m_vkPipeline           = createPipeline(
-      m_device->getVkDevice(), vkRenderPass, m_vkPipelineLayout, vertShader, fragShader);
+      m_device->getVkDevice(), vkRenderPass, m_vkPipelineLayout, vertShader, fragShader, mesh);
 
+  m_mesh = mesh;
   LOG_D(m_logger, "Graphic pipline created", {"asset", asset->getId()});
 }
 

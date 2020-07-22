@@ -3,8 +3,13 @@
 
 namespace tria::asset::internal {
 
-auto loadRawAsset(AssetId id, const fs::path& /*unused*/, RawData raw, DatabaseImpl * /*unused*/)
-    -> AssetUnique {
+auto loadRawAsset(
+    log::Logger* /*unused*/,
+    DatabaseImpl* /*unused*/,
+    AssetId id,
+    const fs::path& /*unused*/,
+    RawData raw) -> AssetUnique {
+
   return std::make_unique<RawAsset>(std::move(id), std::move(raw));
 }
 
