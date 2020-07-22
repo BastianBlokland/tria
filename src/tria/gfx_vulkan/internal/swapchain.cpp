@@ -170,7 +170,7 @@ Swapchain::~Swapchain() {
     vkDestroySwapchainKHR(m_device->getVkDevice(), m_vkSwapchain, nullptr);
   }
 
-  LOG_D(m_logger, "Swapchain destroyed");
+  LOG_D(m_logger, "Vulkan swapchain destroyed");
 }
 
 auto Swapchain::getVkFramebuffer(uint32_t imageIndex) const -> const VkFramebuffer& {
@@ -293,7 +293,7 @@ auto Swapchain::initSwapchain(VkRenderPass vkRenderPass) -> bool {
 
   LOG_D(
       m_logger,
-      "Swapchain created",
+      "Vulkan swapchain created",
       {"presentMode", getVkPresentModeString(presentMode)},
       {"imageCount", m_imgCount},
       {"size", m_extent.width, m_extent.height});

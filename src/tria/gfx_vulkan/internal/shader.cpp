@@ -26,7 +26,7 @@ Shader::Shader(log::Logger* logger, const Device* device, const asset::Shader* a
 
   m_vkModule = createShaderModule(m_device->getVkDevice(), *asset);
 
-  LOG_D(m_logger, "Shader created", {"asset", asset->getId()});
+  LOG_D(m_logger, "Vulkan shader created", {"asset", asset->getId()});
 }
 
 Shader::~Shader() { vkDestroyShaderModule(m_device->getVkDevice(), m_vkModule, nullptr); }

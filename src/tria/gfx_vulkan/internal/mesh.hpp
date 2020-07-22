@@ -1,4 +1,5 @@
 #pragma once
+#include "device.hpp"
 #include "tria/asset/mesh.hpp"
 #include "tria/log/api.hpp"
 #include <cstdint>
@@ -7,8 +8,6 @@
 
 namespace tria::gfx::internal {
 
-class Device;
-
 /* Mesh resource.
  * Holding a vertex-buffer.
  */
@@ -16,7 +15,7 @@ class Mesh final {
 public:
   using AssetType = asset::Mesh;
 
-  Mesh(log::Logger* logger, const Device* device, const asset::Mesh* asset);
+  Mesh(log::Logger* logger, Device* device, const asset::Mesh* asset);
   Mesh(const Mesh& rhs) = delete;
   Mesh(Mesh&& rhs)      = delete;
   ~Mesh();
@@ -38,7 +37,7 @@ private:
   const Device* m_device;
   uint32_t m_vertexCount;
   VkBuffer m_vkVertexBuffer;
-  VkDeviceMemory m_vkVertexBufferMemory;
+  MemoryBlock m_vertexBufferMemory;
 };
 
 } // namespace tria::gfx::internal

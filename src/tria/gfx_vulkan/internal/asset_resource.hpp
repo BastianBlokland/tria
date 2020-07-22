@@ -15,7 +15,7 @@ class AssetResource final {
 public:
   using AssetType = typename T::AssetType;
 
-  AssetResource(log::Logger* logger, const Device* device) : m_logger{logger}, m_device{device} {}
+  AssetResource(log::Logger* logger, Device* device) : m_logger{logger}, m_device{device} {}
   ~AssetResource() = default;
 
   template <typename... Parameters>
@@ -35,7 +35,7 @@ public:
 
 private:
   log::Logger* m_logger;
-  const Device* m_device;
+  Device* m_device;
   std::unordered_map<const AssetType*, T> m_data;
 };
 

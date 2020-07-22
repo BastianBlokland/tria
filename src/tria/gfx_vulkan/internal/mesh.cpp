@@ -1,5 +1,4 @@
 #include "mesh.hpp"
-#include "device.hpp"
 #include "tria/asset/mesh.hpp"
 #include "utils.hpp"
 #include <cassert>
@@ -28,25 +27,9 @@ namespace {
   return result;
 }
 
-[[nodiscard]] auto allocVkMemory(const Device* device, VkMemoryRequirements requirements)
-    -> VkDeviceMemory {
-  assert(device);
-
-  VkMemoryAllocateInfo allocInfo = {};
-  allocInfo.sType                = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-  allocInfo.allocationSize       = requirements.size;
-  allocInfo.memoryTypeIndex      = device->getMemoryType(
-      VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-      requirements.memoryTypeBits);
-
-  VkDeviceMemory result;
-  checkVkResult(vkAllocateMemory(device->getVkDevice(), &allocInfo, nullptr, &result));
-  return result;
-};
-
 } // namespace
 
-Mesh::Mesh(log::Logger* logger, const Device* device, const asset::Mesh* asset) :
+Mesh::Mesh(log::Logger* logger, Device* device, const asset::Mesh* asset) :
     m_device{device}, m_vertexCount{static_cast<uint32_t>(asset->getVertCount())} {
   assert(m_device);
   assert(m_vertexCount > 0);
@@ -58,31 +41,27 @@ Mesh::Mesh(log::Logger* logger, const Device* device, const asset::Mesh* asset) 
 
   // Allocate memory for it.
   const auto memRequirements = getVkMemoryRequirements(m_device->getVkDevice(), m_vkVertexBuffer);
-  m_vkVertexBufferMemory     = allocVkMemory(m_device, memRequirements);
+  m_vertexBufferMemory       = device->getMemory().allocate(MemoryLocation::Host, memRequirements);
 
   // Bind the memory to the buffer.
-  checkVkResult(
-      vkBindBufferMemory(m_device->getVkDevice(), m_vkVertexBuffer, m_vkVertexBufferMemory, 0));
+  m_vertexBufferMemory.bindToBuffer(m_vkVertexBuffer);
 
   // Copy the vertex data to the buffer.
-  void* data;
-  checkVkResult(
-      vkMapMemory(m_device->getVkDevice(), m_vkVertexBufferMemory, 0, VK_WHOLE_SIZE, 0, &data));
-  std::memcpy(data, asset->getVertBegin(), m_vertexCount * sizeof(asset::Vertex));
-  vkUnmapMemory(m_device->getVkDevice(), m_vkVertexBufferMemory);
+  std::memcpy(
+      m_vertexBufferMemory.getMappedPtr(),
+      asset->getVertBegin(),
+      m_vertexCount * sizeof(asset::Vertex));
+  m_vertexBufferMemory.flush();
 
   LOG_D(
       logger,
-      "Mesh created",
+      "Vulkan mesh created",
       {"asset", asset->getId()},
       {"vertices", m_vertexCount},
       {"vertexMemory", log::MemSize{memRequirements.size}});
 }
 
-Mesh::~Mesh() {
-  vkDestroyBuffer(m_device->getVkDevice(), m_vkVertexBuffer, nullptr);
-  vkFreeMemory(m_device->getVkDevice(), m_vkVertexBufferMemory, nullptr);
-}
+Mesh::~Mesh() { vkDestroyBuffer(m_device->getVkDevice(), m_vkVertexBuffer, nullptr); }
 
 auto Mesh::getVkVertexBindingDescriptions() const noexcept
     -> std::vector<VkVertexInputBindingDescription> {

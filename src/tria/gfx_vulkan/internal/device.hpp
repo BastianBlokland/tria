@@ -1,4 +1,5 @@
 #pragma once
+#include "memory_pool.hpp"
 #include "tria/log/api.hpp"
 #include "tria/pal/window.hpp"
 #include <memory>
@@ -38,11 +39,9 @@ public:
 
   [[nodiscard]] auto getGraphicsVkCommandPool() const noexcept { return m_graphicsVkCommandPool; }
 
-  [[nodiscard]] auto queryVkSurfaceCapabilities() const -> VkSurfaceCapabilitiesKHR;
+  [[nodiscard]] auto getMemory() noexcept -> MemoryPool& { return *m_memory; }
 
-  [[nodiscard]] auto
-  getMemoryType(VkMemoryPropertyFlags properties, uint32_t supportedTypesFilter = ~0U) const
-      -> uint32_t;
+  [[nodiscard]] auto queryVkSurfaceCapabilities() const -> VkSurfaceCapabilitiesKHR;
 
 private:
   log::Logger* m_logger;
@@ -62,6 +61,8 @@ private:
   uint32_t m_presentQueueIdx;
 
   VkCommandPool m_graphicsVkCommandPool;
+
+  internal::MemoryPoolUnique m_memory;
 };
 
 using DeviceUnique = std::unique_ptr<Device>;
