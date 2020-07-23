@@ -1,8 +1,7 @@
 #pragma once
-#include "device.hpp"
+#include "buffer.hpp"
 #include "tria/asset/mesh.hpp"
 #include "tria/log/api.hpp"
-#include <cstdint>
 #include <vector>
 #include <vulkan/vulkan.h>
 
@@ -18,14 +17,14 @@ public:
   Mesh(log::Logger* logger, Device* device, const asset::Mesh* asset);
   Mesh(const Mesh& rhs) = delete;
   Mesh(Mesh&& rhs)      = delete;
-  ~Mesh();
+  ~Mesh()               = default;
 
   auto operator=(const Mesh& rhs) -> Mesh& = delete;
   auto operator=(Mesh&& rhs) -> Mesh& = delete;
 
   [[nodiscard]] auto getVertexCount() const noexcept { return m_vertexCount; }
 
-  [[nodiscard]] auto getVkVertexBuffer() const noexcept { return m_vkVertexBuffer; }
+  [[nodiscard]] auto getVertexBuffer() const noexcept -> const Buffer& { return m_vertexBuffer; }
 
   [[nodiscard]] auto getVkVertexBindingDescriptions() const noexcept
       -> std::vector<VkVertexInputBindingDescription>;
@@ -34,10 +33,8 @@ public:
       -> std::vector<VkVertexInputAttributeDescription>;
 
 private:
-  const Device* m_device;
   uint32_t m_vertexCount;
-  VkBuffer m_vkVertexBuffer;
-  MemoryBlock m_vertexBufferMemory;
+  Buffer m_vertexBuffer;
 };
 
 } // namespace tria::gfx::internal

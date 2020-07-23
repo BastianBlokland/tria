@@ -147,7 +147,7 @@ auto Renderer::draw(const Graphic* graphic) -> void {
   vkCmdBindPipeline(
       m_gfxVkCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphic->getVkPipeline());
 
-  std::array<VkBuffer, 1> vertexBuffers           = {mesh->getVkVertexBuffer()};
+  std::array<VkBuffer, 1> vertexBuffers           = {mesh->getVertexBuffer().getVkBuffer()};
   std::array<VkDeviceSize, 1> vertexBufferOffsets = {0};
   vkCmdBindVertexBuffers(
       m_gfxVkCommandBuffer,

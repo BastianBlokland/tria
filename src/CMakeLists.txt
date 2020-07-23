@@ -20,6 +20,7 @@ target_link_libraries(tria_asset PRIVATE Threads::Threads)
 # Gfx (graphics library).
 message(STATUS "Configuring gfx vulkan library")
 add_library(tria_gfx STATIC
+  tria/gfx_vulkan/internal/buffer.cpp
   tria/gfx_vulkan/internal/debug_messenger.cpp
   tria/gfx_vulkan/internal/device.cpp
   tria/gfx_vulkan/internal/graphic.cpp
