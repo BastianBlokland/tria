@@ -10,7 +10,7 @@ namespace {
 [[nodiscard]] auto getVkBufferUsageFlags(BufferUsage usage) -> VkBufferUsageFlags {
   switch (usage) {
   case BufferUsage::VertexData:
-    return VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
+    return VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
   case BufferUsage::Transfer:
     return VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
   }
@@ -40,7 +40,7 @@ namespace {
 } // namespace
 
 Buffer::Buffer(Device* device, size_t size, MemoryLocation location, BufferUsage usage) :
-    m_device{device} {
+    m_device{device}, m_location{location} {
   assert(m_device);
 
   // Create a buffer.
@@ -62,14 +62,14 @@ Buffer::~Buffer() {
   // Note: Memory is reclaimed by the destructor of MemoryBlock.
 }
 
-auto Buffer::upload(const void* data, size_t size) -> void {
+auto Buffer::upload(const void* data, size_t size, uint32_t offset) -> void {
   if (!m_vkBuffer) {
     throw err::DriverErr{"Invalid buffer"};
   }
   if (size > m_memory.getSize()) {
     throw err::DriverErr{"Buffer too small"};
   }
-  auto* mappedPtr = m_memory.getMappedPtr();
+  auto* mappedPtr = m_memory.getMappedPtr() + offset;
   if (!mappedPtr) {
     throw err::DriverErr{"Unable to map buffer memory"};
   }

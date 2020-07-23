@@ -1,7 +1,9 @@
 #pragma once
 #include "graphic.hpp"
+#include "transferer.hpp"
 #include "tria/log/api.hpp"
 #include "tria/math/vec.hpp"
+#include <array>
 #include <vulkan/vulkan.h>
 
 namespace tria::gfx::internal {
@@ -16,7 +18,7 @@ class Device;
  */
 class Renderer final {
 public:
-  Renderer(const Device* device);
+  Renderer(log::Logger* logger, Device* device);
   ~Renderer();
 
   /* The renderer will wait (on the gpu) for this semaphore before starting to render.
@@ -53,7 +55,16 @@ private:
   VkSemaphore m_imgAvailable;
   VkSemaphore m_imgFinished;
   VkFence m_renderDone;
-  VkCommandBuffer m_gfxVkCommandBuffer;
+  TransfererUnique m_transferer;
+
+  /* We record two separate commandbuffers, one for the drawing commands and one for the transfer
+   * commands. But at the moment both buffers are submitted to the Graphics queue, in the future we
+   * could use the transfer queue also.
+   * All draw commands wait for all transfers to be done before executing.
+   */
+  std::array<VkCommandBuffer, 2> m_gfxVkCommandBuffers;
+  const VkCommandBuffer& m_transferVkCommandBuffer = m_gfxVkCommandBuffers[0];
+  const VkCommandBuffer& m_drawVkCommandBuffer     = m_gfxVkCommandBuffers[1];
 
   auto waitForDone() -> void;
   auto markNotDone() -> void;

@@ -29,6 +29,7 @@ add_library(tria_gfx STATIC
   tria/gfx_vulkan/internal/renderer.cpp
   tria/gfx_vulkan/internal/shader.cpp
   tria/gfx_vulkan/internal/swapchain.cpp
+  tria/gfx_vulkan/internal/transferer.cpp
   tria/gfx_vulkan/internal/utils.cpp
   tria/gfx_vulkan/context.cpp
   tria/gfx_vulkan/native_context.cpp

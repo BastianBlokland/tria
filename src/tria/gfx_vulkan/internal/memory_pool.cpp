@@ -7,8 +7,8 @@ namespace tria::gfx::internal {
 
 namespace {
 
-constexpr auto g_minChunkSize                   = 128 * 1024 * 1024;
-constexpr auto g_chunkInitialFreeBlocksCapacity = 100;
+constexpr auto g_minChunkSize                   = 64 * 1024 * 1024;
+constexpr auto g_chunkInitialFreeBlocksCapacity = 128;
 
 [[nodiscard]] auto getVkMemoryProperties(MemoryLocation loc) noexcept -> VkMemoryPropertyFlagBits {
   switch (loc) {
@@ -274,8 +274,8 @@ auto MemoryPool::allocate(
   }
 
   // If no existing chunk has space then create a new chunk.
-  auto newChunkSize    = size > g_minChunkSize ? size : g_minChunkSize;
-  auto newChunkMemType = getMemoryType(getVkMemoryProperties(location), supportedMemoryTypes);
+  const auto newChunkSize    = size > g_minChunkSize ? size : g_minChunkSize;
+  const auto newChunkMemType = getMemoryType(getVkMemoryProperties(location), supportedMemoryTypes);
   m_chunks.emplace_front(
       m_logger,
       m_vkDevice,

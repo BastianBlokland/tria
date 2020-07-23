@@ -2,7 +2,6 @@
 #include "device.hpp"
 #include "mesh.hpp"
 #include "utils.hpp"
-#include <array>
 #include <cassert>
 #include <stdexcept>
 
@@ -10,17 +9,20 @@ namespace tria::gfx::internal {
 
 namespace {
 
-[[nodiscard]] auto createGfxVkCommandBuffer(const Device* device) -> VkCommandBuffer {
+template <unsigned int Count>
+[[nodiscard]] auto createGfxVkCommandBuffers(const Device* device)
+    -> std::array<VkCommandBuffer, Count> {
   assert(device);
 
   VkCommandBufferAllocateInfo commandBufferAllocInfo = {};
   commandBufferAllocInfo.sType              = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
   commandBufferAllocInfo.commandPool        = device->getGraphicsVkCommandPool();
   commandBufferAllocInfo.level              = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-  commandBufferAllocInfo.commandBufferCount = 1;
+  commandBufferAllocInfo.commandBufferCount = Count;
 
-  VkCommandBuffer result;
-  checkVkResult(vkAllocateCommandBuffers(device->getVkDevice(), &commandBufferAllocInfo, &result));
+  std::array<VkCommandBuffer, Count> result;
+  checkVkResult(
+      vkAllocateCommandBuffers(device->getVkDevice(), &commandBufferAllocInfo, result.data()));
   return result;
 }
 
@@ -31,27 +33,25 @@ auto beginCommandBuffer(VkCommandBuffer vkCommandBuffer) -> void {
   checkVkResult(vkBeginCommandBuffer(vkCommandBuffer, &beginInfo));
 }
 
-auto submitCommandBuffer(
+template <unsigned int Count>
+auto submitCommandBuffers(
     const Device* device,
-    VkCommandBuffer vkCommandBuffer,
+    const std::array<VkCommandBuffer, Count>& vkCommandBuffers,
     VkSemaphore beginSemaphore,
+    VkPipelineStageFlags beginWaitStage,
     VkSemaphore endSemaphore,
     VkFence endFence) -> void {
   assert(device);
 
-  std::array<VkSemaphore, 1> waitSemaphores      = {beginSemaphore};
-  std::array<VkSemaphore, 1> signalSemaphores    = {endSemaphore};
-  std::array<VkPipelineStageFlags, 1> waitStages = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
-
   VkSubmitInfo submitInfo         = {};
   submitInfo.sType                = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-  submitInfo.waitSemaphoreCount   = waitSemaphores.size();
-  submitInfo.pWaitSemaphores      = waitSemaphores.data();
-  submitInfo.pWaitDstStageMask    = waitStages.data();
-  submitInfo.commandBufferCount   = 1;
-  submitInfo.pCommandBuffers      = &vkCommandBuffer;
-  submitInfo.signalSemaphoreCount = signalSemaphores.size();
-  submitInfo.pSignalSemaphores    = signalSemaphores.data();
+  submitInfo.waitSemaphoreCount   = 1;
+  submitInfo.pWaitSemaphores      = &beginSemaphore;
+  submitInfo.pWaitDstStageMask    = &beginWaitStage;
+  submitInfo.commandBufferCount   = vkCommandBuffers.size();
+  submitInfo.pCommandBuffers      = vkCommandBuffers.data();
+  submitInfo.signalSemaphoreCount = 1;
+  submitInfo.pSignalSemaphores    = &endSemaphore;
   checkVkResult(vkQueueSubmit(device->getVkGraphicsQueue(), 1, &submitInfo, endFence));
 }
 
@@ -80,6 +80,27 @@ auto beginRenderPass(
   vkCmdBeginRenderPass(vkCommandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 }
 
+/* Memory barrier that waits for transferring to be done before starting any rendering.
+ */
+auto insertWaitForTransferMemBarrier(VkCommandBuffer vkCommandBuffer) -> void {
+  VkMemoryBarrier transferMemBarrier = {};
+  transferMemBarrier.sType           = VK_STRUCTURE_TYPE_MEMORY_BARRIER;
+  transferMemBarrier.srcAccessMask   = VK_ACCESS_TRANSFER_WRITE_BIT;
+  transferMemBarrier.dstAccessMask   = VK_ACCESS_MEMORY_READ_BIT;
+
+  vkCmdPipelineBarrier(
+      vkCommandBuffer,
+      VK_PIPELINE_STAGE_TRANSFER_BIT,
+      VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT,
+      0,
+      1,
+      &transferMemBarrier,
+      0,
+      nullptr,
+      0,
+      nullptr);
+}
+
 auto setViewport(VkCommandBuffer vkCommandBuffer, VkExtent2D extent) -> void {
   VkViewport viewport = {};
   viewport.x          = 0.0f;
@@ -100,15 +121,16 @@ auto setScissor(VkCommandBuffer vkCommandBuffer, VkExtent2D extent) -> void {
 
 } // namespace
 
-Renderer::Renderer(const Device* device) : m_device{device} {
+Renderer::Renderer(log::Logger* logger, Device* device) : m_device{device} {
   if (!m_device) {
     throw std::invalid_argument{"Device cannot be null"};
   }
 
-  m_imgAvailable       = createVkSemaphore(device->getVkDevice());
-  m_imgFinished        = createVkSemaphore(device->getVkDevice());
-  m_renderDone         = createVkFence(device->getVkDevice(), true);
-  m_gfxVkCommandBuffer = createGfxVkCommandBuffer(device);
+  m_imgAvailable        = createVkSemaphore(device->getVkDevice());
+  m_imgFinished         = createVkSemaphore(device->getVkDevice());
+  m_renderDone          = createVkFence(device->getVkDevice(), true);
+  m_transferer          = std::make_unique<Transferer>(logger, device);
+  m_gfxVkCommandBuffers = createGfxVkCommandBuffers<2>(device);
 }
 
 Renderer::~Renderer() {
@@ -116,7 +138,11 @@ Renderer::~Renderer() {
   waitForDone();
 
   vkFreeCommandBuffers(
-      m_device->getVkDevice(), m_device->getGraphicsVkCommandPool(), 1, &m_gfxVkCommandBuffer);
+      m_device->getVkDevice(),
+      m_device->getGraphicsVkCommandPool(),
+      m_gfxVkCommandBuffers.size(),
+      m_gfxVkCommandBuffers.data());
+  m_transferer = nullptr;
   vkDestroySemaphore(m_device->getVkDevice(), m_imgAvailable, nullptr);
   vkDestroySemaphore(m_device->getVkDevice(), m_imgFinished, nullptr);
   vkDestroyFence(m_device->getVkDevice(), m_renderDone, nullptr);
@@ -134,38 +160,59 @@ auto Renderer::drawBegin(
   // Wait for this renderer to be done executing on the gpu.
   waitForDone();
 
-  beginCommandBuffer(m_gfxVkCommandBuffer);
-  beginRenderPass(m_gfxVkCommandBuffer, vkRenderPass, vkFrameBuffer, extent, clearCol);
+  // Clear any resources from the last execution.
+  m_transferer->reset();
 
-  setViewport(m_gfxVkCommandBuffer, extent);
-  setScissor(m_gfxVkCommandBuffer, extent);
+  beginCommandBuffer(m_drawVkCommandBuffer);
+
+  // Wait with rendering until transferring has finished.
+  // Transfers are recorded to the separate 'm_transferVkCommandBuffer' and submitted first.
+  insertWaitForTransferMemBarrier(m_drawVkCommandBuffer);
+
+  beginRenderPass(m_drawVkCommandBuffer, vkRenderPass, vkFrameBuffer, extent, clearCol);
+
+  setViewport(m_drawVkCommandBuffer, extent);
+  setScissor(m_drawVkCommandBuffer, extent);
 }
 
 auto Renderer::draw(const Graphic* graphic) -> void {
-  const auto* mesh = graphic->getMesh();
 
   vkCmdBindPipeline(
-      m_gfxVkCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphic->getVkPipeline());
+      m_drawVkCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphic->getVkPipeline());
+
+  const auto* mesh = graphic->getMesh();
+  mesh->transferData(m_transferer.get());
 
   std::array<VkBuffer, 1> vertexBuffers           = {mesh->getVertexBuffer().getVkBuffer()};
   std::array<VkDeviceSize, 1> vertexBufferOffsets = {0};
   vkCmdBindVertexBuffers(
-      m_gfxVkCommandBuffer,
+      m_drawVkCommandBuffer,
       0,
       vertexBuffers.size(),
       vertexBuffers.data(),
       vertexBufferOffsets.data());
 
-  vkCmdDraw(m_gfxVkCommandBuffer, mesh->getVertexCount(), 1, 0, 0);
+  vkCmdDraw(m_drawVkCommandBuffer, mesh->getVertexCount(), 1, 0, 0);
 }
 
 auto Renderer::drawEnd() -> void {
 
-  vkCmdEndRenderPass(m_gfxVkCommandBuffer);
-  vkEndCommandBuffer(m_gfxVkCommandBuffer);
+  vkCmdEndRenderPass(m_drawVkCommandBuffer);
+  vkEndCommandBuffer(m_drawVkCommandBuffer);
+
+  // Record all data transfer needed for this frame.
+  beginCommandBuffer(m_transferVkCommandBuffer);
+  m_transferer->record(m_transferVkCommandBuffer);
+  vkEndCommandBuffer(m_transferVkCommandBuffer);
 
   markNotDone();
-  submitCommandBuffer(m_device, m_gfxVkCommandBuffer, m_imgAvailable, m_imgFinished, m_renderDone);
+  submitCommandBuffers<2>(
+      m_device,
+      m_gfxVkCommandBuffers,
+      m_imgAvailable,
+      VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+      m_imgFinished,
+      m_renderDone);
 }
 
 auto Renderer::waitForDone() -> void {

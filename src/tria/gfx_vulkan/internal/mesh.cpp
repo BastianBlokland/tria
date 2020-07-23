@@ -6,21 +6,32 @@
 namespace tria::gfx::internal {
 
 Mesh::Mesh(log::Logger* logger, Device* device, const asset::Mesh* asset) :
-    m_vertexCount{static_cast<uint32_t>(asset->getVertCount())} {
+    m_asset{asset}, m_buffersUploaded{false} {
+
   assert(device);
-  assert(m_vertexCount > 0);
   assert(asset);
 
-  auto size      = sizeof(asset::Vertex) * m_vertexCount;
-  m_vertexBuffer = Buffer{device, size, MemoryLocation::Host, BufferUsage::VertexData};
-  m_vertexBuffer.upload(asset->getVertBegin(), size);
+  m_vertexBuffer = Buffer{
+      device,
+      sizeof(asset::Vertex) * asset->getVertCount(),
+      MemoryLocation::Device,
+      BufferUsage::VertexData};
 
   LOG_D(
       logger,
       "Vulkan mesh created",
       {"asset", asset->getId()},
-      {"vertices", m_vertexCount},
-      {"vertexMemory", log::MemSize{size}});
+      {"vertices", asset->getVertCount()},
+      {"vertexMemory", log::MemSize{m_vertexBuffer.getSize()}});
+}
+
+auto Mesh::transferData(Transferer* transferer) const noexcept -> void {
+  if (!m_buffersUploaded) {
+    transferer->queueTransfer(
+        m_asset->getVertBegin(), sizeof(asset::Vertex) * m_asset->getVertCount(), m_vertexBuffer);
+
+    m_buffersUploaded = true;
+  }
 }
 
 auto Mesh::getVkVertexBindingDescriptions() const noexcept

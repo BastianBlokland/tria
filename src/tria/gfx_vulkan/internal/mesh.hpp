@@ -1,5 +1,6 @@
 #pragma once
 #include "buffer.hpp"
+#include "transferer.hpp"
 #include "tria/asset/mesh.hpp"
 #include "tria/log/api.hpp"
 #include <vector>
@@ -22,7 +23,9 @@ public:
   auto operator=(const Mesh& rhs) -> Mesh& = delete;
   auto operator=(Mesh&& rhs) -> Mesh& = delete;
 
-  [[nodiscard]] auto getVertexCount() const noexcept { return m_vertexCount; }
+  [[nodiscard]] auto getVertexCount() const noexcept { return m_asset->getVertCount(); }
+
+  auto transferData(Transferer* transferer) const noexcept -> void;
 
   [[nodiscard]] auto getVertexBuffer() const noexcept -> const Buffer& { return m_vertexBuffer; }
 
@@ -33,7 +36,8 @@ public:
       -> std::vector<VkVertexInputAttributeDescription>;
 
 private:
-  uint32_t m_vertexCount;
+  const asset::Mesh* m_asset;
+  mutable bool m_buffersUploaded;
   Buffer m_vertexBuffer;
 };
 
