@@ -119,6 +119,19 @@ auto setScissor(VkCommandBuffer vkCommandBuffer, VkExtent2D extent) -> void {
   vkCmdSetScissor(vkCommandBuffer, 0, 1, &scissor);
 }
 
+auto bindVertexBuffer(VkCommandBuffer vkCommandBuffer, const Buffer& buffer, size_t offset)
+    -> void {
+  std::array<VkBuffer, 1> vertexBuffers           = {buffer.getVkBuffer()};
+  std::array<VkDeviceSize, 1> vertexBufferOffsets = {offset};
+  vkCmdBindVertexBuffers(
+      vkCommandBuffer, 0U, vertexBuffers.size(), vertexBuffers.data(), vertexBufferOffsets.data());
+}
+
+auto bindIndexBuffer(VkCommandBuffer vkCommandBuffer, const Buffer& buffer, size_t offset) -> void {
+  vkCmdBindIndexBuffer(
+      vkCommandBuffer, buffer.getVkBuffer(), offset, getVkIndexType<Mesh::IndexType>());
+}
+
 } // namespace
 
 Renderer::Renderer(log::Logger* logger, Device* device) : m_device{device} {
@@ -183,16 +196,10 @@ auto Renderer::draw(const Graphic* graphic) -> void {
   const auto* mesh = graphic->getMesh();
   mesh->transferData(m_transferer.get());
 
-  std::array<VkBuffer, 1> vertexBuffers           = {mesh->getVertexBuffer().getVkBuffer()};
-  std::array<VkDeviceSize, 1> vertexBufferOffsets = {0};
-  vkCmdBindVertexBuffers(
-      m_drawVkCommandBuffer,
-      0,
-      vertexBuffers.size(),
-      vertexBuffers.data(),
-      vertexBufferOffsets.data());
+  bindVertexBuffer(m_drawVkCommandBuffer, mesh->getBuffer(), mesh->getBufferVertexOffset());
+  bindIndexBuffer(m_drawVkCommandBuffer, mesh->getBuffer(), mesh->getBufferIndexOffset());
 
-  vkCmdDraw(m_drawVkCommandBuffer, mesh->getVertexCount(), 1, 0, 0);
+  vkCmdDrawIndexed(m_drawVkCommandBuffer, mesh->getIndexCount(), 1U, 0U, 0, 0U);
 }
 
 auto Renderer::drawEnd() -> void {

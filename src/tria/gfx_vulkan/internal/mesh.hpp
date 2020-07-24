@@ -9,11 +9,12 @@
 namespace tria::gfx::internal {
 
 /* Mesh resource.
- * Holding a vertex-buffer.
+ * Holds vertex and index data.
  */
 class Mesh final {
 public:
   using AssetType = asset::Mesh;
+  using IndexType = asset::IndexType;
 
   Mesh(log::Logger* logger, Device* device, const asset::Mesh* asset);
   Mesh(const Mesh& rhs) = delete;
@@ -23,11 +24,14 @@ public:
   auto operator=(const Mesh& rhs) -> Mesh& = delete;
   auto operator=(Mesh&& rhs) -> Mesh& = delete;
 
-  [[nodiscard]] auto getVertexCount() const noexcept { return m_asset->getVertCount(); }
+  [[nodiscard]] auto getVertexCount() const noexcept { return m_asset->getVertexCount(); }
+  [[nodiscard]] auto getIndexCount() const noexcept { return m_asset->getIndexCount(); }
+
+  [[nodiscard]] auto getBuffer() const noexcept -> const Buffer& { return m_buffer; }
+  [[nodiscard]] auto getBufferVertexOffset() const noexcept -> size_t { return 0U; }
+  [[nodiscard]] auto getBufferIndexOffset() const noexcept -> size_t { return m_indexDataOffset; }
 
   auto transferData(Transferer* transferer) const noexcept -> void;
-
-  [[nodiscard]] auto getVertexBuffer() const noexcept -> const Buffer& { return m_vertexBuffer; }
 
   [[nodiscard]] auto getVkVertexBindingDescriptions() const noexcept
       -> std::vector<VkVertexInputBindingDescription>;
@@ -37,8 +41,11 @@ public:
 
 private:
   const asset::Mesh* m_asset;
-  mutable bool m_buffersUploaded;
-  Buffer m_vertexBuffer;
+  size_t m_vertexDataSize;
+  size_t m_indexDataSize;
+  size_t m_indexDataOffset;
+  mutable bool m_bufferUploaded;
+  Buffer m_buffer;
 };
 
 } // namespace tria::gfx::internal

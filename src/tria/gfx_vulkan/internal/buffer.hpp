@@ -6,7 +6,7 @@
 namespace tria::gfx::internal {
 
 enum class BufferUsage {
-  VertexData,
+  VertexAndIndexData,
   Transfer,
 };
 

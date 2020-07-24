@@ -294,9 +294,10 @@ namespace color {
 
 } // namespace tria::math
 
+namespace std {
+
 /* Specialize std::tuple_size and std::tuple_element so we can use structured bindings for vectors.
  */
-namespace std {
 
 template <typename Type, size_t Size>
 struct tuple_size<tria::math::Vec<Type, Size>> : std::integral_constant<size_t, Size> {};
@@ -304,6 +305,21 @@ struct tuple_size<tria::math::Vec<Type, Size>> : std::integral_constant<size_t, 
 template <std::size_t N, typename Type, size_t Size>
 struct tuple_element<N, tria::math::Vec<Type, Size>> {
   using type = Type;
+};
+
+/* Specialize std::hash to be able to use vectors as hash-map keys.
+ */
+template <typename Type, size_t Size>
+struct hash<tria::math::Vec<Type, Size>> final {
+  auto operator()(const tria::math::Vec<Type, Size>& vec) const noexcept -> size_t {
+    size_t result = 0U;
+    for (auto i = 0U; i != Size; ++i) {
+      // Based on the boost::hash_combine, loads of good info in this stackoverflow question:
+      // https://stackoverflow.com/questions/5889238/why-is-xor-the-default-way-to-combine-hashes
+      result ^= std::hash<Type>{}(vec[i]) + 0x9e3779b9 + (result << 6) + (result >> 2);
+    }
+    return result;
+  }
 };
 
 } // namespace std

@@ -9,8 +9,9 @@ namespace {
 
 [[nodiscard]] auto getVkBufferUsageFlags(BufferUsage usage) -> VkBufferUsageFlags {
   switch (usage) {
-  case BufferUsage::VertexData:
-    return VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
+  case BufferUsage::VertexAndIndexData:
+    return VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT |
+        VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
   case BufferUsage::Transfer:
     return VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
   }
