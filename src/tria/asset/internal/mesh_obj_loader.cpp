@@ -1,4 +1,5 @@
 #include "loader.hpp"
+#include "mesh_builder.hpp"
 #include "tiny_obj_loader.h"
 #include "tria/asset/err/asset_load_err.hpp"
 #include "tria/asset/mesh.hpp"
@@ -47,22 +48,23 @@ auto loadMeshObj(
     throw err::AssetLoadErr{path, "No shape found in obj"};
   }
 
-  auto vertices = std::vector<Vertex>{};
+  auto vertices    = std::vector<Vertex>{};
+  auto indices     = std::vector<IndexType>{};
+  auto meshBuilder = MeshBuilder{&vertices, &indices};
+
   for (const auto& shape : shapes) {
     for (const auto& index : shape.mesh.indices) {
-      auto pos = math::Vec3f{
-          attrib.vertices[index.vertex_index * 3 + 0],
-          attrib.vertices[index.vertex_index * 3 + 1],
-          attrib.vertices[index.vertex_index * 3 + 2]};
-      auto col = math::Color{
-          attrib.colors[index.vertex_index * 3 + 0],
-          attrib.colors[index.vertex_index * 3 + 1],
-          attrib.colors[index.vertex_index * 3 + 2],
-          1.0f};
-      vertices.emplace_back(pos, col);
+      auto pos = math::Vec3f{attrib.vertices[index.vertex_index * 3 + 0],
+                             attrib.vertices[index.vertex_index * 3 + 1],
+                             attrib.vertices[index.vertex_index * 3 + 2]};
+      auto col = math::Color{attrib.colors[index.vertex_index * 3 + 0],
+                             attrib.colors[index.vertex_index * 3 + 1],
+                             attrib.colors[index.vertex_index * 3 + 2],
+                             1.0f};
+      meshBuilder.pushVertex(Vertex{pos, col});
     }
   }
-  return std::make_unique<Mesh>(std::move(id), std::move(vertices));
+  return std::make_unique<Mesh>(std::move(id), std::move(vertices), std::move(indices));
 }
 
 } // namespace tria::asset::internal

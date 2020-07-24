@@ -28,13 +28,12 @@ TEST_CASE("[asset] - Mesh Wavefront Obj", "[asset]") {
 
       auto db       = Database{nullptr, dir};
       auto mesh     = db.get("test.obj")->downcast<Mesh>();
-      auto vertices = std::vector<Vertex>(mesh->getVertBegin(), mesh->getVertEnd());
+      auto vertices = std::vector<Vertex>(mesh->getVertexBegin(), mesh->getVertexEnd());
       CHECK(
           vertices ==
-          std::vector<Vertex>{
-              {{1.0, 4.0, 7.0}, math::color::white()},
-              {{2.0, 5.0, 8.0}, math::color::white()},
-              {{3.0, 6.0, 9.0}, math::color::white()}});
+          std::vector<Vertex>{{{1.0, 4.0, 7.0}, math::color::white()},
+                              {{2.0, 5.0, 8.0}, math::color::white()},
+                              {{3.0, 6.0, 9.0}, math::color::white()}});
     });
   }
 
@@ -49,13 +48,28 @@ TEST_CASE("[asset] - Mesh Wavefront Obj", "[asset]") {
 
       auto db       = Database{nullptr, dir};
       auto mesh     = db.get("test.obj")->downcast<Mesh>();
-      auto vertices = std::vector<Vertex>(mesh->getVertBegin(), mesh->getVertEnd());
+      auto vertices = std::vector<Vertex>(mesh->getVertexBegin(), mesh->getVertexEnd());
       CHECK(
           vertices ==
-          std::vector<Vertex>{
-              {{1.0, 4.0, 7.0}, math::color::red()},
-              {{2.0, 5.0, 8.0}, math::color::lime()},
-              {{3.0, 6.0, 9.0}, math::color::blue()}});
+          std::vector<Vertex>{{{1.0, 4.0, 7.0}, math::color::red()},
+                              {{2.0, 5.0, 8.0}, math::color::lime()},
+                              {{3.0, 6.0, 9.0}, math::color::blue()}});
+    });
+  }
+
+  SECTION("Indices are generated") {
+    withTempDir([](const fs::path& dir) {
+      writeFile(
+          dir / "test.obj",
+          "v 1.0 0.0 0.0 \n"
+          "v 2.0 0.0 0.0 \n"
+          "v 3.0 0.0 0.0 \n"
+          "f 1 2 3 \n");
+
+      auto db      = Database{nullptr, dir};
+      auto mesh    = db.get("test.obj")->downcast<Mesh>();
+      auto indices = std::vector<IndexType>(mesh->getIndexBegin(), mesh->getIndexEnd());
+      CHECK(indices == std::vector<IndexType>{0, 1, 2});
     });
   }
 
@@ -71,17 +85,15 @@ TEST_CASE("[asset] - Mesh Wavefront Obj", "[asset]") {
 
       auto db       = Database{nullptr, dir};
       auto mesh     = db.get("test.obj")->downcast<Mesh>();
-      auto vertices = std::vector<Vertex>(mesh->getVertBegin(), mesh->getVertEnd());
+      auto vertices = std::vector<Vertex>(mesh->getVertexBegin(), mesh->getVertexEnd());
+      auto indices  = std::vector<IndexType>(mesh->getIndexBegin(), mesh->getIndexEnd());
       CHECK(
           vertices ==
-          std::vector<Vertex>{
-              {{-0.5, -0.5, 0.0}, math::color::white()},
-              {{+0.5, -0.5, 0.0}, math::color::white()},
-              {{-0.5, +0.5, 0.0}, math::color::white()},
-
-              {{-0.5, -0.5, 0.0}, math::color::white()},
-              {{-0.5, +0.5, 0.0}, math::color::white()},
-              {{+0.5, +0.5, 0.0}, math::color::white()}});
+          std::vector<Vertex>{{{-0.5, -0.5, 0.0}, math::color::white()},
+                              {{+0.5, -0.5, 0.0}, math::color::white()},
+                              {{-0.5, +0.5, 0.0}, math::color::white()},
+                              {{+0.5, +0.5, 0.0}, math::color::white()}});
+      CHECK(indices == std::vector<IndexType>{0, 1, 2, 0, 2, 3});
     });
   }
 

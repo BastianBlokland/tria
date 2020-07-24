@@ -11,24 +11,25 @@ Mesh::Mesh(log::Logger* logger, Device* device, const asset::Mesh* asset) :
   assert(device);
   assert(asset);
 
-  m_vertexBuffer = Buffer{
-      device,
-      sizeof(asset::Vertex) * asset->getVertCount(),
-      MemoryLocation::Device,
-      BufferUsage::VertexData};
+  m_vertexBuffer = Buffer{device,
+                          sizeof(asset::Vertex) * asset->getVertexCount(),
+                          MemoryLocation::Device,
+                          BufferUsage::VertexData};
 
   LOG_D(
       logger,
       "Vulkan mesh created",
       {"asset", asset->getId()},
-      {"vertices", asset->getVertCount()},
+      {"vertices", asset->getVertexCount()},
       {"vertexMemory", log::MemSize{m_vertexBuffer.getSize()}});
 }
 
 auto Mesh::transferData(Transferer* transferer) const noexcept -> void {
   if (!m_buffersUploaded) {
     transferer->queueTransfer(
-        m_asset->getVertBegin(), sizeof(asset::Vertex) * m_asset->getVertCount(), m_vertexBuffer);
+        m_asset->getVertexBegin(),
+        sizeof(asset::Vertex) * m_asset->getVertexCount(),
+        m_vertexBuffer);
 
     m_buffersUploaded = true;
   }

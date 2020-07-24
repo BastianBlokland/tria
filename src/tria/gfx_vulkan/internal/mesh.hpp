@@ -23,7 +23,7 @@ public:
   auto operator=(const Mesh& rhs) -> Mesh& = delete;
   auto operator=(Mesh&& rhs) -> Mesh& = delete;
 
-  [[nodiscard]] auto getVertexCount() const noexcept { return m_asset->getVertCount(); }
+  [[nodiscard]] auto getVertexCount() const noexcept { return m_asset->getVertexCount(); }
 
   auto transferData(Transferer* transferer) const noexcept -> void;
 
