@@ -1,5 +1,6 @@
 #include "catch2/catch.hpp"
 #include "tria/math/vec.hpp"
+#include <unordered_set>
 
 namespace tria::math::tests {
 
@@ -192,6 +193,29 @@ TEST_CASE("[math] - Vec", "[math]") {
     constexpr auto col = color::get(42);
     CHECK((col.r() > 0 || col.g() > 0 || col.b() > 0));
     CHECK(approx(col.a(), 1.0f));
+  }
+
+  SECTION("Identical vectors produce identical hash values") {
+    CHECK(
+        std::hash<Vec3f>{}(Vec3f{1.337f, 42.0f, 0.1f}) ==
+        std::hash<Vec3f>{}(Vec3f{1.337f, 42.0f, 0.1f}));
+    CHECK(std::hash<Vec2i>{}(Vec2i{1, 2}) == std::hash<Vec2i>{}(Vec2i{1, 2}));
+  }
+
+  SECTION("Vectors map to a range of hash values") {
+    // Note: This is not a good exhaustive check, instead just a quick sanity check.
+    auto vecs = std::vector<Vec3f>{
+        Vec3f{0.0f, 1.2f, 0.5f},
+        Vec3f{0.1f, 1.2f, 0.5f},
+        Vec3f{0.2f, 1.2f, 0.5f},
+        Vec3f{0.3f, 1.2f, 0.5f},
+        Vec3f{0.4f, 1.2f, 0.5f},
+    };
+    auto hashes = std::unordered_set<size_t>{};
+    for (const auto& vec : vecs) {
+      auto hash = std::hash<Vec3f>{}(vec);
+      CHECK(hashes.insert(hash).second);
+    }
   }
 }
 
