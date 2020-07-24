@@ -48,13 +48,6 @@ constexpr auto g_chunkInitialFreeBlocksCapacity = 128;
   return "unknown";
 }
 
-/* Calculate the amount of padding required to reach the requested alignment.
- */
-[[nodiscard]] auto padToAlignment(uint32_t value, uint32_t alignment) -> uint32_t {
-  const auto rem = value % alignment;
-  return rem == 0 ? 0 : alignment - rem;
-}
-
 /* Check if the given memory blocks overlap.
  */
 [[maybe_unused]] [[nodiscard]] auto doesOverlap(const MemoryBlock& a, const MemoryBlock& b) {

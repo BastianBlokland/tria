@@ -18,9 +18,11 @@ auto Transferer::reset() noexcept -> void {
   }
 }
 
-auto Transferer::queueTransfer(const void* data, size_t size, const Buffer& destination) -> void {
-  assert(size <= destination.getSize());
-  assert(destination.getLocation() == MemoryLocation::Device);
+auto Transferer::queueTransfer(const void* data, const Buffer& dst, size_t dstOffset, size_t size)
+    -> void {
+
+  assert(size + dstOffset <= dst.getSize());
+  assert(dst.getLocation() == MemoryLocation::Device);
 
   // Upload the data to a transfer buffer.
   const auto src = getTransferSpace(size);
@@ -28,14 +30,14 @@ auto Transferer::queueTransfer(const void* data, size_t size, const Buffer& dest
   src.first.upload(data, size, src.second);
 
   // Add a work item to copy the data from the transfer buffer to the destination.
-  m_work.push_back(Work{src, destination, size});
+  m_work.push_back(Work{src, dst, dstOffset, size});
 }
 
 auto Transferer::record(VkCommandBuffer buffer) noexcept -> void {
   for (const auto& work : m_work) {
     VkBufferCopy copyRegion = {};
     copyRegion.srcOffset    = work.src.second;
-    copyRegion.dstOffset    = 0U;
+    copyRegion.dstOffset    = work.dstOffset;
     copyRegion.size         = work.size;
     vkCmdCopyBuffer(buffer, work.src.first.getVkBuffer(), work.dst.getVkBuffer(), 1, &copyRegion);
   }

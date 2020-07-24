@@ -28,7 +28,7 @@ public:
 
   /* Queue a transfer of the specified cpu memory to the destination buffer.
    */
-  auto queueTransfer(const void* data, size_t memSize, const Buffer& destination) -> void;
+  auto queueTransfer(const void* data, const Buffer& dst, size_t dstOffset, size_t size) -> void;
 
   /* Record transfer commands for the queued work.
    * Note: clears queued transfer items, so recording can be done in batches. However the required
@@ -40,10 +40,11 @@ private:
   struct Work final {
     std::pair<const Buffer&, uint32_t> src;
     const Buffer& dst;
+    size_t dstOffset;
     size_t size;
 
-    Work(std::pair<const Buffer&, uint32_t> src, const Buffer& dst, size_t size) :
-        src{std::move(src)}, dst{dst}, size{size} {}
+    Work(std::pair<const Buffer&, uint32_t> src, const Buffer& dst, size_t dstOffset, size_t size) :
+        src{src}, dst{dst}, dstOffset{dstOffset}, size{size} {}
   };
 
   log::Logger* m_logger;

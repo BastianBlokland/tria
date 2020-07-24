@@ -6,32 +6,40 @@
 namespace tria::gfx::internal {
 
 Mesh::Mesh(log::Logger* logger, Device* device, const asset::Mesh* asset) :
-    m_asset{asset}, m_buffersUploaded{false} {
+    m_asset{asset}, m_bufferUploaded{false} {
 
   assert(device);
   assert(asset);
 
-  m_vertexBuffer = Buffer{device,
-                          sizeof(asset::Vertex) * asset->getVertexCount(),
-                          MemoryLocation::Device,
-                          BufferUsage::VertexData};
+  m_vertexDataSize  = sizeof(asset::Vertex) * asset->getVertexCount();
+  m_indexDataSize   = sizeof(IndexType) * asset->getIndexCount();
+  m_indexDataOffset = m_vertexDataSize + padToAlignment(m_vertexDataSize, sizeof(IndexType));
+
+  m_buffer = Buffer{device,
+                    m_indexDataOffset + m_indexDataSize,
+                    MemoryLocation::Device,
+                    BufferUsage::VertexAndIndexData};
 
   LOG_D(
       logger,
       "Vulkan mesh created",
       {"asset", asset->getId()},
       {"vertices", asset->getVertexCount()},
-      {"vertexMemory", log::MemSize{m_vertexBuffer.getSize()}});
+      {"indices", asset->getIndexCount()},
+      {"memory", log::MemSize{m_buffer.getSize()}});
 }
 
 auto Mesh::transferData(Transferer* transferer) const noexcept -> void {
-  if (!m_buffersUploaded) {
-    transferer->queueTransfer(
-        m_asset->getVertexBegin(),
-        sizeof(asset::Vertex) * m_asset->getVertexCount(),
-        m_vertexBuffer);
+  if (!m_bufferUploaded) {
 
-    m_buffersUploaded = true;
+    // Vertex data.
+    transferer->queueTransfer(m_asset->getVertexBegin(), m_buffer, 0U, m_vertexDataSize);
+
+    // Index data.
+    transferer->queueTransfer(
+        m_asset->getIndexBegin(), m_buffer, m_indexDataOffset, m_indexDataSize);
+
+    m_bufferUploaded = true;
   }
 }
 

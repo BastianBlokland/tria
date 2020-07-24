@@ -1,10 +1,14 @@
 #pragma once
 #include "tria/gfx/err/driver_err.hpp"
 #include <string>
+#include <type_traits>
 #include <vector>
 #include <vulkan/vulkan.h>
 
 namespace tria::gfx::internal {
+
+template <typename>
+constexpr bool falseValue = false;
 
 [[nodiscard]] auto getVkAvailableInstanceExtensions() -> std::vector<VkExtensionProperties>;
 
@@ -50,6 +54,25 @@ inline auto checkVkResult(VkResult result) -> void {
     throw err::DriverErr{"test_error"};
   }
 #endif
+}
+
+template <typename T>
+[[nodiscard]] constexpr auto getVkIndexType() -> VkIndexType {
+  if constexpr (std::is_same_v<T, uint16_t>) {
+    return VK_INDEX_TYPE_UINT16;
+  } else if constexpr (std::is_same_v<T, uint32_t>) {
+    return VK_INDEX_TYPE_UINT32;
+  } else {
+    static_assert(falseValue<T>, "Unsupported index type");
+    return {};
+  }
+}
+
+/* Calculate the amount of padding required to reach the requested alignment.
+ */
+[[nodiscard]] constexpr auto padToAlignment(uint32_t value, uint32_t alignment) -> uint32_t {
+  const auto rem = value % alignment;
+  return rem == 0 ? 0 : alignment - rem;
 }
 
 } // namespace tria::gfx::internal
