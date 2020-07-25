@@ -3,6 +3,7 @@
 #include "tria/math/vec.hpp"
 #include <cstdint>
 #include <memory>
+#include <type_traits>
 
 namespace tria::gfx {
 
@@ -30,6 +31,17 @@ public:
    * Returns: false if we failed to begin drawing (for example because the window is minimized).
    */
   [[nodiscard]] auto drawBegin(math::Color clearCol) -> bool;
+
+  /* Draw a single instance of the given graphic.
+   */
+  template <typename UniformDataType>
+  auto draw(const asset::Graphic* asset, const UniformDataType& uniData) -> void {
+    static_assert(
+        std::is_trivially_copyable<UniformDataType>::value,
+        "Uniform data type has to be trivially copyable");
+
+    draw(asset, &uniData, sizeof(UniformDataType));
+  }
 
   /* Draw a single instance of the given graphic.
    */

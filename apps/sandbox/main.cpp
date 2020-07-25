@@ -20,13 +20,8 @@ auto runApp(pal::Platform& platform, asset::Database& db, gfx::Context& gfx) {
     platform.handleEvents();
 
     if (canvas.drawBegin(math::color::gray())) {
-
-      auto pos1 = math::Vec3f{-.3, 0, 0};
-      canvas.draw(triangle, &pos1, sizeof(pos1));
-
-      auto pos2 = math::Vec3f{+.3, 0, 0};
-      canvas.draw(triangle, &pos2, sizeof(pos2));
-
+      canvas.draw(triangle, math::Vec3f{-.3, 0, 0});
+      canvas.draw(triangle, math::Vec3f{+.3, 0, 0});
       canvas.drawEnd();
     } else {
       // Unable to draw, possibly due to a minimized window.
