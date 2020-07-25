@@ -111,8 +111,9 @@ auto UniformContainer::upload(const void* data, size_t size)
   assert(data);
   assert(size > 0U);
 
-  const auto padding    = padToAlignment(size, m_minAlignment);
-  const auto paddedSize = size + padding;
+  const auto uintSize   = static_cast<uint32_t>(size);
+  const auto padding    = padToAlignment(uintSize, m_minAlignment);
+  const auto paddedSize = uintSize + padding;
   if (paddedSize > g_maxUniformDataSize) {
     throw err::DriverErr{"Uniform data size exceeds maximum"};
   }

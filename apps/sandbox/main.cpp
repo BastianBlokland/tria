@@ -4,10 +4,13 @@
 #include "tria/pal/interrupt.hpp"
 #include "tria/pal/platform.hpp"
 #include "tria/pal/utils.hpp"
+#include <chrono>
+#include <cmath>
 #include <thread>
 
 using namespace std::literals;
 using namespace tria;
+using Clock = std::chrono::high_resolution_clock;
 
 auto runApp(pal::Platform& platform, asset::Database& db, gfx::Context& gfx) {
 
@@ -16,12 +19,17 @@ auto runApp(pal::Platform& platform, asset::Database& db, gfx::Context& gfx) {
 
   const auto* triangle = db.get("triangle.gfx")->downcast<asset::Graphic>();
 
+  const auto startTime = Clock::now();
   while (!win.getIsCloseRequested() && !pal::isInterruptRequested()) {
     platform.handleEvents();
 
+    const auto elapsedTime = std::chrono::duration<float>(Clock::now() - startTime);
     if (canvas.drawBegin(math::color::gray())) {
-      canvas.draw(triangle, math::Vec3f{-.3, 0, 0});
-      canvas.draw(triangle, math::Vec3f{+.3, 0, 0});
+
+      const auto t = (std::sin(elapsedTime.count() * 2.0f) + 1) * .5f;
+      canvas.draw(triangle, math::lerp(math::Vec3f{-.8, 0, 0}, math::Vec3f{.8, 0, 0}, t));
+      canvas.draw(triangle, math::lerp(math::Vec3f{0, -.8, 0}, math::Vec3f{0, .8, 0}, t));
+
       canvas.drawEnd();
     } else {
       // Unable to draw, possibly due to a minimized window.
