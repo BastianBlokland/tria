@@ -19,7 +19,7 @@ Mesh::Mesh(log::Logger* logger, Device* device, const asset::Mesh* asset) :
       device,
       m_indexDataOffset + m_indexDataSize,
       MemoryLocation::Device,
-      BufferUsage::VertexAndIndexData};
+      BufferUsage::DeviceVertexAndIndexData};
 
   LOG_D(
       logger,

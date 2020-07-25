@@ -143,6 +143,7 @@ Renderer::Renderer(log::Logger* logger, Device* device) : m_device{device} {
   m_imgFinished         = createVkSemaphore(device->getVkDevice());
   m_renderDone          = createVkFence(device->getVkDevice(), true);
   m_transferer          = std::make_unique<Transferer>(logger, device);
+  m_uni                 = std::make_unique<UniformContainer>(logger, device);
   m_gfxVkCommandBuffers = createGfxVkCommandBuffers<2>(device);
 }
 
@@ -156,6 +157,7 @@ Renderer::~Renderer() {
       m_gfxVkCommandBuffers.size(),
       m_gfxVkCommandBuffers.data());
   m_transferer = nullptr;
+  m_uni        = nullptr;
   vkDestroySemaphore(m_device->getVkDevice(), m_imgAvailable, nullptr);
   vkDestroySemaphore(m_device->getVkDevice(), m_imgFinished, nullptr);
   vkDestroyFence(m_device->getVkDevice(), m_renderDone, nullptr);
@@ -175,6 +177,7 @@ auto Renderer::drawBegin(
 
   // Clear any resources from the last execution.
   m_transferer->reset();
+  m_uni->reset();
 
   beginCommandBuffer(m_drawVkCommandBuffer);
 
@@ -188,12 +191,35 @@ auto Renderer::drawBegin(
   setScissor(m_drawVkCommandBuffer, extent);
 }
 
-auto Renderer::draw(VkRenderPass vkRenderPass, const Graphic* graphic) -> void {
+auto Renderer::draw(
+    VkRenderPass vkRenderPass, const Graphic* graphic, const void* uniData, size_t uniSize)
+    -> void {
 
-  graphic->prepareResources(m_transferer.get(), vkRenderPass);
+  graphic->prepareResources(m_transferer.get(), m_uni.get(), vkRenderPass);
 
   vkCmdBindPipeline(
       m_drawVkCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphic->getVkPipeline());
+
+  // Upload and bind any uniform data.
+  if (uniData && uniSize > 0) {
+    auto [uniDescSet, uniOffset] = m_uni->upload(uniData, uniSize);
+
+    std::array<VkDescriptorSet, 1> descriptors = {
+        uniDescSet,
+    };
+    std::array<uint32_t, 1> descriptorOffsets = {
+        uniOffset,
+    };
+    vkCmdBindDescriptorSets(
+        m_drawVkCommandBuffer,
+        VK_PIPELINE_BIND_POINT_GRAPHICS,
+        graphic->getVkPipelineLayout(),
+        0U,
+        descriptors.size(),
+        descriptors.data(),
+        descriptorOffsets.size(),
+        descriptorOffsets.data());
+  }
 
   const auto* mesh = graphic->getMesh();
   bindVertexBuffer(m_drawVkCommandBuffer, mesh->getBuffer(), mesh->getBufferVertexOffset());

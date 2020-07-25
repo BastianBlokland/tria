@@ -15,14 +15,18 @@ auto runApp(pal::Platform& platform, asset::Database& db, gfx::Context& gfx) {
   auto canvas = gfx.createCanvas(&win, gfx::VSyncMode::Disable);
 
   const auto* triangle = db.get("triangle.gfx")->downcast<asset::Graphic>();
-  const auto* quad     = db.get("quad.gfx")->downcast<asset::Graphic>();
 
   while (!win.getIsCloseRequested() && !pal::isInterruptRequested()) {
     platform.handleEvents();
 
     if (canvas.drawBegin(math::color::gray())) {
-      canvas.draw(triangle);
-      canvas.draw(quad);
+
+      auto pos1 = math::Vec3f{-.3, 0, 0};
+      canvas.draw(triangle, &pos1, sizeof(pos1));
+
+      auto pos2 = math::Vec3f{+.3, 0, 0};
+      canvas.draw(triangle, &pos2, sizeof(pos2));
+
       canvas.drawEnd();
     } else {
       // Unable to draw, possibly due to a minimized window.

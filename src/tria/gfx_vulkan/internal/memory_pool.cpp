@@ -7,8 +7,8 @@ namespace tria::gfx::internal {
 
 namespace {
 
-constexpr auto g_minChunkSize                   = 64 * 1024 * 1024;
-constexpr auto g_chunkInitialFreeBlocksCapacity = 128;
+constexpr auto g_minChunkSize                   = 64U * 1024U * 1024U;
+constexpr auto g_chunkInitialFreeBlocksCapacity = 128U;
 
 [[nodiscard]] auto getVkMemoryProperties(MemoryLocation loc) noexcept -> VkMemoryPropertyFlagBits {
   switch (loc) {

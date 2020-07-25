@@ -10,9 +10,11 @@ namespace tria::gfx::internal {
 
 namespace {
 
-[[nodiscard]] auto createPipelineLayout(VkDevice vkDevice) {
+[[nodiscard]] auto createPipelineLayout(VkDevice vkDevice, VkDescriptorSetLayout uniDescLayout) {
   VkPipelineLayoutCreateInfo pipelineLayoutInfo = {};
   pipelineLayoutInfo.sType                      = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+  pipelineLayoutInfo.setLayoutCount             = 1;
+  pipelineLayoutInfo.pSetLayouts                = &uniDescLayout;
 
   VkPipelineLayout result;
   checkVkResult(vkCreatePipelineLayout(vkDevice, &pipelineLayoutInfo, nullptr, &result));
@@ -135,7 +137,7 @@ Graphic::Graphic(
     const asset::Graphic* asset,
     AssetResource<Shader>* shaders,
     AssetResource<Mesh>* meshes) :
-    m_logger{logger}, m_device{device}, m_asset{asset} {
+    m_logger{logger}, m_device{device}, m_asset{asset}, m_vkPipeline{nullptr} {
   assert(m_device);
   assert(m_asset);
 
@@ -151,12 +153,13 @@ Graphic::~Graphic() {
   }
 }
 
-auto Graphic::prepareResources(Transferer* transferer, VkRenderPass vkRenderPass) const -> void {
+auto Graphic::prepareResources(
+    Transferer* transferer, UniformContainer* uni, VkRenderPass vkRenderPass) const -> void {
 
   m_mesh->prepareResources(transferer);
 
   if (!m_vkPipeline) {
-    m_vkPipelineLayout = createPipelineLayout(m_device->getVkDevice());
+    m_vkPipelineLayout = createPipelineLayout(m_device->getVkDevice(), uni->getVkDescLayout());
     m_vkPipeline       = createPipeline(
         m_device->getVkDevice(),
         vkRenderPass,

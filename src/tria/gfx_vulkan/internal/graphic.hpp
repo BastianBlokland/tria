@@ -3,6 +3,7 @@
 #include "transferer.hpp"
 #include "tria/asset/graphic.hpp"
 #include "tria/log/api.hpp"
+#include "uniform_container.hpp"
 #include <vulkan/vulkan.h>
 
 namespace tria::gfx::internal {
@@ -33,10 +34,13 @@ public:
 
   /* Note: Call this before accessing any resources from this graphic.
    */
-  auto prepareResources(Transferer* transferer, VkRenderPass vkRenderPass) const -> void;
+  auto
+  prepareResources(Transferer* transferer, UniformContainer* uni, VkRenderPass vkRenderPass) const
+      -> void;
 
   [[nodiscard]] auto getMesh() const noexcept { return m_mesh; }
   [[nodiscard]] auto getVkPipeline() const noexcept { return m_vkPipeline; }
+  [[nodiscard]] auto getVkPipelineLayout() const noexcept { return m_vkPipelineLayout; }
 
 private:
   log::Logger* m_logger;

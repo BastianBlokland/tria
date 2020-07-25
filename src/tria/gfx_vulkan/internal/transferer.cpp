@@ -5,7 +5,7 @@ namespace tria::gfx::internal {
 
 namespace {
 
-constexpr auto g_minTransferBufferSize = 8 * 1024 * 1024;
+constexpr auto g_minTransferBufferSize = 8U * 1024U * 1024U;
 
 } // namespace
 
@@ -58,7 +58,7 @@ auto Transferer::getTransferSpace(size_t size) -> std::pair<Buffer&, uint32_t> {
   // If no transfer buffers has enough space then create a new one.
   const auto newBuffSize = size > g_minTransferBufferSize ? size : g_minTransferBufferSize;
   m_transferBuffers.emplace_back(
-      Buffer{m_device, newBuffSize, MemoryLocation::Host, BufferUsage::Transfer},
+      Buffer{m_device, newBuffSize, MemoryLocation::Host, BufferUsage::HostTransfer},
       static_cast<uint32_t>(size));
 
   LOG_D(m_logger, "Vulkan transfer buffer created", {"size", log::MemSize{newBuffSize}});
