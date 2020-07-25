@@ -44,7 +44,7 @@ public:
 
   /* Record a single draw of the given graphic.
    */
-  auto draw(const Graphic* graphic) -> void;
+  auto draw(VkRenderPass vkRenderPass, const Graphic* graphic) -> void;
 
   /* Finish recordering draw commands and submit the work to the gpu.
    */

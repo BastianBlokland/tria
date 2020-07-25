@@ -188,14 +188,14 @@ auto Renderer::drawBegin(
   setScissor(m_drawVkCommandBuffer, extent);
 }
 
-auto Renderer::draw(const Graphic* graphic) -> void {
+auto Renderer::draw(VkRenderPass vkRenderPass, const Graphic* graphic) -> void {
+
+  graphic->prepareResources(m_transferer.get(), vkRenderPass);
 
   vkCmdBindPipeline(
       m_drawVkCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphic->getVkPipeline());
 
   const auto* mesh = graphic->getMesh();
-  mesh->transferData(m_transferer.get());
-
   bindVertexBuffer(m_drawVkCommandBuffer, mesh->getBuffer(), mesh->getBufferVertexOffset());
   bindIndexBuffer(m_drawVkCommandBuffer, mesh->getBuffer(), mesh->getBufferIndexOffset());
 

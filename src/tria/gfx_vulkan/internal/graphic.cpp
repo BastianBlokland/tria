@@ -43,8 +43,10 @@ namespace {
   fragShaderStageInfo.module = fragShader->getVkModule();
   fragShaderStageInfo.pName  = "main";
 
-  std::array<VkPipelineShaderStageCreateInfo, 2> shaderStages = {vertShaderStageInfo,
-                                                                 fragShaderStageInfo};
+  std::array<VkPipelineShaderStageCreateInfo, 2> shaderStages = {
+      vertShaderStageInfo,
+      fragShaderStageInfo,
+  };
 
   auto vertexBindingDescriptions   = mesh->getVkVertexBindingDescriptions();
   auto vertexAttributeDescriptions = mesh->getVkVertexAttributeDescriptions();
@@ -95,8 +97,10 @@ namespace {
   colorBlending.attachmentCount = 1;
   colorBlending.pAttachments    = &colorBlendAttachment;
 
-  std::array<VkDynamicState, 2> dynamicStates       = {VK_DYNAMIC_STATE_VIEWPORT,
-                                                 VK_DYNAMIC_STATE_SCISSOR};
+  std::array<VkDynamicState, 2> dynamicStates = {
+      VK_DYNAMIC_STATE_VIEWPORT,
+      VK_DYNAMIC_STATE_SCISSOR,
+  };
   VkPipelineDynamicStateCreateInfo dynamicStateInfo = {};
   dynamicStateInfo.sType             = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
   dynamicStateInfo.dynamicStateCount = dynamicStates.size();
@@ -130,28 +134,38 @@ Graphic::Graphic(
     const Device* device,
     const asset::Graphic* asset,
     AssetResource<Shader>* shaders,
-    AssetResource<Mesh>* meshes,
-    VkRenderPass vkRenderPass) :
-    m_logger{logger}, m_device{device} {
-  assert(device);
+    AssetResource<Mesh>* meshes) :
+    m_logger{logger}, m_device{device}, m_asset{asset} {
+  assert(m_device);
+  assert(m_asset);
 
-  // Create pipeline layout.
-  m_vkPipelineLayout = createPipelineLayout(m_device->getVkDevice());
-
-  // Create pipeline.
-  const auto* vertShader = shaders->get(asset->getVertShader());
-  const auto* fragShader = shaders->get(asset->getFragShader());
-  const auto* mesh       = meshes->get(asset->getMesh());
-  m_vkPipeline           = createPipeline(
-      m_device->getVkDevice(), vkRenderPass, m_vkPipelineLayout, vertShader, fragShader, mesh);
-
-  m_mesh = mesh;
-  LOG_D(m_logger, "Vulkan pipline created", {"asset", asset->getId()});
+  m_vertShader = shaders->get(m_asset->getVertShader());
+  m_fragShader = shaders->get(m_asset->getFragShader());
+  m_mesh       = meshes->get(m_asset->getMesh());
 }
 
 Graphic::~Graphic() {
-  vkDestroyPipeline(m_device->getVkDevice(), m_vkPipeline, nullptr);
-  vkDestroyPipelineLayout(m_device->getVkDevice(), m_vkPipelineLayout, nullptr);
+  if (m_vkPipeline) {
+    vkDestroyPipelineLayout(m_device->getVkDevice(), m_vkPipelineLayout, nullptr);
+    vkDestroyPipeline(m_device->getVkDevice(), m_vkPipeline, nullptr);
+  }
+}
+
+auto Graphic::prepareResources(Transferer* transferer, VkRenderPass vkRenderPass) const -> void {
+
+  m_mesh->prepareResources(transferer);
+
+  if (!m_vkPipeline) {
+    m_vkPipelineLayout = createPipelineLayout(m_device->getVkDevice());
+    m_vkPipeline       = createPipeline(
+        m_device->getVkDevice(),
+        vkRenderPass,
+        m_vkPipelineLayout,
+        m_vertShader,
+        m_fragShader,
+        m_mesh);
+    LOG_D(m_logger, "Vulkan pipline created", {"asset", m_asset->getId()});
+  }
 }
 
 } // namespace tria::gfx::internal

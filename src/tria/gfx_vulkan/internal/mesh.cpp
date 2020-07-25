@@ -15,10 +15,11 @@ Mesh::Mesh(log::Logger* logger, Device* device, const asset::Mesh* asset) :
   m_indexDataSize   = sizeof(IndexType) * asset->getIndexCount();
   m_indexDataOffset = m_vertexDataSize + padToAlignment(m_vertexDataSize, sizeof(IndexType));
 
-  m_buffer = Buffer{device,
-                    m_indexDataOffset + m_indexDataSize,
-                    MemoryLocation::Device,
-                    BufferUsage::VertexAndIndexData};
+  m_buffer = Buffer{
+      device,
+      m_indexDataOffset + m_indexDataSize,
+      MemoryLocation::Device,
+      BufferUsage::VertexAndIndexData};
 
   LOG_D(
       logger,
@@ -29,7 +30,7 @@ Mesh::Mesh(log::Logger* logger, Device* device, const asset::Mesh* asset) :
       {"memory", log::MemSize{m_buffer.getSize()}});
 }
 
-auto Mesh::transferData(Transferer* transferer) const noexcept -> void {
+auto Mesh::prepareResources(Transferer* transferer) const -> void {
   if (!m_bufferUploaded) {
 
     // Vertex data.

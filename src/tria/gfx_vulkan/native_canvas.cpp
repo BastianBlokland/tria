@@ -143,8 +143,8 @@ auto NativeCanvas::draw(const asset::Graphic* asset) -> void {
     throw err::SyncErr{"Unable record a draw: no draw active"};
   }
 
-  const auto* graphic = m_graphics->get(asset, m_shaders.get(), m_meshes.get(), m_vkRenderPass);
-  getCurRenderer().draw(graphic);
+  const auto* graphic = m_graphics->get(asset, m_shaders.get(), m_meshes.get());
+  getCurRenderer().draw(m_vkRenderPass, graphic);
 }
 
 auto NativeCanvas::drawEnd() -> void {

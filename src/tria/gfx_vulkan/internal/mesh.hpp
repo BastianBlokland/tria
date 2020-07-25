@@ -27,17 +27,19 @@ public:
   [[nodiscard]] auto getVertexCount() const noexcept { return m_asset->getVertexCount(); }
   [[nodiscard]] auto getIndexCount() const noexcept { return m_asset->getIndexCount(); }
 
-  [[nodiscard]] auto getBuffer() const noexcept -> const Buffer& { return m_buffer; }
-  [[nodiscard]] auto getBufferVertexOffset() const noexcept -> size_t { return 0U; }
-  [[nodiscard]] auto getBufferIndexOffset() const noexcept -> size_t { return m_indexDataOffset; }
-
-  auto transferData(Transferer* transferer) const noexcept -> void;
-
   [[nodiscard]] auto getVkVertexBindingDescriptions() const noexcept
       -> std::vector<VkVertexInputBindingDescription>;
 
   [[nodiscard]] auto getVkVertexAttributeDescriptions() const noexcept
       -> std::vector<VkVertexInputAttributeDescription>;
+
+  /* Note: Call this before accessing any resources from this mesh.
+   */
+  auto prepareResources(Transferer* transferer) const -> void;
+
+  [[nodiscard]] auto getBuffer() const noexcept -> const Buffer& { return m_buffer; }
+  [[nodiscard]] auto getBufferVertexOffset() const noexcept -> size_t { return 0U; }
+  [[nodiscard]] auto getBufferIndexOffset() const noexcept -> size_t { return m_indexDataOffset; }
 
 private:
   const asset::Mesh* m_asset;
