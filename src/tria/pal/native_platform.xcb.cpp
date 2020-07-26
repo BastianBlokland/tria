@@ -137,7 +137,10 @@ auto NativePlatform::setWinTitle(WindowId id, std::string_view title) noexcept -
 }
 
 auto NativePlatform::setWinSize(WindowId id, const WindowSize size) noexcept -> void {
-  const auto valList = std::array<uint32_t, 2>{size.x(), size.y()};
+  const auto valList = std::array<uint32_t, 2>{
+      size.x(),
+      size.y(),
+  };
   xcb_configure_window(
       m_xcbCon, id, XCB_CONFIG_WINDOW_WIDTH | XCB_CONFIG_WINDOW_HEIGHT, valList.data());
 

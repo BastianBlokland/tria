@@ -110,7 +110,12 @@ inline auto writeIsoTime(std::string* str, std::chrono::system_clock::time_point
 }
 
 inline auto writePrettyDuration(std::string* str, std::chrono::duration<double> dur) noexcept {
-  constexpr static std::array<std::string_view, 4> units = {" sec", " ms", " us", " ns"};
+  constexpr static std::array<std::string_view, 4> units = {
+      " sec",
+      " ms",
+      " us",
+      " ns",
+  };
 
   auto unitIdx = 0U;
   auto t       = dur.count();
@@ -128,7 +133,13 @@ inline auto writePrettyDuration(std::string* str, std::chrono::duration<double> 
 
 inline auto writePrettyMemSize(std::string* str, const size_t size) noexcept {
   constexpr static std::array<std::string_view, 6> units = {
-      " B", " KiB", " MiB", " GiB", " TiB", " PiB"};
+      " B",
+      " KiB",
+      " MiB",
+      " GiB",
+      " TiB",
+      " PiB",
+  };
 
   auto unitIdx = 0U;
   auto sizeD   = static_cast<double>(size);

@@ -66,7 +66,9 @@ auto beginRenderPass(
   VkClearColorValue clearColorValue;
   clearCol.memcpy(clearColorValue.float32);
 
-  std::array<VkClearValue, 1> clearValues = {VkClearValue{clearColorValue}};
+  std::array<VkClearValue, 1> clearValues = {
+      VkClearValue{clearColorValue},
+  };
 
   VkRenderPassBeginInfo renderPassInfo = {};
   renderPassInfo.sType                 = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
@@ -121,8 +123,12 @@ auto setScissor(VkCommandBuffer vkCommandBuffer, VkExtent2D extent) -> void {
 
 auto bindVertexBuffer(VkCommandBuffer vkCommandBuffer, const Buffer& buffer, size_t offset)
     -> void {
-  std::array<VkBuffer, 1> vertexBuffers           = {buffer.getVkBuffer()};
-  std::array<VkDeviceSize, 1> vertexBufferOffsets = {offset};
+  std::array<VkBuffer, 1> vertexBuffers = {
+      buffer.getVkBuffer(),
+  };
+  std::array<VkDeviceSize, 1> vertexBufferOffsets = {
+      offset,
+  };
   vkCmdBindVertexBuffers(
       vkCommandBuffer, 0U, vertexBuffers.size(), vertexBuffers.data(), vertexBufferOffsets.data());
 }

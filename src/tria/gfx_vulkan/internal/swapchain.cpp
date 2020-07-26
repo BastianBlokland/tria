@@ -76,7 +76,9 @@ namespace {
   createInfo.imageUsage               = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
 
   std::array<uint32_t, 2> queueFamilyIndices = {
-      device->getVkGraphicsQueueIdx(), device->getVkPresentQueueIdx()};
+      device->getVkGraphicsQueueIdx(),
+      device->getVkPresentQueueIdx(),
+  };
   if (queueFamilyIndices[0] == queueFamilyIndices[1]) {
     createInfo.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
   } else {
@@ -132,7 +134,9 @@ namespace {
     const Device* device, VkRenderPass vkRenderPass, VkImageView imageView, VkExtent2D extent) {
   assert(device);
 
-  std::array<VkImageView, 1> attachments  = {imageView};
+  std::array<VkImageView, 1> attachments = {
+      imageView,
+  };
   VkFramebufferCreateInfo framebufferInfo = {};
   framebufferInfo.sType                   = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
   framebufferInfo.renderPass              = vkRenderPass;
@@ -222,8 +226,12 @@ auto Swapchain::acquireImage(VkRenderPass vkRenderPass, VkSemaphore imgAvailable
 
 auto Swapchain::presentImage(VkSemaphore imgReady, uint32_t imageIndex) -> bool {
 
-  std::array<VkSemaphore, 1> semaphores    = {imgReady};
-  std::array<VkSwapchainKHR, 1> swapChains = {m_vkSwapchain};
+  std::array<VkSemaphore, 1> semaphores = {
+      imgReady,
+  };
+  std::array<VkSwapchainKHR, 1> swapChains = {
+      m_vkSwapchain,
+  };
 
   VkPresentInfoKHR presentInfo   = {};
   presentInfo.sType              = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;

@@ -92,7 +92,9 @@ createVkDevice(VkPhysicalDevice vkPhysicalDevice, std::set<uint32_t> queueFamili
   auto queueCreateInfos = std::vector<VkDeviceQueueCreateInfo>{};
   queueCreateInfos.reserve(queueFamilies.size());
   for (auto queueFamily : queueFamilies) {
-    std::array<float, 1> queuePriorities    = {1.0f};
+    std::array<float, 1> queuePriorities = {
+        1.0f,
+    };
     VkDeviceQueueCreateInfo queueCreateInfo = {};
     queueCreateInfo.sType                   = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
     queueCreateInfo.queueFamilyIndex        = queueFamily;
