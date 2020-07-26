@@ -64,8 +64,7 @@ constexpr std::array<const char*, 1> requiredDeviceExtensions = {
   return std::nullopt;
 }
 
-[[nodiscard]] auto
-pickSurfaceFormat(VkPhysicalDevice vkPhysicalDevice, VkSurfaceKHR vkSurface) noexcept
+[[nodiscard]] auto pickSurfaceFormat(VkPhysicalDevice vkPhysicalDevice, VkSurfaceKHR vkSurface)
     -> std::optional<VkSurfaceFormatKHR> {
 
   const auto availableFormats = getVkSurfaceFormats(vkPhysicalDevice, vkSurface);
@@ -143,12 +142,19 @@ Device::Device(
   vkGetPhysicalDeviceMemoryProperties(vkPhysicalDevice, &m_memProperties);
 
   // Create a vulkan surface targetting the given window.
-  m_vkSurface                   = createVkSurfaceKhr(vkInstance, window);
-  const auto foundSurfaceFormat = pickSurfaceFormat(vkPhysicalDevice, m_vkSurface);
-  if (foundSurfaceFormat) {
-    m_surfaceFormat = *foundSurfaceFormat;
-  } else {
-    throw err::GfxErr{"Selected vulkan device is missing a suitable surface format"};
+  m_vkSurface = createVkSurfaceKhr(vkInstance, window);
+
+  // Find a format to use for the vkSurface.
+  try {
+    const auto foundSurfaceFormat = pickSurfaceFormat(vkPhysicalDevice, m_vkSurface);
+    if (foundSurfaceFormat) {
+      m_surfaceFormat = *foundSurfaceFormat;
+    } else {
+      throw err::GfxErr{"Selected vulkan device is missing a suitable surface format"};
+    }
+  } catch (...) {
+    vkDestroySurfaceKHR(m_vkInstance, m_vkSurface, nullptr);
+    throw;
   }
 
   // Pick a queue family for the graphics and present queue to create on the device.
