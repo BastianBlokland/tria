@@ -36,7 +36,7 @@ public:
 
   /* Record a draw with the given asset.
    */
-  auto draw(const asset::Graphic* asset) -> void;
+  auto draw(const asset::Graphic* asset, const void* uniData, size_t uniSize) -> void;
 
   /* Stop recording draw commands, execute the commands and present the result to the surface
    * (window).

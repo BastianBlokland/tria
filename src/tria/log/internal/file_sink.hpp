@@ -1,5 +1,6 @@
 #pragma once
 #include "tria/fs.hpp"
+#include "tria/log/err/log_file_err.hpp"
 #include "tria/log/sink.hpp"
 
 namespace tria::log::internal {
@@ -49,9 +50,8 @@ template <typename T, typename... Args>
 #endif
 
   if (!file) {
-    throw fs::filesystem_error{"Failed to create log file",
-                               path.c_str(),
-                               std::make_error_code(static_cast<std::errc>(errno))};
+    const auto errCode = std::make_error_code(static_cast<std::errc>(errno));
+    throw err::LogFileErr(path, errCode.message());
   }
   return std::make_unique<T>(file, true, mask, std::forward<Args>(args)...);
 }

@@ -1,4 +1,5 @@
 #include "buffer.hpp"
+#include "tria/gfx/err/gfx_err.hpp"
 #include "utils.hpp"
 #include "vulkan/vulkan_core.h"
 #include <cassert>
@@ -9,13 +10,15 @@ namespace {
 
 [[nodiscard]] auto getVkBufferUsageFlags(BufferUsage usage) -> VkBufferUsageFlags {
   switch (usage) {
-  case BufferUsage::VertexAndIndexData:
+  case BufferUsage::HostUniformData:
+    return VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
+  case BufferUsage::HostTransfer:
+    return VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
+  case BufferUsage::DeviceVertexAndIndexData:
     return VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT |
         VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
-  case BufferUsage::Transfer:
-    return VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
   }
-  throw err::DriverErr{"Unexpected buffer-usage"};
+  throw err::GfxErr{"Unexpected buffer-usage"};
 }
 
 [[nodiscard]] auto getVkMemoryRequirements(VkDevice vkDevice, VkBuffer vkBuffer)
@@ -65,14 +68,14 @@ Buffer::~Buffer() {
 
 auto Buffer::upload(const void* data, size_t size, uint32_t offset) -> void {
   if (!m_vkBuffer) {
-    throw err::DriverErr{"Invalid buffer"};
+    throw err::GfxErr{"Invalid buffer"};
   }
   if (size > m_memory.getSize()) {
-    throw err::DriverErr{"Buffer too small"};
+    throw err::GfxErr{"Buffer too small"};
   }
   auto* mappedPtr = m_memory.getMappedPtr() + offset;
   if (!mappedPtr) {
-    throw err::DriverErr{"Unable to map buffer memory"};
+    throw err::GfxErr{"Unable to map buffer memory"};
   }
   std::memcpy(mappedPtr, data, size);
   m_memory.flush();

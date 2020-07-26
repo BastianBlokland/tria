@@ -1,5 +1,5 @@
 #include "memory_pool.hpp"
-#include "tria/gfx/err/driver_err.hpp"
+#include "tria/gfx/err/gfx_err.hpp"
 #include "utils.hpp"
 #include <cassert>
 
@@ -7,8 +7,8 @@ namespace tria::gfx::internal {
 
 namespace {
 
-constexpr auto g_minChunkSize                   = 64 * 1024 * 1024;
-constexpr auto g_chunkInitialFreeBlocksCapacity = 128;
+constexpr auto g_minChunkSize                   = 64U * 1024U * 1024U;
+constexpr auto g_chunkInitialFreeBlocksCapacity = 128U;
 
 [[nodiscard]] auto getVkMemoryProperties(MemoryLocation loc) noexcept -> VkMemoryPropertyFlagBits {
   switch (loc) {
@@ -293,7 +293,7 @@ auto MemoryPool::getMemoryType(VkMemoryPropertyFlags properties, uint32_t allowe
       return i;
     }
   }
-  throw err::DriverErr{"Device has no memory type that satisfies required properties"};
+  throw err::GfxErr{"Device has no memory type that satisfies required properties"};
 }
 
 } // namespace tria::gfx::internal

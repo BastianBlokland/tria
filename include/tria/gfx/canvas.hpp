@@ -3,6 +3,7 @@
 #include "tria/math/vec.hpp"
 #include <cstdint>
 #include <memory>
+#include <type_traits>
 
 namespace tria::gfx {
 
@@ -33,7 +34,18 @@ public:
 
   /* Draw a single instance of the given graphic.
    */
-  auto draw(const asset::Graphic* asset) -> void;
+  template <typename UniformDataType>
+  auto draw(const asset::Graphic* asset, const UniformDataType& uniData) -> void {
+    static_assert(
+        std::is_trivially_copyable<UniformDataType>::value,
+        "Uniform data type has to be trivially copyable");
+
+    draw(asset, &uniData, sizeof(UniformDataType));
+  }
+
+  /* Draw a single instance of the given graphic.
+   */
+  auto draw(const asset::Graphic* asset, const void* uniData, size_t uniSize) -> void;
 
   /* End drawing and present the result to the window.
    * Note: Has to be preceeded by a call to 'drawBegin'

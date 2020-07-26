@@ -141,8 +141,8 @@ public:
   MemoryPool(
       log::Logger* logger,
       VkDevice vkDevice,
-      VkPhysicalDeviceMemoryProperties deviceMemProperties,
-      VkPhysicalDeviceLimits deviceLimits) :
+      const VkPhysicalDeviceMemoryProperties& deviceMemProperties,
+      const VkPhysicalDeviceLimits& deviceLimits) :
       m_logger{logger},
       m_vkDevice{vkDevice},
       m_deviceMemProperties{deviceMemProperties},
@@ -170,8 +170,8 @@ public:
 private:
   log::Logger* m_logger;
   VkDevice m_vkDevice;
-  VkPhysicalDeviceMemoryProperties m_deviceMemProperties;
-  VkPhysicalDeviceLimits m_deviceLimits;
+  const VkPhysicalDeviceMemoryProperties& m_deviceMemProperties;
+  const VkPhysicalDeviceLimits& m_deviceLimits;
   std::forward_list<MemoryChunk> m_chunks;
 
   [[nodiscard]] auto getMemoryType(VkMemoryPropertyFlags properties, uint32_t allowedMemTypes)

@@ -3,6 +3,7 @@
 #include "transferer.hpp"
 #include "tria/log/api.hpp"
 #include "tria/math/vec.hpp"
+#include "uniform_container.hpp"
 #include <array>
 #include <vulkan/vulkan.h>
 
@@ -44,7 +45,8 @@ public:
 
   /* Record a single draw of the given graphic.
    */
-  auto draw(const Graphic* graphic) -> void;
+  auto draw(VkRenderPass vkRenderPass, const Graphic* graphic, const void* uniData, size_t uniSize)
+      -> void;
 
   /* Finish recordering draw commands and submit the work to the gpu.
    */
@@ -56,6 +58,7 @@ private:
   VkSemaphore m_imgFinished;
   VkFence m_renderDone;
   TransfererUnique m_transferer;
+  UniformContainerUnique m_uni;
 
   /* We record two separate commandbuffers, one for the drawing commands and one for the transfer
    * commands. But at the moment both buffers are submitted to the Graphics queue, in the future we

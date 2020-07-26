@@ -30,6 +30,9 @@ public:
   [[nodiscard]] auto getVkDevice() const noexcept { return m_vkDevice; }
   [[nodiscard]] auto getVkSurface() const noexcept { return m_vkSurface; }
   [[nodiscard]] auto getVkSurfaceFormat() const noexcept { return m_surfaceFormat; }
+  [[nodiscard]] auto getLimits() const noexcept -> const VkPhysicalDeviceLimits& {
+    return m_properties.limits;
+  }
 
   [[nodiscard]] auto getVkGraphicsQueue() const noexcept { return m_graphicsQueue; }
   [[nodiscard]] auto getVkGraphicsQueueIdx() const noexcept { return m_graphicsQueueIdx; }
