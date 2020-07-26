@@ -13,6 +13,13 @@ class Vec final {
   static_assert(std::is_arithmetic_v<Type>, "Type has to be arithmetic");
 
 public:
+  template <typename OtherType>
+  constexpr Vec(const Vec<OtherType, Size>& rhs) noexcept {
+    for (auto i = 0U; i != Size; ++i) {
+      m_comps[i] = static_cast<Type>(rhs[i]);
+    }
+  }
+
   template <typename... Components>
   constexpr Vec(const Components&... comps) noexcept : m_comps{static_cast<Type>(comps)...} {}
 
@@ -273,21 +280,23 @@ namespace color {
 /* Get a color based on a unsigned integer, usefull for getting a color in debug code.
  */
 [[nodiscard]] constexpr auto get(unsigned int i) noexcept -> Color {
-  constexpr auto generators = std::array<Color (*)(), 14>{silver,
-                                                          gray,
-                                                          red,
-                                                          maroon,
-                                                          yellow,
-                                                          olive,
-                                                          lime,
-                                                          green,
-                                                          aqua,
-                                                          teal,
-                                                          blue,
-                                                          navy,
-                                                          fuchsia,
-                                                          purple};
-  return generators[i % generators.size()]();
+  constexpr auto colors = std::array<Color, 14>{
+      silver(),
+      gray(),
+      red(),
+      maroon(),
+      yellow(),
+      olive(),
+      lime(),
+      green(),
+      aqua(),
+      teal(),
+      blue(),
+      navy(),
+      fuchsia(),
+      purple(),
+  };
+  return colors[i % colors.size()];
 }
 
 } // namespace color
