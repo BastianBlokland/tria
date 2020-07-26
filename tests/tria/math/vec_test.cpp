@@ -34,13 +34,25 @@ TEST_CASE("[math] - Vec", "[math]") {
     CHECK(arr[2] == 1337);
   }
 
-  SECTION("Vectors are constructed from their components") {
+  SECTION("Vectors can be constructed from their components") {
     const auto vf = Vec3f{1.0, 2.0, 3.0};
     CHECK(vf.x() == 1.0);
     CHECK(vf.y() == 2.0);
     CHECK(vf.z() == 3.0);
 
     const auto vi = Vec3i{1, 2, 3};
+    CHECK(vi.x() == 1);
+    CHECK(vi.y() == 2);
+    CHECK(vi.z() == 3);
+  }
+
+  SECTION("Vectors can be constructed from vectors of different types") {
+    const auto vf = Vec3f{Vec3i{1, 2, 3}};
+    CHECK(vf.x() == 1.0);
+    CHECK(vf.y() == 2.0);
+    CHECK(vf.z() == 3.0);
+
+    const auto vi = Vec3i{Vec3f{1.0, 2.0, 3.0}};
     CHECK(vi.x() == 1);
     CHECK(vi.y() == 2);
     CHECK(vi.z() == 3);
@@ -155,8 +167,16 @@ TEST_CASE("[math] - Vec", "[math]") {
     CHECK(Vec3i{1, 2, 3} * 2 == Vec3i{2, 4, 6});
   }
 
+  SECTION("Multipling vectors by other vectors multiplies each component") {
+    CHECK(Vec3i{1, 2, 3} * Vec3i{2, 4, 2} == Vec3i{2, 8, 6});
+  }
+
   SECTION("Dividing vectors by a scalar divides each component") {
     CHECK(Vec3i{2, 4, 6} / 2 == Vec3i{1, 2, 3});
+  }
+
+  SECTION("Dividing vectors by other vectors divides each component") {
+    CHECK(Vec3i{2, 8, 4} / Vec3i{2, 4, 4} == Vec3i{1, 2, 1});
   }
 
   SECTION("Square magnitude is sum of squared components") {

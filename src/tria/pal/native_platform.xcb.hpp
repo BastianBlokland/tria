@@ -1,4 +1,5 @@
 #pragma once
+#include "internal/win_input.hpp"
 #include "tria/log/api.hpp"
 #include "tria/pal/platform.hpp"
 #include <string>
@@ -12,9 +13,9 @@ using WindowId = uint32_t;
 struct WindowData {
   WindowId id;
   WindowSize size;
-  bool isCloseRequested;
+  internal::WinInput input;
 
-  WindowData(WindowId id, WindowSize size) noexcept : id{id}, size{size}, isCloseRequested{false} {}
+  WindowData(WindowId id, WindowSize size) noexcept : id{id}, size{size}, input{} {}
 };
 
 class NativePlatform final {
@@ -24,16 +25,16 @@ public:
 
   [[nodiscard]] auto getConnection() const noexcept { return m_xcbCon; }
 
-  [[nodiscard]] auto getIsWinCloseRequested(WindowId id) const noexcept -> bool {
-    auto* win = getWindow(id);
-    assert(win);
-    return win->isCloseRequested;
-  }
-
   [[nodiscard]] auto getWinSize(WindowId id) const noexcept -> WindowSize {
     auto* win = getWindow(id);
     assert(win);
     return win->size;
+  }
+
+  [[nodiscard]] auto getWinInput(WindowId id) const noexcept -> const internal::WinInput& {
+    auto* win = getWindow(id);
+    assert(win);
+    return win->input;
   }
 
   auto handleEvents() -> void;

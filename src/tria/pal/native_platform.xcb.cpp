@@ -1,4 +1,5 @@
 #include "native_platform.xcb.hpp"
+#include "internal/xcb_utils.hpp"
 #include "tria/pal/err/platform_err.hpp"
 #include "tria/pal/utils.hpp"
 #include <array>
@@ -25,33 +26,89 @@ auto NativePlatform::handleEvents() -> void {
   xcb_generic_event_t* evt;
   while ((evt = xcb_poll_for_event(m_xcbCon))) {
     switch (evt->response_type & ~0x80) {
+
     case XCB_CLIENT_MESSAGE: {
       const auto* clientMsg = static_cast<xcb_client_message_event_t*>(static_cast<void*>(evt));
       auto* winData         = getWindow(clientMsg->window);
-      if (!winData) {
-        // Unknown window.
-        break;
+      if (winData && clientMsg->data.data32[0] == m_xcbDeleteMsgAtom) {
+        winData->input.isCloseRequested = true;
       }
-      // User wants to close the window.
-      if (clientMsg->data.data32[0] == m_xcbDeleteMsgAtom) {
-        winData->isCloseRequested = true;
-      }
-      break;
-    }
+    } break;
+
     case XCB_CONFIGURE_NOTIFY: {
       const auto* configMsg = static_cast<xcb_configure_notify_event_t*>(static_cast<void*>(evt));
       auto* winData         = getWindow(configMsg->window);
-      if (!winData) {
-        // Unknown window.
-        break;
+      if (winData) {
+        const auto newSize = WindowSize{configMsg->width, configMsg->height};
+        if (newSize != winData->size) {
+          LOG_D(m_logger, "Window resized", {"id", configMsg->window}, {"size", newSize});
+        }
+        winData->size = newSize;
       }
-
-      const auto newSize = WindowSize{configMsg->width, configMsg->height};
-      if (newSize != winData->size) {
-        LOG_D(m_logger, "Window resized", {"id", configMsg->window}, {"size", newSize});
-      }
-      winData->size = newSize;
     } break;
+
+    case XCB_MOTION_NOTIFY: {
+      const auto* motionMsg = static_cast<xcb_motion_notify_event_t*>(static_cast<void*>(evt));
+      auto* winData         = getWindow(motionMsg->event);
+      if (winData) {
+        winData->input.mousePos = {motionMsg->event_x, motionMsg->event_y};
+      }
+    } break;
+
+    case XCB_BUTTON_PRESS: {
+      const auto* pressMsg = static_cast<xcb_button_press_event_t*>(static_cast<void*>(evt));
+      auto* winData        = getWindow(pressMsg->event);
+      if (winData) {
+        switch (pressMsg->detail) {
+        case XCB_BUTTON_INDEX_1:
+          winData->input.downKeys |= KeyMask(Key::MouseLeft);
+          break;
+        case XCB_BUTTON_INDEX_2:
+          winData->input.downKeys |= KeyMask(Key::MouseMiddle);
+          break;
+        case XCB_BUTTON_INDEX_3:
+          winData->input.downKeys |= KeyMask(Key::MouseRight);
+          break;
+        }
+      }
+    } break;
+
+    case XCB_BUTTON_RELEASE: {
+      const auto* releaseMsg = static_cast<xcb_button_release_event_t*>(static_cast<void*>(evt));
+      auto* winData          = getWindow(releaseMsg->event);
+      if (winData) {
+        switch (releaseMsg->detail) {
+        case XCB_BUTTON_INDEX_1:
+          winData->input.downKeys &= ~KeyMask(Key::MouseLeft);
+          break;
+        case XCB_BUTTON_INDEX_2:
+          winData->input.downKeys &= ~KeyMask(Key::MouseMiddle);
+          break;
+        case XCB_BUTTON_INDEX_3:
+          winData->input.downKeys &= ~KeyMask(Key::MouseRight);
+          break;
+        }
+      }
+    } break;
+
+    case XCB_KEY_PRESS: {
+      const auto* pressMsg = static_cast<xcb_key_press_event_t*>(static_cast<void*>(evt));
+      auto* winData        = getWindow(pressMsg->event);
+      const auto key       = internal::xcbKeyCodeToKey(pressMsg->detail);
+      if (winData && key) {
+        winData->input.downKeys |= KeyMask(*key);
+      }
+    } break;
+
+    case XCB_KEY_RELEASE: {
+      const auto* releaseMsg = static_cast<xcb_key_release_event_t*>(static_cast<void*>(evt));
+      auto* winData          = getWindow(releaseMsg->event);
+      const auto key         = internal::xcbKeyCodeToKey(releaseMsg->detail);
+      if (winData && key) {
+        winData->input.downKeys &= ~KeyMask(*key);
+      }
+    } break;
+
     default:
       // Unknown event.
       break;
@@ -64,8 +121,12 @@ auto NativePlatform::createWindow(WindowSize size) -> Window {
 
   const auto winId    = xcb_generate_id(m_xcbCon);
   const auto eventMsk = XCB_CW_BACK_PIXEL | XCB_CW_EVENT_MASK;
-  const auto valList =
-      std::array<uint32_t, 2>{m_xcbScreen->black_pixel, XCB_EVENT_MASK_STRUCTURE_NOTIFY};
+  const auto valList  = std::array<uint32_t, 2>{
+      m_xcbScreen->black_pixel,
+      XCB_EVENT_MASK_STRUCTURE_NOTIFY | XCB_EVENT_MASK_BUTTON_PRESS |
+          XCB_EVENT_MASK_BUTTON_RELEASE | XCB_EVENT_MASK_POINTER_MOTION | XCB_EVENT_MASK_KEY_PRESS |
+          XCB_EVENT_MASK_KEY_RELEASE,
+  };
 
   if (size.x() == 0) {
     size.x() = m_xcbScreen->width_in_pixels;
@@ -186,31 +247,7 @@ auto NativePlatform::xcbCheckErr() -> void {
   assert(m_xcbCon);
   const auto err = xcb_connection_has_error(m_xcbCon);
   if (err != 0) {
-    std::string msg;
-    switch (err) {
-    case XCB_CONN_ERROR:
-      msg = "x11: Connection error";
-      break;
-    case XCB_CONN_CLOSED_EXT_NOTSUPPORTED:
-      msg = "x11: Extension not supported";
-      break;
-    case XCB_CONN_CLOSED_MEM_INSUFFICIENT:
-      msg = "x11: Insufficient memory available";
-      break;
-    case XCB_CONN_CLOSED_REQ_LEN_EXCEED:
-      msg = "x11: Request length exceeded";
-      break;
-    case XCB_CONN_CLOSED_PARSE_ERR:
-      msg = "x11: Failed to parse display string";
-      break;
-    case XCB_CONN_CLOSED_INVALID_SCREEN:
-      msg = "x11: No valid screen available";
-      break;
-    default:
-      msg = "x11: Unknown error";
-      break;
-    }
-    throw err::PlatformErr{static_cast<unsigned long>(err), msg};
+    throw err::PlatformErr{static_cast<unsigned long>(err), internal::xcbErrToStr(err)};
   }
 }
 

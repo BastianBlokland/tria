@@ -10,14 +10,24 @@ Window::~Window() {
   }
 }
 
-auto Window::getIsCloseRequested() const noexcept -> bool {
-  assert(m_alive);
-  return m_platform->getIsWinCloseRequested(m_id);
-}
-
 auto Window::getSize() const noexcept -> WindowSize {
   assert(m_alive);
   return m_platform->getWinSize(m_id);
+}
+
+auto Window::getIsCloseRequested() const noexcept -> bool {
+  assert(m_alive);
+  return m_platform->getWinInput(m_id).isCloseRequested;
+}
+
+auto Window::getMousePos() const noexcept -> WindowPos {
+  assert(m_alive);
+  return m_platform->getWinInput(m_id).mousePos;
+}
+
+auto Window::isKeyDown(Key key) const noexcept -> bool {
+  assert(m_alive);
+  return isInMask(m_platform->getWinInput(m_id).downKeys, key);
 }
 
 auto Window::setTitle(std::string_view title) -> void {

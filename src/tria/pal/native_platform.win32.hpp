@@ -1,4 +1,5 @@
 #pragma once
+#include "internal/win_input.hpp"
 #include "tria/log/api.hpp"
 #include "tria/pal/platform.hpp"
 #include <string>
@@ -18,7 +19,7 @@ struct WindowData {
   std::string className;
   DWORD dwStyle;
   WindowSize size;
-  bool isCloseRequested;
+  internal::WinInput input;
 
   WindowData(
       WindowId id, HWND handle, std::string className, DWORD dwStyle, WindowSize size) noexcept :
@@ -27,7 +28,7 @@ struct WindowData {
       className{std::move(className)},
       dwStyle{dwStyle},
       size{size},
-      isCloseRequested{false} {}
+      input{} {}
 };
 
 auto WindowProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) noexcept -> LRESULT;
@@ -43,16 +44,16 @@ public:
 
   [[nodiscard]] auto getAppName() const noexcept -> std::string_view { return m_appName; }
 
-  [[nodiscard]] auto getIsWinCloseRequested(WindowId id) const noexcept -> bool {
-    auto* win = getWindow(id);
-    assert(win);
-    return win->isCloseRequested;
-  }
-
   [[nodiscard]] auto getWinSize(WindowId id) const noexcept -> WindowSize {
     auto* win = getWindow(id);
     assert(win);
     return win->size;
+  }
+
+  [[nodiscard]] auto getWinInput(WindowId id) const noexcept -> const internal::WinInput& {
+    auto* win = getWindow(id);
+    assert(win);
+    return win->input;
   }
 
   [[nodiscard]] auto getHWnd(WindowId id) const noexcept -> HWND { return getWindow(id)->handle; }
