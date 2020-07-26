@@ -1,4 +1,5 @@
 #include "uniform_container.hpp"
+#include "tria/gfx/err/gfx_err.hpp"
 #include "utils.hpp"
 #include <cassert>
 
@@ -115,7 +116,7 @@ auto UniformContainer::upload(const void* data, size_t size)
   const auto padding    = padToAlignment(uintSize, m_minAlignment);
   const auto paddedSize = uintSize + padding;
   if (paddedSize > g_maxUniformDataSize) {
-    throw err::DriverErr{"Uniform data size exceeds maximum"};
+    throw err::GfxErr{"Uniform data size exceeds maximum"};
   }
 
   // Find space in an existing set.
@@ -134,7 +135,7 @@ auto UniformContainer::upload(const void* data, size_t size)
   // If no set has enough space then create a new one.
 
   if (m_sets.size() == g_maxUniformBuffers) {
-    throw err::DriverErr{"Unable to allocate new uniform buffer: maximum reached"};
+    throw err::GfxErr{"Unable to allocate new uniform buffer: maximum reached"};
   }
 
   const auto descSet = allocVkDescriptorSet(m_device, m_vkDescPool, m_vkDescLayout);

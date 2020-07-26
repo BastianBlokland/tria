@@ -1,6 +1,7 @@
 #include "native_canvas.hpp"
 #include "internal/utils.hpp"
 #include "native_context.hpp"
+#include "tria/gfx/err/gfx_err.hpp"
 #include "tria/gfx/err/sync_err.hpp"
 #include "tria/pal/native.hpp"
 #include "tria/pal/utils.hpp"
@@ -73,7 +74,7 @@ NativeCanvas::NativeCanvas(
 
   m_device = getDevice(m_logger, m_context->getVkInstance(), window);
   if (!m_device) {
-    throw err::DriverErr{"No device found with vulkan support"};
+    throw err::GfxErr{"No device found with vulkan support"};
   }
 
   m_shaders  = std::make_unique<AssetResource<Shader>>(m_logger, m_device.get());

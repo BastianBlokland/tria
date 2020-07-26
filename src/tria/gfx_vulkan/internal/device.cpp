@@ -1,5 +1,5 @@
 #include "device.hpp"
-#include "tria/gfx/err/driver_err.hpp"
+#include "tria/gfx/err/gfx_err.hpp"
 #include "tria/pal/native.hpp"
 #include "utils.hpp"
 #include <algorithm>
@@ -146,7 +146,7 @@ Device::Device(
   if (foundSurfaceFormat) {
     m_surfaceFormat = *foundSurfaceFormat;
   } else {
-    throw err::DriverErr{"Selected vulkan device is missing a suitable surface format"};
+    throw err::GfxErr{"Selected vulkan device is missing a suitable surface format"};
   }
 
   // Pick a queue family for the graphics and present queue to create on the device.
@@ -155,14 +155,14 @@ Device::Device(
   if (foundGfxQueueIdx) {
     m_graphicsQueueIdx = *foundGfxQueueIdx;
   } else {
-    throw err::DriverErr{"Selected vulkan device is missing a graphics queue"};
+    throw err::GfxErr{"Selected vulkan device is missing a graphics queue"};
   }
   const auto foundPresentQueueIdx =
       pickPresentQueueIdx(queueFamilies, vkPhysicalDevice, m_vkSurface);
   if (foundPresentQueueIdx) {
     m_presentQueueIdx = *foundPresentQueueIdx;
   } else {
-    throw err::DriverErr{"Selected vulkan device is missing a presentation queue"};
+    throw err::GfxErr{"Selected vulkan device is missing a presentation queue"};
   }
 
   // Create a logical device and retrieve the created queues.
