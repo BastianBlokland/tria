@@ -18,6 +18,7 @@ auto runApp(pal::Platform& platform, asset::Database& db, gfx::Context& gfx) {
   auto canvas = gfx.createCanvas(&win, gfx::VSyncMode::Disable);
 
   const auto* triangle = db.get("triangle.gfx")->downcast<asset::Graphic>();
+  const auto* quad     = db.get("quad.gfx")->downcast<asset::Graphic>();
 
   const auto startTime = Clock::now();
   while (!win.getIsCloseRequested() && !pal::isInterruptRequested()) {
@@ -27,8 +28,11 @@ auto runApp(pal::Platform& platform, asset::Database& db, gfx::Context& gfx) {
     if (canvas.drawBegin(math::color::gray())) {
 
       const auto t = (std::sin(elapsedTime.count() * 2.0f) + 1) * .5f;
-      canvas.draw(triangle, math::lerp(math::Vec3f{-.8, 0, 0}, math::Vec3f{.8, 0, 0}, t));
-      canvas.draw(triangle, math::lerp(math::Vec3f{0, -.8, 0}, math::Vec3f{0, .8, 0}, t));
+      canvas.draw(triangle, math::lerp(math::Vec3f{-.75, 0, 0}, math::Vec3f{.75, 0, 0}, t));
+
+      const auto isMouseDown = win.isKeyDown(pal::Key::MouseLeft);
+      const auto ndcMousePos = win.getMousePosNrm() * 2 - math::Vec2f{1, 1};
+      canvas.draw(isMouseDown ? quad : triangle, math::Vec3f{ndcMousePos.x(), ndcMousePos.y(), 0});
 
       canvas.drawEnd();
     } else {

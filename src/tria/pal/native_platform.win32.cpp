@@ -1,38 +1,9 @@
 #include "native_platform.win32.hpp"
-#include "tria/pal/err/platform_err.hpp"
+#include "internal/win32_utils.hpp"
 #include "tria/pal/utils.hpp"
 #include <array>
 
 namespace tria::pal {
-
-namespace {
-
-auto getWin32ErrorMsg(unsigned long errCode) noexcept -> std::string {
-  // Translate the errCode into a string message.
-  LPSTR msgBuffer = nullptr;
-  const auto size = FormatMessageA(
-      FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
-      nullptr,
-      errCode,
-      MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
-      reinterpret_cast<LPSTR>(&msgBuffer),
-      0,
-      nullptr);
-
-  // Copy the buffer to a string object.
-  auto result = std::string{msgBuffer, size};
-
-  // Free the win32 buffer.
-  LocalFree(msgBuffer);
-  return result;
-}
-
-auto throwPlatformError() {
-  const auto errCode = GetLastError();
-  throw err::PlatformErr{errCode, getWin32ErrorMsg(errCode)};
-}
-
-} // namespace
 
 auto WindowProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) noexcept -> LRESULT {
 
@@ -101,7 +72,7 @@ auto NativePlatform::createWindow(const WindowSize size) -> Window {
 
   // Register the window-class to win32.
   if (!RegisterClassEx(&winClass)) {
-    throwPlatformError();
+    internal::throwPlatformError();
   }
 
   const DWORD dwStyle = WS_OVERLAPPEDWINDOW | WS_CLIPSIBLINGS | WS_CLIPCHILDREN;
@@ -126,7 +97,7 @@ auto NativePlatform::createWindow(const WindowSize size) -> Window {
       m_hInstance,
       static_cast<LPVOID>(this));
   if (!winHandle) {
-    throwPlatformError();
+    internal::throwPlatformError();
   }
 
   // Center on screen.
@@ -199,7 +170,7 @@ auto NativePlatform::setWinSize(WindowId id, const WindowSize size) noexcept -> 
 auto NativePlatform::win32Setup() -> void {
   m_hInstance = GetModuleHandle(nullptr);
   if (!m_hInstance) {
-    throwPlatformError();
+    internal::throwPlatformError();
   }
 
   LOG_I(
@@ -208,13 +179,13 @@ auto NativePlatform::win32Setup() -> void {
       {"screenSize", GetSystemMetrics(SM_CXSCREEN), GetSystemMetrics(SM_CYSCREEN)});
 }
 
-auto NativePlatform::handleEvent(HWND hWnd, UINT msg, WPARAM /*unused*/, LPARAM lParam) noexcept
+auto NativePlatform::handleEvent(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) noexcept
     -> bool {
   switch (msg) {
   case WM_CLOSE: {
     auto* window = getWindow(hWnd);
     if (window) {
-      window->isCloseRequested = true;
+      window->input.isCloseRequested = true;
       return true;
     }
     return false;
@@ -242,6 +213,71 @@ auto NativePlatform::handleEvent(HWND hWnd, UINT msg, WPARAM /*unused*/, LPARAM 
   case WM_PAINT: {
     ValidateRect(hWnd, nullptr);
     return true;
+  }
+  case WM_MOUSEMOVE: {
+    auto* window = getWindow(hWnd);
+    if (window) {
+      window->input.mousePos = {LOWORD(lParam), HIWORD(lParam)};
+    }
+    return window;
+  }
+  case WM_LBUTTONDOWN: {
+    auto* window = getWindow(hWnd);
+    if (window) {
+      window->input.downKeys |= KeyMask(Key::MouseLeft);
+    }
+    return window;
+  }
+  case WM_RBUTTONDOWN: {
+    auto* window = getWindow(hWnd);
+    if (window) {
+      window->input.downKeys |= KeyMask(Key::MouseRight);
+    }
+    return window;
+  }
+  case WM_MBUTTONDOWN: {
+    auto* window = getWindow(hWnd);
+    if (window) {
+      window->input.downKeys |= KeyMask(Key::MouseMiddle);
+    }
+    return window;
+  }
+  case WM_LBUTTONUP: {
+    auto* window = getWindow(hWnd);
+    if (window) {
+      window->input.downKeys &= ~KeyMask(Key::MouseLeft);
+    }
+    return window;
+  }
+  case WM_RBUTTONUP: {
+    auto* window = getWindow(hWnd);
+    if (window) {
+      window->input.downKeys &= ~KeyMask(Key::MouseRight);
+    }
+    return window;
+  }
+  case WM_MBUTTONUP: {
+    auto* window = getWindow(hWnd);
+    if (window) {
+      window->input.downKeys &= ~KeyMask(Key::MouseMiddle);
+    }
+    return window;
+  }
+  case WM_KEYDOWN: {
+    auto* window   = getWindow(hWnd);
+    const auto key = internal::winVkToKey(wParam);
+    if (window && key) {
+      window->input.downKeys |= KeyMask(*key);
+    }
+    return window;
+  }
+  case WM_KEYUP: {
+    auto* window   = getWindow(hWnd);
+    const auto key = internal::winVkToKey(wParam);
+    if (window && key) {
+      window->input.downKeys &= ~KeyMask(*key);
+    }
+    return window;
   }
   default:
     return false;
