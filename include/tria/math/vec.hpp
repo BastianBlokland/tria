@@ -169,10 +169,28 @@ public:
     return res;
   }
 
+  [[nodiscard]] constexpr auto operator*(const Vec<Type, Size>& rhs) const noexcept
+      -> Vec<Type, Size> {
+    auto res = *this;
+    for (auto i = 0U; i != Size; ++i) {
+      res[i] *= rhs[i];
+    }
+    return res;
+  }
+
   [[nodiscard]] constexpr auto operator/(const Type& rhs) const noexcept -> Vec<Type, Size> {
     auto res = *this;
     for (auto i = 0U; i != Size; ++i) {
       res[i] /= rhs;
+    }
+    return res;
+  }
+
+  [[nodiscard]] constexpr auto operator/(const Vec<Type, Size>& rhs) const noexcept
+      -> Vec<Type, Size> {
+    auto res = *this;
+    for (auto i = 0U; i != Size; ++i) {
+      res[i] /= rhs[i];
     }
     return res;
   }

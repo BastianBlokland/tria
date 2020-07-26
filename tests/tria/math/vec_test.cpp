@@ -167,8 +167,16 @@ TEST_CASE("[math] - Vec", "[math]") {
     CHECK(Vec3i{1, 2, 3} * 2 == Vec3i{2, 4, 6});
   }
 
+  SECTION("Multipling vectors by other vectors multiplies each component") {
+    CHECK(Vec3i{1, 2, 3} * Vec3i{2, 4, 2} == Vec3i{2, 8, 6});
+  }
+
   SECTION("Dividing vectors by a scalar divides each component") {
     CHECK(Vec3i{2, 4, 6} / 2 == Vec3i{1, 2, 3});
+  }
+
+  SECTION("Dividing vectors by other vectors divides each component") {
+    CHECK(Vec3i{2, 8, 4} / Vec3i{2, 4, 4} == Vec3i{1, 2, 1});
   }
 
   SECTION("Square magnitude is sum of squared components") {
