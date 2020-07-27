@@ -21,7 +21,9 @@ auto runApp(pal::Platform& platform, asset::Database& db, gfx::Context& gfx) {
   const auto* quad     = db.get("quad.gfx")->downcast<asset::Graphic>();
 
   const auto startTime = Clock::now();
-  while (!win.getIsCloseRequested() && !pal::isInterruptRequested()) {
+  while (!win.getIsCloseRequested() && !pal::isInterruptRequested() &&
+         !win.isKeyPressed(pal::Key::Escape)) {
+
     platform.handleEvents();
 
     const auto elapsedTime = std::chrono::duration<float>(Clock::now() - startTime);

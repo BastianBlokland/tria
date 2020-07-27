@@ -14,7 +14,7 @@ Cross-platform game engine / playground.
 ### Linux
 
 * [CMake](https://cmake.org/) (At least version `3.15`).
-* [Xcb](https://xcb.freedesktop.org/) (apt install libxcb1-dev)
+* [Xcb](https://xcb.freedesktop.org/) (apt install libxcb1-dev libxcb-xkb-dev)
 * [Vulkan](https://vulkan.lunarg.com/sdk/home).
 
 ## Credits

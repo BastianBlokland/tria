@@ -44,6 +44,10 @@ NativePlatform::~NativePlatform() {
 }
 
 auto NativePlatform::handleEvents() -> void {
+
+  // Reset any events (like pressed keys) from the previous 'handleEvents' call.
+  resetEvents();
+
   MSG msg;
   while (PeekMessage(&msg, nullptr, 0, 0, PM_REMOVE)) {
     TranslateMessage(&msg);
@@ -51,12 +55,22 @@ auto NativePlatform::handleEvents() -> void {
   }
 }
 
-auto NativePlatform::createWindow(const WindowSize size) -> Window {
+auto NativePlatform::createWindow(WindowSize size) -> Window {
   auto winId = m_nextWinId++;
 
   // Create a unique class-name for this window class.
   auto className = m_appName;
   className += std::to_string(winId);
+
+  const auto screenWidth  = GetSystemMetrics(SM_CXSCREEN);
+  const auto screenHeight = GetSystemMetrics(SM_CYSCREEN);
+
+  if (size.x() == 0) {
+    size.x() = screenWidth;
+  }
+  if (size.y() == 0) {
+    size.y() = screenHeight;
+  }
 
   // Create a window-class structure.
   WNDCLASSEX winClass    = {};
@@ -101,10 +115,8 @@ auto NativePlatform::createWindow(const WindowSize size) -> Window {
   }
 
   // Center on screen.
-  const auto screenWidth  = GetSystemMetrics(SM_CXSCREEN);
-  const auto screenHeight = GetSystemMetrics(SM_CYSCREEN);
-  const auto x            = (screenWidth - winRect.right) / 2;
-  const auto y            = (screenHeight - winRect.bottom) / 2;
+  const auto x = (screenWidth - winRect.right) / 2;
+  const auto y = (screenHeight - winRect.bottom) / 2;
   SetWindowPos(winHandle, nullptr, x, y, 0, 0, SWP_NOZORDER | SWP_NOSIZE);
 
   // Show and focus window.
@@ -185,7 +197,7 @@ auto NativePlatform::handleEvent(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lPar
   case WM_CLOSE: {
     auto* window = getWindow(hWnd);
     if (window) {
-      window->input.isCloseRequested = true;
+      window->input.requestClose();
       return true;
     }
     return false;
@@ -217,49 +229,49 @@ auto NativePlatform::handleEvent(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lPar
   case WM_MOUSEMOVE: {
     auto* window = getWindow(hWnd);
     if (window) {
-      window->input.mousePos = {LOWORD(lParam), HIWORD(lParam)};
+      window->input.setMousePos({LOWORD(lParam), HIWORD(lParam)});
     }
     return window;
   }
   case WM_LBUTTONDOWN: {
     auto* window = getWindow(hWnd);
     if (window) {
-      window->input.downKeys |= KeyMask(Key::MouseLeft);
+      window->input.markPressed(Key::MouseLeft);
     }
     return window;
   }
   case WM_RBUTTONDOWN: {
     auto* window = getWindow(hWnd);
     if (window) {
-      window->input.downKeys |= KeyMask(Key::MouseRight);
+      window->input.markPressed(Key::MouseRight);
     }
     return window;
   }
   case WM_MBUTTONDOWN: {
     auto* window = getWindow(hWnd);
     if (window) {
-      window->input.downKeys |= KeyMask(Key::MouseMiddle);
+      window->input.markPressed(Key::MouseMiddle);
     }
     return window;
   }
   case WM_LBUTTONUP: {
     auto* window = getWindow(hWnd);
     if (window) {
-      window->input.downKeys &= ~KeyMask(Key::MouseLeft);
+      window->input.markReleased(Key::MouseLeft);
     }
     return window;
   }
   case WM_RBUTTONUP: {
     auto* window = getWindow(hWnd);
     if (window) {
-      window->input.downKeys &= ~KeyMask(Key::MouseRight);
+      window->input.markReleased(Key::MouseRight);
     }
     return window;
   }
   case WM_MBUTTONUP: {
     auto* window = getWindow(hWnd);
     if (window) {
-      window->input.downKeys &= ~KeyMask(Key::MouseMiddle);
+      window->input.markReleased(Key::MouseMiddle);
     }
     return window;
   }
@@ -267,7 +279,7 @@ auto NativePlatform::handleEvent(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lPar
     auto* window   = getWindow(hWnd);
     const auto key = internal::winVkToKey(wParam);
     if (window && key) {
-      window->input.downKeys |= KeyMask(*key);
+      window->input.markPressed(*key);
     }
     return window;
   }
@@ -275,12 +287,18 @@ auto NativePlatform::handleEvent(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lPar
     auto* window   = getWindow(hWnd);
     const auto key = internal::winVkToKey(wParam);
     if (window && key) {
-      window->input.downKeys &= ~KeyMask(*key);
+      window->input.markReleased(*key);
     }
     return window;
   }
   default:
     return false;
+  }
+}
+
+auto NativePlatform::resetEvents() noexcept -> void {
+  for (auto& win : m_windows) {
+    win.second.input.reset();
   }
 }
 

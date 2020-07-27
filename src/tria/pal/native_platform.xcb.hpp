@@ -1,5 +1,5 @@
 #pragma once
-#include "internal/win_input.hpp"
+#include "internal/window_input.hpp"
 #include "tria/log/api.hpp"
 #include "tria/pal/platform.hpp"
 #include <string>
@@ -13,7 +13,7 @@ using WindowId = uint32_t;
 struct WindowData {
   WindowId id;
   WindowSize size;
-  internal::WinInput input;
+  internal::WindowInput input;
 
   WindowData(WindowId id, WindowSize size) noexcept : id{id}, size{size}, input{} {}
 };
@@ -31,7 +31,7 @@ public:
     return win->size;
   }
 
-  [[nodiscard]] auto getWinInput(WindowId id) const noexcept -> const internal::WinInput& {
+  [[nodiscard]] auto getWinInput(WindowId id) const noexcept -> const internal::WindowInput& {
     auto* win = getWindow(id);
     assert(win);
     return win->input;
@@ -56,12 +56,16 @@ private:
   std::unordered_map<WindowId, WindowData> m_windows;
 
   auto xcbSetup() -> void;
+  auto xkbSetup() const noexcept -> bool;
 
   auto xcbTeardown() noexcept -> void;
-
   auto xcbCheckErr() -> void;
 
   auto xcbGetAtom(const std::string& name) noexcept -> xcb_atom_t;
+
+  /* Reset any events (like pressed keys) from the previous 'handleEvents' call.
+   */
+  auto resetEvents() noexcept -> void;
 
   auto getWindow(WindowId id) noexcept -> WindowData*;
 

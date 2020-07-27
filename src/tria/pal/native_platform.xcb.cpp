@@ -7,11 +7,11 @@
 namespace tria::pal {
 
 NativePlatform::NativePlatform(log::Logger* logger) : m_logger{logger}, m_xcbScreen{nullptr} {
-
   LOG_I(
       logger, "Platform init", {"executable", getCurExecutableName()}, {"pid", getCurProcessId()});
 
   xcbSetup();
+  xkbSetup();
 }
 
 NativePlatform::~NativePlatform() {
@@ -23,6 +23,9 @@ NativePlatform::~NativePlatform() {
 
 auto NativePlatform::handleEvents() -> void {
 
+  // Reset any events (like pressed keys) from the previous 'handleEvents' call.
+  resetEvents();
+
   xcb_generic_event_t* evt;
   while ((evt = xcb_poll_for_event(m_xcbCon))) {
     switch (evt->response_type & ~0x80) {
@@ -31,7 +34,7 @@ auto NativePlatform::handleEvents() -> void {
       const auto* clientMsg = static_cast<xcb_client_message_event_t*>(static_cast<void*>(evt));
       auto* winData         = getWindow(clientMsg->window);
       if (winData && clientMsg->data.data32[0] == m_xcbDeleteMsgAtom) {
-        winData->input.isCloseRequested = true;
+        winData->input.requestClose();
       }
     } break;
 
@@ -51,7 +54,7 @@ auto NativePlatform::handleEvents() -> void {
       const auto* motionMsg = static_cast<xcb_motion_notify_event_t*>(static_cast<void*>(evt));
       auto* winData         = getWindow(motionMsg->event);
       if (winData) {
-        winData->input.mousePos = {motionMsg->event_x, motionMsg->event_y};
+        winData->input.setMousePos({motionMsg->event_x, motionMsg->event_y});
       }
     } break;
 
@@ -61,13 +64,13 @@ auto NativePlatform::handleEvents() -> void {
       if (winData) {
         switch (pressMsg->detail) {
         case XCB_BUTTON_INDEX_1:
-          winData->input.downKeys |= KeyMask(Key::MouseLeft);
+          winData->input.markPressed(Key::MouseLeft);
           break;
         case XCB_BUTTON_INDEX_2:
-          winData->input.downKeys |= KeyMask(Key::MouseMiddle);
+          winData->input.markPressed(Key::MouseMiddle);
           break;
         case XCB_BUTTON_INDEX_3:
-          winData->input.downKeys |= KeyMask(Key::MouseRight);
+          winData->input.markPressed(Key::MouseRight);
           break;
         }
       }
@@ -79,13 +82,13 @@ auto NativePlatform::handleEvents() -> void {
       if (winData) {
         switch (releaseMsg->detail) {
         case XCB_BUTTON_INDEX_1:
-          winData->input.downKeys &= ~KeyMask(Key::MouseLeft);
+          winData->input.markReleased(Key::MouseLeft);
           break;
         case XCB_BUTTON_INDEX_2:
-          winData->input.downKeys &= ~KeyMask(Key::MouseMiddle);
+          winData->input.markReleased(Key::MouseMiddle);
           break;
         case XCB_BUTTON_INDEX_3:
-          winData->input.downKeys &= ~KeyMask(Key::MouseRight);
+          winData->input.markReleased(Key::MouseRight);
           break;
         }
       }
@@ -96,7 +99,7 @@ auto NativePlatform::handleEvents() -> void {
       auto* winData        = getWindow(pressMsg->event);
       const auto key       = internal::xcbKeyCodeToKey(pressMsg->detail);
       if (winData && key) {
-        winData->input.downKeys |= KeyMask(*key);
+        winData->input.markPressed(*key);
       }
     } break;
 
@@ -105,7 +108,7 @@ auto NativePlatform::handleEvents() -> void {
       auto* winData          = getWindow(releaseMsg->event);
       const auto key         = internal::xcbKeyCodeToKey(releaseMsg->detail);
       if (winData && key) {
-        winData->input.downKeys &= ~KeyMask(*key);
+        winData->input.markReleased(*key);
       }
     } break;
 
@@ -119,13 +122,15 @@ auto NativePlatform::handleEvents() -> void {
 
 auto NativePlatform::createWindow(WindowSize size) -> Window {
 
-  const auto winId    = xcb_generate_id(m_xcbCon);
-  const auto eventMsk = XCB_CW_BACK_PIXEL | XCB_CW_EVENT_MASK;
-  const auto valList  = std::array<uint32_t, 2>{
-      m_xcbScreen->black_pixel,
-      XCB_EVENT_MASK_STRUCTURE_NOTIFY | XCB_EVENT_MASK_BUTTON_PRESS |
-          XCB_EVENT_MASK_BUTTON_RELEASE | XCB_EVENT_MASK_POINTER_MOTION | XCB_EVENT_MASK_KEY_PRESS |
-          XCB_EVENT_MASK_KEY_RELEASE,
+  const auto winId          = xcb_generate_id(m_xcbCon);
+  const auto valMask        = XCB_CW_BACK_PIXEL | XCB_CW_EVENT_MASK;
+  const auto backPixelColor = m_xcbScreen->black_pixel;
+  const auto evtMask        = XCB_EVENT_MASK_STRUCTURE_NOTIFY | XCB_EVENT_MASK_BUTTON_PRESS |
+      XCB_EVENT_MASK_BUTTON_RELEASE | XCB_EVENT_MASK_POINTER_MOTION | XCB_EVENT_MASK_KEY_PRESS |
+      XCB_EVENT_MASK_KEY_RELEASE;
+  const auto valList = std::array<uint32_t, 2>{
+      backPixelColor,
+      evtMask,
   };
 
   if (size.x() == 0) {
@@ -148,7 +153,7 @@ auto NativePlatform::createWindow(WindowSize size) -> Window {
       0,
       XCB_WINDOW_CLASS_INPUT_OUTPUT,
       m_xcbScreen->root_visual,
-      eventMsk,
+      valMask,
       valList.data());
 
   // Register a custom delete message atom.
@@ -204,7 +209,6 @@ auto NativePlatform::setWinSize(WindowId id, const WindowSize size) noexcept -> 
   };
   xcb_configure_window(
       m_xcbCon, id, XCB_CONFIG_WINDOW_WIDTH | XCB_CONFIG_WINDOW_HEIGHT, valList.data());
-
   xcb_flush(m_xcbCon);
 
   // Update local information immediately.
@@ -238,6 +242,42 @@ auto NativePlatform::xcbSetup() -> void {
       {"screenSize", m_xcbScreen->width_in_pixels, m_xcbScreen->height_in_pixels});
 }
 
+auto NativePlatform::xkbSetup() const noexcept -> bool {
+
+  auto useExt = XCB_CALL_WITH_REPLY(
+      m_xcbCon, xcb_xkb_use_extension, XCB_XKB_MAJOR_VERSION, XCB_XKB_MINOR_VERSION);
+  if (useExt.hasError()) {
+    // TODO(bastian): Decide if we should throw here, the program still runs however the keyboard
+    // input wont work correctly.
+    LOG_E(m_logger, "Failed to initialize xkb", {"errorCode", useExt.getErrCode()});
+    return false;
+  }
+  auto serverVerMajor = useExt.getValue()->serverMajor;
+  auto serverVerMinor = useExt.getValue()->serverMinor;
+
+  // Enable 'detectableAutoRepeat': by default x-server will send repeated press and release events
+  // when holding down a key, we don't want this.
+  auto setFlags = XCB_CALL_WITH_REPLY(
+      m_xcbCon,
+      xcb_xkb_per_client_flags,
+      XCB_XKB_ID_USE_CORE_KBD,
+      XCB_XKB_PER_CLIENT_FLAG_DETECTABLE_AUTO_REPEAT,
+      XCB_XKB_PER_CLIENT_FLAG_DETECTABLE_AUTO_REPEAT,
+      0,
+      0,
+      0);
+  if (setFlags.hasError()) {
+    // TODO(bastian): Decide if we should throw here, the program still runs however the keyboard
+    // input wont work correctly.
+    LOG_E(
+        m_logger, "Failed to enable 'detectableAutoRepeat'", {"errorCode", setFlags.getErrCode()});
+    return false;
+  }
+
+  LOG_I(m_logger, "Initialized xkb", {"version", serverVerMajor, serverVerMinor});
+  return true;
+}
+
 auto NativePlatform::xcbTeardown() noexcept -> void {
   xcb_disconnect(m_xcbCon);
   LOG_I(m_logger, "Xcb disconnected");
@@ -252,11 +292,14 @@ auto NativePlatform::xcbCheckErr() -> void {
 }
 
 auto NativePlatform::xcbGetAtom(const std::string& name) noexcept -> xcb_atom_t {
-  const auto req  = xcb_intern_atom(m_xcbCon, 0, name.length(), name.data());
-  auto* reply     = xcb_intern_atom_reply(m_xcbCon, req, nullptr);
-  const auto atom = reply->atom;
-  std::free(reply);
-  return atom;
+  auto atomReply = XCB_CALL_WITH_REPLY(m_xcbCon, xcb_intern_atom, 0, name.length(), name.data());
+  return atomReply.getValue()->atom;
+}
+
+auto NativePlatform::resetEvents() noexcept -> void {
+  for (auto& [id, data] : m_windows) {
+    data.input.reset();
+  }
 }
 
 auto NativePlatform::getWindow(WindowId id) noexcept -> WindowData* {

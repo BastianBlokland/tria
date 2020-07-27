@@ -1,10 +1,47 @@
 #pragma once
 #include "tria/pal/key.hpp"
+#include "xcb_xkb_include.hpp"
+#include <cassert>
 #include <optional>
 #include <string_view>
 #include <xcb/xcb.h>
 
 namespace tria::pal::internal {
+
+/* RAII wrapper around a xcb reply pointer.
+ */
+template <typename ReplyType>
+class XcbReply final {
+public:
+  XcbReply(ReplyType* reply, xcb_generic_error_t* error) : m_reply{reply}, m_error{error} {}
+  ~XcbReply() { std::free(m_reply); }
+
+  [[nodiscard]] auto getValue() const noexcept -> ReplyType* { return m_reply; }
+  [[nodiscard]] auto hasError() const noexcept -> bool { return m_error; }
+  [[nodiscard]] auto getErrCode() const noexcept { return m_error->error_code; }
+
+private:
+  ReplyType* m_reply;
+  xcb_generic_error_t* m_error;
+};
+
+/* Wrapper function that calls a xcb '_reply' function and wraps the result in a 'XcbReply'.
+ */
+template <typename CookieType, typename ReplyType>
+[[nodiscard]] auto xcbCallReply(
+    xcb_connection_t* con,
+    CookieType cookie,
+    ReplyType* (*replyFunc)(xcb_connection_t*, CookieType, xcb_generic_error_t**)) {
+  xcb_generic_error_t* err;
+  auto* reply = replyFunc(con, cookie, &err);
+  return XcbReply(reply, err);
+}
+
+/* Call a xcb function, await its reply using a '_reply' function and wraps the result in a RAII
+ * wrapper.
+ */
+#define XCB_CALL_WITH_REPLY(CON, XCB_FUNC, ...)                                                    \
+  tria::pal::internal::xcbCallReply(CON, XCB_FUNC(CON, __VA_ARGS__), &XCB_FUNC##_reply)
 
 [[nodiscard]] constexpr auto xcbErrToStr(int xcbErrCode) -> std::string_view {
   switch (xcbErrCode) {

@@ -77,9 +77,11 @@ message(STATUS "Configuring linux xcb pal library")
     tria/pal/utils.linux.cpp
     tria/pal/window.xcb.cpp)
 
-    message(STATUS "Finding xcb package")
+    message(STATUS "Finding xcb (with xkb) package")
     find_package(xcb REQUIRED)
+    find_package(xcb-xkb REQUIRED)
     target_link_libraries(tria_pal PRIVATE xcb)
+    target_link_libraries(tria_pal PRIVATE xcb-xkb)
 
 elseif(${TRIA_PLATFORM} STREQUAL "win32")
   message(STATUS "Configuring win32 pal library")

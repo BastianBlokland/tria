@@ -69,6 +69,14 @@ public:
    */
   [[nodiscard]] auto isKeyDown(Key key) const noexcept -> bool;
 
+  /* Check if the given key is pressed this frame.
+   */
+  [[nodiscard]] auto isKeyPressed(Key key) const noexcept -> bool;
+
+  /* Check if the given key is released this frame.
+   */
+  [[nodiscard]] auto isKeyReleased(Key key) const noexcept -> bool;
+
   auto setTitle(std::string_view title) -> void;
   auto setSize(WindowSize size) -> void;
 
