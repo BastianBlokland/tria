@@ -34,6 +34,7 @@ if(UNIX)
 elseif(WIN32)
   set(TRIA_PLATFORM "win32")
   add_definitions(-DTRIA_WIN32)
+  add_definitions(-DWINVER=0x0600 -D_WIN32_WINNT=0x0600) # Target windows 'vista'.
   message(STATUS "Detected win32 platform")
 else()
   message(FATAL_ERROR "Unsupported platform")

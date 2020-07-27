@@ -17,17 +17,32 @@ auto Window::getSize() const noexcept -> WindowSize {
 
 auto Window::getIsCloseRequested() const noexcept -> bool {
   assert(m_alive);
-  return m_platform->getWinInput(m_id).isCloseRequested;
+  return m_platform->getWinInput(m_id).getIsCloseRequested();
 }
 
 auto Window::getMousePos() const noexcept -> WindowPos {
   assert(m_alive);
-  return m_platform->getWinInput(m_id).mousePos;
+  return m_platform->getWinInput(m_id).getMousePos();
+}
+
+auto Window::getScrollDelta() const noexcept -> WindowPos {
+  assert(m_alive);
+  return m_platform->getWinInput(m_id).getScrollDelta();
 }
 
 auto Window::isKeyDown(Key key) const noexcept -> bool {
   assert(m_alive);
-  return isInMask(m_platform->getWinInput(m_id).downKeys, key);
+  return m_platform->getWinInput(m_id).isKeyDown(key);
+}
+
+auto Window::isKeyPressed(Key key) const noexcept -> bool {
+  assert(m_alive);
+  return m_platform->getWinInput(m_id).isKeyPressed(key);
+}
+
+auto Window::isKeyReleased(Key key) const noexcept -> bool {
+  assert(m_alive);
+  return m_platform->getWinInput(m_id).isKeyReleased(key);
 }
 
 auto Window::setTitle(std::string_view title) -> void {

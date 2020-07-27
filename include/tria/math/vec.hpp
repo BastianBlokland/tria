@@ -144,6 +144,13 @@ public:
     return res;
   }
 
+  constexpr auto operator+=(const Vec<Type, Size>& rhs) noexcept -> Vec<Type, Size>& {
+    for (auto i = 0U; i != Size; ++i) {
+      m_comps[i] += rhs[i];
+    }
+    return *this;
+  }
+
   [[nodiscard]] constexpr auto operator-(const Vec<Type, Size>& rhs) const noexcept
       -> Vec<Type, Size> {
     auto res = *this;
@@ -151,6 +158,13 @@ public:
       res[i] -= rhs[i];
     }
     return res;
+  }
+
+  constexpr auto operator-=(const Vec<Type, Size>& rhs) noexcept -> Vec<Type, Size>& {
+    for (auto i = 0U; i != Size; ++i) {
+      m_comps[i] -= rhs[i];
+    }
+    return *this;
   }
 
   [[nodiscard]] constexpr auto operator-() const noexcept -> Vec<Type, Size> {

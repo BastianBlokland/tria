@@ -1,5 +1,5 @@
 #pragma once
-#include "internal/win_input.hpp"
+#include "internal/window_input.hpp"
 #include "tria/log/api.hpp"
 #include "tria/pal/platform.hpp"
 #include <string>
@@ -19,7 +19,7 @@ struct WindowData {
   std::string className;
   DWORD dwStyle;
   WindowSize size;
-  internal::WinInput input;
+  internal::WindowInput input;
 
   WindowData(
       WindowId id, HWND handle, std::string className, DWORD dwStyle, WindowSize size) noexcept :
@@ -50,7 +50,7 @@ public:
     return win->size;
   }
 
-  [[nodiscard]] auto getWinInput(WindowId id) const noexcept -> const internal::WinInput& {
+  [[nodiscard]] auto getWinInput(WindowId id) const noexcept -> const internal::WindowInput& {
     auto* win = getWindow(id);
     assert(win);
     return win->input;
@@ -78,6 +78,8 @@ private:
   auto win32Setup() -> void;
 
   auto handleEvent(HWND hWnd, UINT msg, WPARAM /*unused*/, LPARAM lParam) noexcept -> bool;
+
+  auto resetEvents() noexcept -> void;
 
   auto getWindow(HWND handle) noexcept -> WindowData*;
 

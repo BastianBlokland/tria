@@ -20,15 +20,17 @@ auto runApp(pal::Platform& platform, asset::Database& db, gfx::Context& gfx) {
   const auto* triangle = db.get("triangle.gfx")->downcast<asset::Graphic>();
   const auto* quad     = db.get("quad.gfx")->downcast<asset::Graphic>();
 
-  const auto startTime = Clock::now();
-  while (!win.getIsCloseRequested() && !pal::isInterruptRequested()) {
+  auto pos = math::Vec2f{0, 0};
+  while (!win.getIsCloseRequested() && !pal::isInterruptRequested() &&
+         !win.isKeyPressed(pal::Key::Escape)) {
+
     platform.handleEvents();
 
-    const auto elapsedTime = std::chrono::duration<float>(Clock::now() - startTime);
+    pos += math::Vec2f(win.getScrollDelta()) * 0.01f;
+
     if (canvas.drawBegin(math::color::gray())) {
 
-      const auto t = (std::sin(elapsedTime.count() * 2.0f) + 1) * .5f;
-      canvas.draw(triangle, math::lerp(math::Vec3f{-.75, 0, 0}, math::Vec3f{.75, 0, 0}, t));
+      canvas.draw(triangle, pos);
 
       const auto isMouseDown = win.isKeyDown(pal::Key::MouseLeft);
       const auto ndcMousePos = win.getMousePosNrm() * 2 - math::Vec2f{1, 1};
