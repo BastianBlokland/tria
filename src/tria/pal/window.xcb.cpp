@@ -25,6 +25,11 @@ auto Window::getMousePos() const noexcept -> WindowPos {
   return m_platform->getWinInput(m_id).getMousePos();
 }
 
+auto Window::getScrollDelta() const noexcept -> WindowPos {
+  assert(m_alive);
+  return m_platform->getWinInput(m_id).getScrollDelta();
+}
+
 auto Window::isKeyDown(Key key) const noexcept -> bool {
   assert(m_alive);
   return m_platform->getWinInput(m_id).isKeyDown(key);

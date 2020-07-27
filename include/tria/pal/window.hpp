@@ -65,6 +65,11 @@ public:
     return WindowPosNrm{getMousePos()} / WindowPosNrm{getSize()};
   }
 
+  /* Get the scroll delta for this frame.
+   * Positive y means scrolled up, negative y scrolled down.
+   */
+  [[nodiscard]] auto getScrollDelta() const noexcept -> WindowPos;
+
   /* Check if the given key is currently being held down.
    */
   [[nodiscard]] auto isKeyDown(Key key) const noexcept -> bool;

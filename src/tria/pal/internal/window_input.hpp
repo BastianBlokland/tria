@@ -9,6 +9,7 @@ public:
   WindowInput() = default;
 
   [[nodiscard]] auto getMousePos() const noexcept { return m_mousePos; }
+  [[nodiscard]] auto getScrollDelta() const noexcept { return m_scrollDelta; }
   [[nodiscard]] auto getIsCloseRequested() const noexcept { return m_isCloseRequested; }
   [[nodiscard]] auto isKeyDown(Key key) const noexcept { return isInMask(m_downKeys, key); }
   [[nodiscard]] auto isKeyPressed(Key key) const noexcept { return isInMask(m_pressedKeys, key); }
@@ -18,11 +19,14 @@ public:
    * platform events.
    */
   auto reset() {
+    m_scrollDelta  = WindowPos();
     m_pressedKeys  = KeyMask();
     m_releasedKeys = KeyMask();
   }
 
   auto setMousePos(WindowPos pos) { m_mousePos = pos; }
+
+  auto updateScroll(WindowPos delta) { m_scrollDelta += delta; }
 
   auto requestClose() { m_isCloseRequested = true; }
 
@@ -42,6 +46,7 @@ public:
 
 private:
   WindowPos m_mousePos;
+  WindowPos m_scrollDelta;
   KeyMask m_downKeys;
   KeyMask m_pressedKeys;
   KeyMask m_releasedKeys;

@@ -291,6 +291,22 @@ auto NativePlatform::handleEvent(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lPar
     }
     return window;
   }
+  case WM_MOUSEWHEEL: {
+    auto* window = getWindow(hWnd);
+    if (window) {
+      const auto delta = GET_WHEEL_DELTA_WPARAM(wParam) / WHEEL_DELTA;
+      window->input.updateScroll({0, delta});
+    }
+    return window;
+  }
+  case WM_MOUSEHWHEEL: {
+    auto* window = getWindow(hWnd);
+    if (window) {
+      const auto delta = GET_WHEEL_DELTA_WPARAM(wParam) / WHEEL_DELTA;
+      window->input.updateScroll({-delta, 0});
+    }
+    return window;
+  }
   default:
     return false;
   }

@@ -72,6 +72,18 @@ auto NativePlatform::handleEvents() -> void {
         case XCB_BUTTON_INDEX_3:
           winData->input.markPressed(Key::MouseRight);
           break;
+        case XCB_BUTTON_INDEX_4: // Mouse-wheel scroll up.
+          winData->input.updateScroll({0, 1});
+          break;
+        case XCB_BUTTON_INDEX_5: // Mouse-wheel scroll down.
+          winData->input.updateScroll({0, -1});
+          break;
+        case 6: // XCB_BUTTON_INDEX_6 // Mouse-wheel scroll right.
+          winData->input.updateScroll({1, 0});
+          break;
+        case 7: // XCB_BUTTON_INDEX_7 // Mouse-wheel scroll left.
+          winData->input.updateScroll({-1, 0});
+          break;
         }
       }
     } break;
@@ -297,8 +309,8 @@ auto NativePlatform::xcbGetAtom(const std::string& name) noexcept -> xcb_atom_t 
 }
 
 auto NativePlatform::resetEvents() noexcept -> void {
-  for (auto& [id, data] : m_windows) {
-    data.input.reset();
+  for (auto& win : m_windows) {
+    win.second.input.reset();
   }
 }
 
