@@ -13,9 +13,11 @@ using WindowId = uint32_t;
 struct WindowData {
   WindowId id;
   WindowSize size;
+  FullscreenMode fullscreen;
   internal::WindowInput input;
 
-  WindowData(WindowId id, WindowSize size) noexcept : id{id}, size{size}, input{} {}
+  WindowData(WindowId id, WindowSize size) noexcept :
+      id{id}, size{size}, fullscreen{FullscreenMode::Disable}, input{} {}
 };
 
 class NativePlatform final {
@@ -29,6 +31,12 @@ public:
     auto* win = getWindow(id);
     assert(win);
     return win->size;
+  }
+
+  [[nodiscard]] auto getWinFullscreenMode(WindowId id) const noexcept -> FullscreenMode {
+    auto* win = getWindow(id);
+    assert(win);
+    return win->fullscreen;
   }
 
   [[nodiscard]] auto getWinInput(WindowId id) const noexcept -> const internal::WindowInput& {

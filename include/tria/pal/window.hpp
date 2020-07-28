@@ -53,6 +53,10 @@ public:
    */
   [[nodiscard]] auto getSize() const noexcept -> WindowSize;
 
+  /* Get the current fullscreen mode.
+   */
+  [[nodiscard]] auto getFullscreenMode() const noexcept -> FullscreenMode;
+
   /* Has the user requested to close this window.
    */
   [[nodiscard]] auto getIsCloseRequested() const noexcept -> bool;

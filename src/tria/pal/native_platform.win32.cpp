@@ -121,8 +121,8 @@ auto NativePlatform::createWindow(WindowSize desiredSize) -> Window {
   if (!GetClientRect(winHandle, &realClientRect)) {
     internal::throwPlatformError();
   }
-  WindowSize realSize = {
-      realClientRect.right - realClientRect.left, realClientRect.bottom - realClientRect.top};
+  WindowSize realSize = {realClientRect.right - realClientRect.left,
+                         realClientRect.bottom - realClientRect.top};
 
   // Get window size of the window (including borders).
   RECT realWinRect;
@@ -244,9 +244,12 @@ auto NativePlatform::setWinSize(WindowId id, WindowSize desiredSize, FullscreenM
   // us a different size then was desired).
   RECT realClientRect;
   if (GetClientRect(winData->handle, &realClientRect)) {
-    winData->size = {
-        realClientRect.right - realClientRect.left, realClientRect.bottom - realClientRect.top};
+    winData->size = {realClientRect.right - realClientRect.left,
+                     realClientRect.bottom - realClientRect.top};
   }
+
+  // Update the fullscreen mode on the window data.
+  winData->fullscreen = fullscreen;
 
   return true;
 }

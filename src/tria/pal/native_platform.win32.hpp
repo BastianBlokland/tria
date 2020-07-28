@@ -20,6 +20,7 @@ struct WindowData {
   DWORD dwStyle;
   DWORD dwFullscreenStyle;
   WindowSize size;
+  FullscreenMode fullscreen;
   internal::WindowInput input;
 
   WindowData(
@@ -35,6 +36,7 @@ struct WindowData {
       dwStyle{dwStyle},
       dwFullscreenStyle{dwFullscreenStyle},
       size{size},
+      fullscreen{FullscreenMode::Disable},
       input{} {}
 };
 
@@ -55,6 +57,12 @@ public:
     auto* win = getWindow(id);
     assert(win);
     return win->size;
+  }
+
+  [[nodiscard]] auto getWinFullscreenMode(WindowId id) const noexcept -> FullscreenMode {
+    auto* win = getWindow(id);
+    assert(win);
+    return win->fullscreen;
   }
 
   [[nodiscard]] auto getWinInput(WindowId id) const noexcept -> const internal::WindowInput& {

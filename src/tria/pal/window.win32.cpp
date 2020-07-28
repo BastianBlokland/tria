@@ -15,6 +15,11 @@ auto Window::getSize() const noexcept -> WindowSize {
   return m_platform->getWinSize(m_id);
 }
 
+auto Window::getFullscreenMode() const noexcept -> FullscreenMode {
+  assert(m_alive);
+  return m_platform->getWinFullscreenMode(m_id);
+}
+
 auto Window::getIsCloseRequested() const noexcept -> bool {
   assert(m_alive);
   return m_platform->getWinInput(m_id).getIsCloseRequested();

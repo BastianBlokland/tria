@@ -4,7 +4,6 @@
 #include "tria/pal/utils.hpp"
 #include "tria/pal/window.hpp"
 #include <array>
-#include <xcb/xproto.h>
 
 namespace tria::pal {
 
@@ -183,8 +182,8 @@ auto NativePlatform::createWindow(WindowSize desiredSize) -> Window {
   LOG_I(m_logger, "Window created", {"id", winId}, {"desiredSize", desiredSize});
 
   // Keep track of the window data.
-  // DesiredSize might not be 'correct' if the compositor cannot achieve the desired size, however
-  // in the 'configure' event we will update to the 'correct' size.
+  // DesiredSize might not be 'correct' if the windowmanager cannot achieve the desired size,
+  // however in the 'configure' event we will update to the 'correct' size.
   m_windows.insert({winId, WindowData{winId, desiredSize}});
 
   // Return a handle to the window.
@@ -223,6 +222,9 @@ auto NativePlatform::setWinTitle(WindowId id, std::string_view title) noexcept -
 auto NativePlatform::setWinSize(WindowId id, WindowSize desiredSize, FullscreenMode fullscreen)
     -> bool {
 
+  auto* winData = getWindow(id);
+  assert(winData);
+
   // TODO(bastian): We are using the sizes we got when initializing xcb, we could consider getting
   // more up to date info. However that might make the resizing slower.
   if (desiredSize.x() == 0) {
@@ -253,18 +255,25 @@ auto NativePlatform::setWinSize(WindowId id, WindowSize desiredSize, FullscreenM
   default:
     xcbSetWmState(id, m_xcbWmStateFullscreenAtom, false);
     xcbSetBypassCompositor(id, false);
+
+    const auto valList = std::array<uint32_t, 2>{
+        desiredSize.x(),
+        desiredSize.y(),
+    };
+    xcb_configure_window(
+        m_xcbCon, id, XCB_CONFIG_WINDOW_WIDTH | XCB_CONFIG_WINDOW_HEIGHT, valList.data());
+
     break;
   }
 
-  const auto valList = std::array<uint32_t, 2>{
-      desiredSize.x(),
-      desiredSize.y(),
-  };
-  xcb_configure_window(
-      m_xcbCon, id, XCB_CONFIG_WINDOW_WIDTH | XCB_CONFIG_WINDOW_HEIGHT, valList.data());
-
   xcb_flush(m_xcbCon);
   xcbCheckErr();
+
+  // Update the fullscreen mode on the window data.
+  // TODO(bastian): Found out if entering fullscreen can fail. If so we might need to handle it and
+  // update the 'fullscreen' data accordingly.
+  winData->fullscreen = fullscreen;
+
   return true;
 }
 
