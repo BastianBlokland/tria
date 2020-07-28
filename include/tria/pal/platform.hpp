@@ -30,7 +30,7 @@ public:
 
   /* Create a new os window.
    */
-  [[nodiscard]] auto createWindow(WindowSize size) -> Window;
+  [[nodiscard]] auto createWindow(WindowSize desiredSize) -> Window;
 
 private:
   std::unique_ptr<NativePlatform> m_native;

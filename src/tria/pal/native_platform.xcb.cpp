@@ -2,6 +2,7 @@
 #include "internal/xcb_utils.hpp"
 #include "tria/pal/err/platform_err.hpp"
 #include "tria/pal/utils.hpp"
+#include "tria/pal/window.hpp"
 #include <array>
 
 namespace tria::pal {
@@ -132,7 +133,7 @@ auto NativePlatform::handleEvents() -> void {
   }
 }
 
-auto NativePlatform::createWindow(WindowSize size) -> Window {
+auto NativePlatform::createWindow(WindowSize desiredSize) -> Window {
 
   const auto winId          = xcb_generate_id(m_xcbCon);
   const auto valMask        = XCB_CW_BACK_PIXEL | XCB_CW_EVENT_MASK;
@@ -145,11 +146,13 @@ auto NativePlatform::createWindow(WindowSize size) -> Window {
       evtMask,
   };
 
-  if (size.x() == 0) {
-    size.x() = m_xcbScreen->width_in_pixels;
+  // TODO(bastian): We are using the sizes we got when initializing xcb, we could consider getting
+  // more up to date info. However that might make creating a window slower.
+  if (desiredSize.x() == 0) {
+    desiredSize.x() = m_xcbScreen->width_in_pixels;
   }
-  if (size.y() == 0) {
-    size.y() = m_xcbScreen->height_in_pixels;
+  if (desiredSize.y() == 0) {
+    desiredSize.y() = m_xcbScreen->height_in_pixels;
   }
 
   // Create a window on the xcb side.
@@ -160,8 +163,8 @@ auto NativePlatform::createWindow(WindowSize size) -> Window {
       m_xcbScreen->root,
       0,
       0,
-      size.x(),
-      size.y(),
+      desiredSize.x(),
+      desiredSize.y(),
       0,
       XCB_WINDOW_CLASS_INPUT_OUTPUT,
       m_xcbScreen->root_visual,
@@ -176,10 +179,12 @@ auto NativePlatform::createWindow(WindowSize size) -> Window {
   xcb_map_window(m_xcbCon, winId);
   xcb_flush(m_xcbCon);
 
-  LOG_I(m_logger, "Window created", {"id", winId}, {"size", size});
+  LOG_I(m_logger, "Window created", {"id", winId}, {"desiredSize", desiredSize});
 
   // Keep track of the window data.
-  m_windows.insert({winId, WindowData{winId, size}});
+  // DesiredSize might not be 'correct' if the windowmanager cannot achieve the desired size,
+  // however in the 'configure' event we will update to the 'correct' size.
+  m_windows.insert({winId, WindowData{winId, desiredSize}});
 
   // Return a handle to the window.
   return Window{this, winId};
@@ -214,19 +219,62 @@ auto NativePlatform::setWinTitle(WindowId id, std::string_view title) noexcept -
   xcb_flush(m_xcbCon);
 }
 
-auto NativePlatform::setWinSize(WindowId id, const WindowSize size) noexcept -> void {
-  const auto valList = std::array<uint32_t, 2>{
-      size.x(),
-      size.y(),
-  };
-  xcb_configure_window(
-      m_xcbCon, id, XCB_CONFIG_WINDOW_WIDTH | XCB_CONFIG_WINDOW_HEIGHT, valList.data());
-  xcb_flush(m_xcbCon);
+auto NativePlatform::setWinSize(WindowId id, WindowSize desiredSize, FullscreenMode fullscreen)
+    -> bool {
 
-  // Update local information immediately.
-  auto* win = getWindow(id);
-  assert(win);
-  win->size = size;
+  auto* winData = getWindow(id);
+  assert(winData);
+
+  // TODO(bastian): We are using the sizes we got when initializing xcb, we could consider getting
+  // more up to date info. However that might make the resizing slower.
+  if (desiredSize.x() == 0) {
+    desiredSize.x() = m_xcbScreen->width_in_pixels;
+  }
+  if (desiredSize.y() == 0) {
+    desiredSize.y() = m_xcbScreen->height_in_pixels;
+  }
+
+  LOG_D(
+      m_logger,
+      "Updating window size",
+      {"id", id},
+      {"desiredSize", desiredSize},
+      {"fullscreen", getName(fullscreen)});
+
+  // Update full-screen state.
+  switch (fullscreen) {
+  case FullscreenMode::Enable:
+    // TODO(bastian): Investigate supporting different sizes in fullscreen, requires actually
+    // changing the system display settings.
+    desiredSize.x() = m_xcbScreen->width_in_pixels;
+    desiredSize.y() = m_xcbScreen->height_in_pixels;
+    xcbSetWmState(id, m_xcbWmStateFullscreenAtom, true);
+    xcbSetBypassCompositor(id, true);
+    break;
+  case FullscreenMode::Disable:
+  default:
+    xcbSetWmState(id, m_xcbWmStateFullscreenAtom, false);
+    xcbSetBypassCompositor(id, false);
+
+    const auto valList = std::array<uint32_t, 2>{
+        desiredSize.x(),
+        desiredSize.y(),
+    };
+    xcb_configure_window(
+        m_xcbCon, id, XCB_CONFIG_WINDOW_WIDTH | XCB_CONFIG_WINDOW_HEIGHT, valList.data());
+
+    break;
+  }
+
+  xcb_flush(m_xcbCon);
+  xcbCheckErr();
+
+  // Update the fullscreen mode on the window data.
+  // TODO(bastian): Found out if entering fullscreen can fail. If so we might need to handle it and
+  // update the 'fullscreen' data accordingly.
+  winData->fullscreen = fullscreen;
+
+  return true;
 }
 
 auto NativePlatform::xcbSetup() -> void {
@@ -243,9 +291,12 @@ auto NativePlatform::xcbSetup() -> void {
   }
   m_xcbScreen = rootItr.data;
 
-  // Retrieve message atoms to listen for.
-  m_xcbProtoMsgAtom  = xcbGetAtom("WM_PROTOCOLS");
-  m_xcbDeleteMsgAtom = xcbGetAtom("WM_DELETE_WINDOW");
+  // Retreive atoms to use while communicating with the x-server.
+  m_xcbProtoMsgAtom                = xcbGetAtom("WM_PROTOCOLS");
+  m_xcbDeleteMsgAtom               = xcbGetAtom("WM_DELETE_WINDOW");
+  m_xcbWmStateAtom                 = xcbGetAtom("_NET_WM_STATE");
+  m_xcbWmStateFullscreenAtom       = xcbGetAtom("_NET_WM_STATE_FULLSCREEN");
+  m_xcbWmStateBypassCompositorAtom = xcbGetAtom("_NET_WM_BYPASS_COMPOSITOR");
 
   LOG_I(
       m_logger,
@@ -303,9 +354,40 @@ auto NativePlatform::xcbCheckErr() -> void {
   }
 }
 
-auto NativePlatform::xcbGetAtom(const std::string& name) noexcept -> xcb_atom_t {
+auto NativePlatform::xcbGetAtom(const std::string& name) const noexcept -> xcb_atom_t {
   auto atomReply = XCB_CALL_WITH_REPLY(m_xcbCon, xcb_intern_atom, 0, name.length(), name.data());
   return atomReply.getValue()->atom;
+}
+
+auto NativePlatform::xcbSetWmState(WindowId window, xcb_atom_t stateAtom, bool set) const noexcept
+    -> void {
+  xcb_client_message_event_t evt = {};
+  evt.response_type              = XCB_CLIENT_MESSAGE;
+  evt.format                     = 32;
+  evt.window                     = window;
+  evt.type                       = m_xcbWmStateAtom;
+  evt.data.data32[0]             = set ? 1 : 0;
+  evt.data.data32[1]             = stateAtom;
+
+  xcb_send_event(
+      m_xcbCon,
+      false,
+      m_xcbScreen->root,
+      XCB_EVENT_MASK_STRUCTURE_NOTIFY | XCB_EVENT_MASK_SUBSTRUCTURE_REDIRECT,
+      reinterpret_cast<const char*>(&evt));
+}
+
+auto NativePlatform::xcbSetBypassCompositor(WindowId window, bool set) const noexcept -> void {
+  const long value = set ? 1 : 0;
+  xcb_change_property(
+      m_xcbCon,
+      XCB_PROP_MODE_REPLACE,
+      window,
+      m_xcbWmStateBypassCompositorAtom,
+      XCB_ATOM_CARDINAL,
+      32,
+      1,
+      reinterpret_cast<const char*>(&value));
 }
 
 auto NativePlatform::resetEvents() noexcept -> void {

@@ -1,6 +1,7 @@
 #include "native_platform.win32.hpp"
 #include "internal/win32_utils.hpp"
 #include "tria/pal/utils.hpp"
+#include "tria/pal/window.hpp"
 #include <array>
 
 namespace tria::pal {
@@ -55,7 +56,7 @@ auto NativePlatform::handleEvents() -> void {
   }
 }
 
-auto NativePlatform::createWindow(WindowSize size) -> Window {
+auto NativePlatform::createWindow(WindowSize desiredSize) -> Window {
   auto winId = m_nextWinId++;
 
   // Create a unique class-name for this window class.
@@ -65,11 +66,11 @@ auto NativePlatform::createWindow(WindowSize size) -> Window {
   const auto screenWidth  = GetSystemMetrics(SM_CXSCREEN);
   const auto screenHeight = GetSystemMetrics(SM_CYSCREEN);
 
-  if (size.x() == 0) {
-    size.x() = screenWidth;
+  if (desiredSize.x() == 0) {
+    desiredSize.x() = screenWidth;
   }
-  if (size.y() == 0) {
-    size.y() = screenHeight;
+  if (desiredSize.y() == 0) {
+    desiredSize.y() = screenHeight;
   }
 
   // Create a window-class structure.
@@ -89,13 +90,14 @@ auto NativePlatform::createWindow(WindowSize size) -> Window {
     internal::throwPlatformError();
   }
 
-  const DWORD dwStyle = WS_OVERLAPPEDWINDOW | WS_CLIPSIBLINGS | WS_CLIPCHILDREN;
+  const DWORD dwStyle           = WS_OVERLAPPEDWINDOW | WS_CLIPSIBLINGS | WS_CLIPCHILDREN;
+  const DWORD dwFullscreenStyle = WS_POPUP | WS_CLIPSIBLINGS | WS_CLIPCHILDREN;
 
   // Calculate the size of the window (because we give width and height of the content area).
-  RECT winRect   = {};
-  winRect.right  = static_cast<long>(size.x());
-  winRect.bottom = static_cast<long>(size.y());
-  AdjustWindowRect(&winRect, dwStyle, false);
+  RECT desiredWinRect   = {};
+  desiredWinRect.right  = static_cast<long>(desiredSize.x());
+  desiredWinRect.bottom = static_cast<long>(desiredSize.y());
+  AdjustWindowRect(&desiredWinRect, dwStyle, false);
 
   // Create a new window.
   auto winHandle = CreateWindow(
@@ -104,8 +106,8 @@ auto NativePlatform::createWindow(WindowSize size) -> Window {
       dwStyle,
       0,
       0,
-      winRect.right - winRect.left,
-      winRect.bottom - winRect.top,
+      desiredWinRect.right - desiredWinRect.left,
+      desiredWinRect.bottom - desiredWinRect.top,
       nullptr,
       nullptr,
       m_hInstance,
@@ -114,9 +116,23 @@ auto NativePlatform::createWindow(WindowSize size) -> Window {
     internal::throwPlatformError();
   }
 
+  // Get the content size that the windowmanager gave the window (might not match the desired size).
+  RECT realClientRect;
+  if (!GetClientRect(winHandle, &realClientRect)) {
+    internal::throwPlatformError();
+  }
+  WindowSize realSize = {realClientRect.right - realClientRect.left,
+                         realClientRect.bottom - realClientRect.top};
+
+  // Get window size of the window (including borders).
+  RECT realWinRect;
+  if (!GetWindowRect(winHandle, &realWinRect)) {
+    internal::throwPlatformError();
+  }
+
   // Center on screen.
-  const auto x = (screenWidth - winRect.right) / 2;
-  const auto y = (screenHeight - winRect.bottom) / 2;
+  const auto x = (screenWidth - realWinRect.right) / 2;
+  const auto y = (screenHeight - realWinRect.bottom) / 2;
   SetWindowPos(winHandle, nullptr, x, y, 0, 0, SWP_NOZORDER | SWP_NOSIZE);
 
   // Show and focus window.
@@ -124,10 +140,17 @@ auto NativePlatform::createWindow(WindowSize size) -> Window {
   SetForegroundWindow(winHandle);
   SetFocus(winHandle);
 
-  LOG_I(m_logger, "Window created", {"id", winId}, {"size", size});
+  LOG_I(
+      m_logger,
+      "Window created",
+      {"id", winId},
+      {"desiredSize", desiredSize},
+      {"realSize", realSize});
 
   // Keep track of the window data.
-  m_windows.insert({winId, WindowData{winId, winHandle, std::move(className), dwStyle, size}});
+  m_windows.insert(
+      {winId,
+       WindowData{winId, winHandle, std::move(className), dwStyle, dwFullscreenStyle, realSize}});
 
   // Return a handle to the window.
   return Window{this, winId};
@@ -158,25 +181,77 @@ auto NativePlatform::setWinTitle(WindowId id, std::string_view title) noexcept -
   SetWindowText(winData->handle, title.data());
 }
 
-auto NativePlatform::setWinSize(WindowId id, const WindowSize size) noexcept -> void {
+auto NativePlatform::setWinSize(WindowId id, WindowSize desiredSize, FullscreenMode fullscreen)
+    -> bool {
+
   auto* winData = getWindow(id);
   assert(winData);
 
-  // Calculate the size of the window (because we give width and height of the content area).
-  RECT winRect   = {};
-  winRect.right  = static_cast<long>(size.x());
-  winRect.bottom = static_cast<long>(size.y());
-  AdjustWindowRect(&winRect, winData->dwStyle, false);
+  if (desiredSize.x() == 0) {
+    desiredSize.x() = GetSystemMetrics(SM_CXSCREEN);
+  }
+  if (desiredSize.y() == 0) {
+    desiredSize.y() = GetSystemMetrics(SM_CYSCREEN);
+  }
 
-  // Set the window size.
-  SetWindowPos(
-      winData->handle,
-      nullptr,
-      0,
-      0,
-      winRect.right - winRect.left,
-      winRect.bottom - winRect.top,
-      SWP_NOCOPYBITS | SWP_NOMOVE | SWP_NOZORDER);
+  LOG_D(
+      m_logger,
+      "Updating window size",
+      {"id", id},
+      {"desiredSize", desiredSize},
+      {"fullscreen", getName(fullscreen)});
+
+  switch (fullscreen) {
+  case FullscreenMode::Enable:
+    // TODO(bastian): Investigate supporting different sizes in fullscreen, requires actually
+    // changing the system display settings.
+
+    // Update the window style.
+    SetWindowLongPtr(winData->handle, GWL_STYLE, winData->dwFullscreenStyle);
+
+    // Present the updated window.
+    ShowWindow(winData->handle, SW_MAXIMIZE);
+    break;
+
+  case FullscreenMode::Disable:
+  default:
+
+    // Update the window style.
+    SetWindowLongPtr(winData->handle, GWL_STYLE, winData->dwStyle);
+
+    // Calculate the size of the window (because we give width and height of the content area).
+    RECT winRect   = {};
+    winRect.right  = static_cast<long>(desiredSize.x());
+    winRect.bottom = static_cast<long>(desiredSize.y());
+    AdjustWindowRect(&winRect, winData->dwStyle, false);
+
+    // Set the window size.
+    SetWindowPos(
+        winData->handle,
+        nullptr,
+        0,
+        0,
+        winRect.right - winRect.left,
+        winRect.bottom - winRect.top,
+        SWP_NOCOPYBITS | SWP_NOMOVE | SWP_NOZORDER);
+
+    // Present the updated window.
+    ShowWindow(winData->handle, SW_RESTORE);
+    break;
+  }
+
+  // Update the local size with the real content size of the window (in case the window-manager gave
+  // us a different size then was desired).
+  RECT realClientRect;
+  if (GetClientRect(winData->handle, &realClientRect)) {
+    winData->size = {realClientRect.right - realClientRect.left,
+                     realClientRect.bottom - realClientRect.top};
+  }
+
+  // Update the fullscreen mode on the window data.
+  winData->fullscreen = fullscreen;
+
+  return true;
 }
 
 auto NativePlatform::win32Setup() -> void {

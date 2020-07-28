@@ -26,6 +26,15 @@ auto runApp(pal::Platform& platform, asset::Database& db, gfx::Context& gfx) {
 
     platform.handleEvents();
 
+    // Toggle fullscreen when pressing '1'.
+    if (win.isKeyPressed(pal::Key::Alpha1)) {
+      if (win.getFullscreenMode() == pal::FullscreenMode::Disable) {
+        win.setSize({0, 0}, pal::FullscreenMode::Enable);
+      } else {
+        win.setSize({512, 512}, pal::FullscreenMode::Disable);
+      }
+    }
+
     pos += math::Vec2f(win.getScrollDelta()) * 0.01f;
 
     if (canvas.drawBegin(math::color::gray())) {

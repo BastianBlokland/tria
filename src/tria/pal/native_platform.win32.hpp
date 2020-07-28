@@ -18,16 +18,25 @@ struct WindowData {
   HWND handle;
   std::string className;
   DWORD dwStyle;
+  DWORD dwFullscreenStyle;
   WindowSize size;
+  FullscreenMode fullscreen;
   internal::WindowInput input;
 
   WindowData(
-      WindowId id, HWND handle, std::string className, DWORD dwStyle, WindowSize size) noexcept :
+      WindowId id,
+      HWND handle,
+      std::string className,
+      DWORD dwStyle,
+      DWORD dwFullscreenStyle,
+      WindowSize size) noexcept :
       id{id},
       handle{handle},
       className{std::move(className)},
       dwStyle{dwStyle},
+      dwFullscreenStyle{dwFullscreenStyle},
       size{size},
+      fullscreen{FullscreenMode::Disable},
       input{} {}
 };
 
@@ -50,6 +59,12 @@ public:
     return win->size;
   }
 
+  [[nodiscard]] auto getWinFullscreenMode(WindowId id) const noexcept -> FullscreenMode {
+    auto* win = getWindow(id);
+    assert(win);
+    return win->fullscreen;
+  }
+
   [[nodiscard]] auto getWinInput(WindowId id) const noexcept -> const internal::WindowInput& {
     auto* win = getWindow(id);
     assert(win);
@@ -60,13 +75,13 @@ public:
 
   auto handleEvents() -> void;
 
-  auto createWindow(WindowSize size) -> Window;
+  auto createWindow(WindowSize desiredSize) -> Window;
 
   auto destroyWindow(WindowId id) noexcept -> void;
 
   auto setWinTitle(WindowId id, std::string_view title) noexcept -> void;
 
-  auto setWinSize(WindowId id, WindowSize size) noexcept -> void;
+  auto setWinSize(WindowId id, WindowSize desiredSize, FullscreenMode fullscreen) -> bool;
 
 private:
   log::Logger* m_logger;

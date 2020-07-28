@@ -302,6 +302,7 @@ auto Swapchain::initSwapchain(VkRenderPass vkRenderPass) -> bool {
   LOG_D(
       m_logger,
       "Vulkan swapchain created",
+      {"vSync", getName(m_vSync)},
       {"presentMode", getVkPresentModeString(presentMode)},
       {"imageCount", m_imgCount},
       {"size", m_extent.width, m_extent.height});

@@ -7,7 +7,10 @@ namespace tria::gfx {
 
 class NativeContext;
 
-enum class VSyncMode { Disable, Enable };
+enum class VSyncMode {
+  Disable,
+  Enable,
+};
 
 /*
  * Abstraction over a graphics context.
@@ -31,5 +34,15 @@ public:
 private:
   std::unique_ptr<NativeContext> m_native;
 };
+
+[[nodiscard]] constexpr auto getName(VSyncMode mode) noexcept -> std::string_view {
+  switch (mode) {
+  case VSyncMode::Enable:
+    return "enable";
+  case VSyncMode::Disable:
+    return "disable";
+  }
+  return "unknown";
+}
 
 } // namespace tria::gfx
