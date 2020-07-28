@@ -55,6 +55,7 @@ private:
   xcb_atom_t m_xcbDeleteMsgAtom;
   xcb_atom_t m_xcbWmStateAtom;
   xcb_atom_t m_xcbWmStateFullscreenAtom;
+  xcb_atom_t m_xcbWmStateBypassCompositorAtom;
   std::unordered_map<WindowId, WindowData> m_windows;
 
   auto xcbSetup() -> void;
@@ -65,6 +66,7 @@ private:
 
   auto xcbGetAtom(const std::string& name) const noexcept -> xcb_atom_t;
   auto xcbSetWmState(WindowId window, xcb_atom_t stateAtom, bool set) const noexcept -> void;
+  auto xcbSetBypassCompositor(WindowId window, bool set) const noexcept -> void;
 
   /* Reset any events (like pressed keys) from the previous 'handleEvents' call.
    */

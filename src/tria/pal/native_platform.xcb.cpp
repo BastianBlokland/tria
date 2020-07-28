@@ -247,10 +247,12 @@ auto NativePlatform::setWinSize(WindowId id, WindowSize desiredSize, FullscreenM
     desiredSize.x() = m_xcbScreen->width_in_pixels;
     desiredSize.y() = m_xcbScreen->height_in_pixels;
     xcbSetWmState(id, m_xcbWmStateFullscreenAtom, true);
+    xcbSetBypassCompositor(id, true);
     break;
   case FullscreenMode::Disable:
   default:
     xcbSetWmState(id, m_xcbWmStateFullscreenAtom, false);
+    xcbSetBypassCompositor(id, false);
     break;
   }
 
@@ -281,10 +283,11 @@ auto NativePlatform::xcbSetup() -> void {
   m_xcbScreen = rootItr.data;
 
   // Retreive atoms to use while communicating with the x-server.
-  m_xcbProtoMsgAtom          = xcbGetAtom("WM_PROTOCOLS");
-  m_xcbDeleteMsgAtom         = xcbGetAtom("WM_DELETE_WINDOW");
-  m_xcbWmStateAtom           = xcbGetAtom("_NET_WM_STATE");
-  m_xcbWmStateFullscreenAtom = xcbGetAtom("_NET_WM_STATE_FULLSCREEN");
+  m_xcbProtoMsgAtom                = xcbGetAtom("WM_PROTOCOLS");
+  m_xcbDeleteMsgAtom               = xcbGetAtom("WM_DELETE_WINDOW");
+  m_xcbWmStateAtom                 = xcbGetAtom("_NET_WM_STATE");
+  m_xcbWmStateFullscreenAtom       = xcbGetAtom("_NET_WM_STATE_FULLSCREEN");
+  m_xcbWmStateBypassCompositorAtom = xcbGetAtom("_NET_WM_BYPASS_COMPOSITOR");
 
   LOG_I(
       m_logger,
@@ -363,6 +366,19 @@ auto NativePlatform::xcbSetWmState(WindowId window, xcb_atom_t stateAtom, bool s
       m_xcbScreen->root,
       XCB_EVENT_MASK_STRUCTURE_NOTIFY | XCB_EVENT_MASK_SUBSTRUCTURE_REDIRECT,
       reinterpret_cast<const char*>(&evt));
+}
+
+auto NativePlatform::xcbSetBypassCompositor(WindowId window, bool set) const noexcept -> void {
+  const long value = set ? 1 : 0;
+  xcb_change_property(
+      m_xcbCon,
+      XCB_PROP_MODE_REPLACE,
+      window,
+      m_xcbWmStateBypassCompositorAtom,
+      XCB_ATOM_CARDINAL,
+      32,
+      1,
+      reinterpret_cast<const char*>(&value));
 }
 
 auto NativePlatform::resetEvents() noexcept -> void {
