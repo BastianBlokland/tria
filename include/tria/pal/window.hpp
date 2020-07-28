@@ -13,6 +13,11 @@ using WindowSize   = math::Vec<uint16_t, 2>;
 using WindowPos    = math::Vec<int32_t, 2>;
 using WindowPosNrm = math::Vec<float, 2>;
 
+enum class FullscreenMode {
+  Disable,
+  Enable,
+};
+
 /* Handle to a native window.
  * When handle is destroyed the native window is also closed. Supports moving ownership.
  *
@@ -82,8 +87,14 @@ public:
    */
   [[nodiscard]] auto isKeyReleased(Key key) const noexcept -> bool;
 
+  /* Update the title of the window.
+   */
   auto setTitle(std::string_view title) -> void;
-  auto setSize(WindowSize size) -> void;
+
+  /* Update the size of the window.
+   * Returns true if the update was successfully or false if it failed.
+   */
+  auto setSize(WindowSize desiredSize, FullscreenMode fullscreen) -> bool;
 
   [[nodiscard]] auto getNativePlatformPtr() const noexcept { return m_platform; }
   [[nodiscard]] auto getWindowId() const noexcept { return m_id; }
@@ -100,5 +111,15 @@ private:
     assert(m_platform);
   }
 };
+
+[[nodiscard]] constexpr auto getName(FullscreenMode mode) noexcept -> std::string_view {
+  switch (mode) {
+  case FullscreenMode::Enable:
+    return "enable";
+  case FullscreenMode::Disable:
+    return "disable";
+  }
+  return "unknown";
+}
 
 } // namespace tria::pal

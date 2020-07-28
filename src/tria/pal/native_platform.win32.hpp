@@ -18,15 +18,22 @@ struct WindowData {
   HWND handle;
   std::string className;
   DWORD dwStyle;
+  DWORD dwFullscreenStyle;
   WindowSize size;
   internal::WindowInput input;
 
   WindowData(
-      WindowId id, HWND handle, std::string className, DWORD dwStyle, WindowSize size) noexcept :
+      WindowId id,
+      HWND handle,
+      std::string className,
+      DWORD dwStyle,
+      DWORD dwFullscreenStyle,
+      WindowSize size) noexcept :
       id{id},
       handle{handle},
       className{std::move(className)},
       dwStyle{dwStyle},
+      dwFullscreenStyle{dwFullscreenStyle},
       size{size},
       input{} {}
 };
@@ -60,13 +67,13 @@ public:
 
   auto handleEvents() -> void;
 
-  auto createWindow(WindowSize size) -> Window;
+  auto createWindow(WindowSize desiredSize) -> Window;
 
   auto destroyWindow(WindowId id) noexcept -> void;
 
   auto setWinTitle(WindowId id, std::string_view title) noexcept -> void;
 
-  auto setWinSize(WindowId id, WindowSize size) noexcept -> void;
+  auto setWinSize(WindowId id, WindowSize desiredSize, FullscreenMode fullscreen) -> bool;
 
 private:
   log::Logger* m_logger;

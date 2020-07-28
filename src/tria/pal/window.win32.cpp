@@ -49,9 +49,9 @@ auto Window::setTitle(std::string_view title) -> void {
   m_platform->setWinTitle(m_id, title);
 }
 
-auto Window::setSize(const WindowSize size) -> void {
+auto Window::setSize(WindowSize desiredSize, FullscreenMode fullscreen) -> bool {
   assert(m_alive);
-  m_platform->setWinSize(m_id, size);
+  return m_platform->setWinSize(m_id, desiredSize, fullscreen);
 }
 
 } // namespace tria::pal
