@@ -30,7 +30,7 @@ public:
    * Throws if asset loading fails.
    * Is thread-safe.
    */
-  [[nodiscard]] auto get(const AssetId& id) -> const Asset*;
+  auto get(const AssetId& id) -> const Asset*;
 
 private:
   std::unique_ptr<DatabaseImpl> m_impl;

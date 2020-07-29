@@ -73,16 +73,6 @@ TEST_CASE("[math] - Vec", "[math]") {
     CHECK(v3.x() == 0);
     CHECK(v3.y() == 0);
     CHECK(v3.z() == 0);
-
-    const Vec3i v4 = {1};
-    CHECK(v4.x() == 1);
-    CHECK(v4.y() == 0);
-    CHECK(v4.z() == 0);
-
-    const Vec3i v5 = {1, 2};
-    CHECK(v5.x() == 1);
-    CHECK(v5.y() == 2);
-    CHECK(v5.z() == 0);
   }
 
   SECTION("Vectors can be decomposed using structured bindings") {

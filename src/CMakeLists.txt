@@ -2,6 +2,7 @@
 message(STATUS "Configuring asset library")
 add_library(tria_asset STATIC
   tria/asset/internal/graphic_loader.cpp
+  tria/asset/internal/image_ppm_loader.cpp
   tria/asset/internal/json.cpp
   tria/asset/internal/loader.cpp
   tria/asset/internal/mesh_obj_loader.cpp
