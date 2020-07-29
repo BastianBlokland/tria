@@ -1,5 +1,6 @@
 {
   "vertShader": "shaders/plain.vert.spv",
   "fragShader": "shaders/plain.frag.spv",
-  "mesh": "models/quad.obj"
+  "mesh": "models/quad.obj",
+  "images": [ "images/checker.ppm" ]
 }

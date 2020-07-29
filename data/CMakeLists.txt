@@ -61,10 +61,11 @@ configure_shaders(
 # Plain files
 message(STATUS "Configuring plain files")
 configure_plainfiles(
-  triangle.gfx
-  quad.gfx
+  images/checker.ppm
   models/triangle.obj
-  models/quad.obj)
+  models/quad.obj
+  triangle.gfx
+  quad.gfx)
 
 # Wrapper dependency that depends on all types of data.
 add_custom_target(tria_data)
