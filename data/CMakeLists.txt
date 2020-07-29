@@ -61,7 +61,7 @@ configure_shaders(
 # Plain files
 message(STATUS "Configuring plain files")
 configure_plainfiles(
-  images/checker.ppm
+  textures/checker.ppm
   models/triangle.obj
   models/quad.obj
   triangle.gfx

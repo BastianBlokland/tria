@@ -1,12 +1,12 @@
 #include "catch2/catch.hpp"
 #include "tria/asset/database.hpp"
 #include "tria/asset/err/asset_load_err.hpp"
-#include "tria/asset/image.hpp"
+#include "tria/asset/texture.hpp"
 #include "utils.hpp"
 
 namespace tria::asset::tests {
 
-TEST_CASE("[asset] - Image Portable Pixmap", "[asset]") {
+TEST_CASE("[asset] - Texture Portable Pixmap", "[asset]") {
 
   SECTION("Formatted P3 ascii can be loaded") {
     withTempDir([](const fs::path& dir) {
@@ -20,9 +20,9 @@ TEST_CASE("[asset] - Image Portable Pixmap", "[asset]") {
           "128 128 128\n");
 
       auto db     = Database{nullptr, dir};
-      auto* img   = db.get("test.ppm")->downcast<Image>();
-      auto pixels = std::vector<Pixel>(img->getPixelBegin(), img->getPixelEnd());
-      CHECK(img->getSize() == ImageSize{2, 2});
+      auto* tex   = db.get("test.ppm")->downcast<Texture>();
+      auto pixels = std::vector<Pixel>(tex->getPixelBegin(), tex->getPixelEnd());
+      CHECK(tex->getSize() == TextureSize{2, 2});
       CHECK(
           pixels ==
           std::vector<Pixel>{
@@ -42,9 +42,9 @@ TEST_CASE("[asset] - Image Portable Pixmap", "[asset]") {
           "128\n128\n128\n");
 
       auto db     = Database{nullptr, dir};
-      auto* img   = db.get("test.ppm")->downcast<Image>();
-      auto pixels = std::vector<Pixel>(img->getPixelBegin(), img->getPixelEnd());
-      CHECK(img->getSize() == ImageSize{2, 2});
+      auto* tex   = db.get("test.ppm")->downcast<Texture>();
+      auto pixels = std::vector<Pixel>(tex->getPixelBegin(), tex->getPixelEnd());
+      CHECK(tex->getSize() == TextureSize{2, 2});
       CHECK(
           pixels ==
           std::vector<Pixel>{
@@ -57,9 +57,9 @@ TEST_CASE("[asset] - Image Portable Pixmap", "[asset]") {
       writeFile(dir / "test.ppm", "P3 2 2 255 255 0 0 0 255 0 0 0 255 128 128 128");
 
       auto db     = Database{nullptr, dir};
-      auto* img   = db.get("test.ppm")->downcast<Image>();
-      auto pixels = std::vector<Pixel>(img->getPixelBegin(), img->getPixelEnd());
-      CHECK(img->getSize() == ImageSize{2, 2});
+      auto* tex   = db.get("test.ppm")->downcast<Texture>();
+      auto pixels = std::vector<Pixel>(tex->getPixelBegin(), tex->getPixelEnd());
+      CHECK(tex->getSize() == TextureSize{2, 2});
       CHECK(
           pixels ==
           std::vector<Pixel>{
@@ -79,9 +79,9 @@ TEST_CASE("[asset] - Image Portable Pixmap", "[asset]") {
           "128 128 128# End of file\n");
 
       auto db     = Database{nullptr, dir};
-      auto* img   = db.get("test.ppm")->downcast<Image>();
-      auto pixels = std::vector<Pixel>(img->getPixelBegin(), img->getPixelEnd());
-      CHECK(img->getSize() == ImageSize{2, 2});
+      auto* tex   = db.get("test.ppm")->downcast<Texture>();
+      auto pixels = std::vector<Pixel>(tex->getPixelBegin(), tex->getPixelEnd());
+      CHECK(tex->getSize() == TextureSize{2, 2});
       CHECK(
           pixels ==
           std::vector<Pixel>{
@@ -102,9 +102,9 @@ TEST_CASE("[asset] - Image Portable Pixmap", "[asset]") {
           "128 128 128\r\n");
 
       auto db     = Database{nullptr, dir};
-      auto* img   = db.get("test.ppm")->downcast<Image>();
-      auto pixels = std::vector<Pixel>(img->getPixelBegin(), img->getPixelEnd());
-      CHECK(img->getSize() == ImageSize{2, 2});
+      auto* tex   = db.get("test.ppm")->downcast<Texture>();
+      auto pixels = std::vector<Pixel>(tex->getPixelBegin(), tex->getPixelEnd());
+      CHECK(tex->getSize() == TextureSize{2, 2});
       CHECK(
           pixels ==
           std::vector<Pixel>{
@@ -123,9 +123,9 @@ TEST_CASE("[asset] - Image Portable Pixmap", "[asset]") {
           "\x80\x80\x80");
 
       auto db     = Database{nullptr, dir};
-      auto* img   = db.get("test.ppm")->downcast<Image>();
-      auto pixels = std::vector<Pixel>(img->getPixelBegin(), img->getPixelEnd());
-      CHECK(img->getSize() == ImageSize{2, 2});
+      auto* tex   = db.get("test.ppm")->downcast<Texture>();
+      auto pixels = std::vector<Pixel>(tex->getPixelBegin(), tex->getPixelEnd());
+      CHECK(tex->getSize() == TextureSize{2, 2});
       CHECK(
           pixels ==
           std::vector<Pixel>{
@@ -169,9 +169,9 @@ TEST_CASE("[asset] - Image Portable Pixmap", "[asset]") {
           "0 255 0");
 
       auto db     = Database{nullptr, dir};
-      auto* img   = db.get("test.ppm")->downcast<Image>();
-      auto pixels = std::vector<Pixel>(img->getPixelBegin(), img->getPixelEnd());
-      CHECK(img->getSize() == ImageSize{2, 2});
+      auto* tex   = db.get("test.ppm")->downcast<Texture>();
+      auto pixels = std::vector<Pixel>(tex->getPixelBegin(), tex->getPixelEnd());
+      CHECK(tex->getSize() == TextureSize{2, 2});
       CHECK(
           pixels ==
           std::vector<Pixel>{{255, 0, 0, 255}, {0, 255, 0, 255}, {0, 0, 0, 255}, {0, 0, 0, 255}});
@@ -187,9 +187,9 @@ TEST_CASE("[asset] - Image Portable Pixmap", "[asset]") {
           "\x1\xFF\x1");
 
       auto db     = Database{nullptr, dir};
-      auto* img   = db.get("test.ppm")->downcast<Image>();
-      auto pixels = std::vector<Pixel>(img->getPixelBegin(), img->getPixelEnd());
-      CHECK(img->getSize() == ImageSize{2, 2});
+      auto* tex   = db.get("test.ppm")->downcast<Texture>();
+      auto pixels = std::vector<Pixel>(tex->getPixelBegin(), tex->getPixelEnd());
+      CHECK(tex->getSize() == TextureSize{2, 2});
       CHECK(
           pixels ==
           std::vector<Pixel>{{255, 1, 1, 255}, {1, 255, 1, 255}, {0, 0, 0, 255}, {0, 0, 0, 255}});
@@ -206,9 +206,9 @@ TEST_CASE("[asset] - Image Portable Pixmap", "[asset]") {
           "0 0 255");
 
       auto db     = Database{nullptr, dir};
-      auto* img   = db.get("test.ppm")->downcast<Image>();
-      auto pixels = std::vector<Pixel>(img->getPixelBegin(), img->getPixelEnd());
-      CHECK(img->getSize() == ImageSize{1, 1});
+      auto* tex   = db.get("test.ppm")->downcast<Texture>();
+      auto pixels = std::vector<Pixel>(tex->getPixelBegin(), tex->getPixelEnd());
+      CHECK(tex->getSize() == TextureSize{1, 1});
       CHECK(pixels == std::vector<Pixel>{{255, 0, 0, 255}});
     });
   }
@@ -223,9 +223,9 @@ TEST_CASE("[asset] - Image Portable Pixmap", "[asset]") {
           "\x1\x1\xFF");
 
       auto db     = Database{nullptr, dir};
-      auto* img   = db.get("test.ppm")->downcast<Image>();
-      auto pixels = std::vector<Pixel>(img->getPixelBegin(), img->getPixelEnd());
-      CHECK(img->getSize() == ImageSize{1, 1});
+      auto* tex   = db.get("test.ppm")->downcast<Texture>();
+      auto pixels = std::vector<Pixel>(tex->getPixelBegin(), tex->getPixelEnd());
+      CHECK(tex->getSize() == TextureSize{1, 1});
       CHECK(pixels == std::vector<Pixel>{{255, 1, 1, 255}});
     });
   }

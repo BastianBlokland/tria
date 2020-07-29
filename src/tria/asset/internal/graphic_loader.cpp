@@ -43,20 +43,21 @@ auto loadGraphic(
   }
   auto* mesh = db->get(AssetId{meshId})->downcast<Mesh>();
 
-  // Images (optional field).
-  auto images = std::vector<const Image*>{};
-  simdjson::dom::array imageArray;
-  if (!obj.at("images").get(imageArray)) {
-    std::string_view imageId;
-    for (const auto& elem : imageArray) {
-      if (elem.get(imageId)) {
-        throw err::AssetLoadErr{path, "Image array contains non-string element"};
+  // Textures (optional field).
+  auto textures = std::vector<const Texture*>{};
+  simdjson::dom::array textureArray;
+  if (!obj.at("textures").get(textureArray)) {
+    std::string_view textureId;
+    for (const auto& elem : textureArray) {
+      if (elem.get(textureId)) {
+        throw err::AssetLoadErr{path, "Texture array contains non-string element"};
       }
-      images.push_back(db->get(AssetId{imageId})->downcast<Image>());
+      textures.push_back(db->get(AssetId{textureId})->downcast<Texture>());
     }
   }
 
-  return std::make_unique<Graphic>(std::move(id), vertShader, fragShader, mesh, std::move(images));
+  return std::make_unique<Graphic>(
+      std::move(id), vertShader, fragShader, mesh, std::move(textures));
 }
 
 } // namespace tria::asset::internal

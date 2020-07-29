@@ -1,10 +1,10 @@
 #include "loader.hpp"
 #include "tria/asset/err/asset_load_err.hpp"
-#include "tria/asset/image.hpp"
+#include "tria/asset/texture.hpp"
 
 namespace tria::asset::internal {
 
-/* Portable Bitmap Format.
+/* Portable Pixmap Format.
  * Ascii format P3 and binary format P6 are both suported.
  * Format specification: https://en.wikipedia.org/wiki/Netpbm
  */
@@ -160,7 +160,7 @@ private:
 
 } // namespace
 
-auto loadImagePpm(
+auto loadTexturePpm(
     log::Logger* /*unused*/,
     DatabaseImpl* /*unused*/,
     AssetId id,
@@ -183,12 +183,12 @@ auto loadImagePpm(
     throw err::AssetLoadErr{path, "Only 8bit Pixmap files are supported"};
   }
 
-  auto size       = ImageSize{header.width, header.height};
+  auto size       = TextureSize{header.width, header.height};
   auto pixelCount = header.width * header.height;
   auto pixels     = header.type == PixmapType::Ascii ? readPixelsAscii(reader, pixelCount)
                                                  : readPixelsBinary(reader, pixelCount);
 
-  return std::make_unique<Image>(std::move(id), size, std::move(pixels));
+  return std::make_unique<Texture>(std::move(id), size, std::move(pixels));
 }
 
 } // namespace tria::asset::internal

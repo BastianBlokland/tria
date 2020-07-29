@@ -5,7 +5,7 @@ namespace tria::asset::internal {
 
 auto loadGraphic(log::Logger*, DatabaseImpl*, AssetId, const fs::path&, RawData) -> AssetUnique;
 auto loadMeshObj(log::Logger*, DatabaseImpl*, AssetId, const fs::path&, RawData) -> AssetUnique;
-auto loadImagePpm(log::Logger*, DatabaseImpl*, AssetId, const fs::path&, RawData) -> AssetUnique;
+auto loadTexturePpm(log::Logger*, DatabaseImpl*, AssetId, const fs::path&, RawData) -> AssetUnique;
 auto loadShader(log::Logger*, DatabaseImpl*, AssetId, const fs::path&, RawData) -> AssetUnique;
 auto loadRawAsset(log::Logger*, DatabaseImpl*, AssetId, const fs::path&, RawData) -> AssetUnique;
 
@@ -17,7 +17,7 @@ auto getLoader(const fs::path& path) -> AssetLoader {
   static const std::unordered_map<std::string, AssetLoader> table = {
       {".gfx", loadGraphic},
       {".obj", loadMeshObj},
-      {".ppm", loadImagePpm},
+      {".ppm", loadTexturePpm},
       {".spv", loadShader},
   };
   auto itr = table.find(path.extension().string());

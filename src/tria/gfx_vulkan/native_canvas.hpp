@@ -2,11 +2,11 @@
 #include "internal/asset_resource.hpp"
 #include "internal/device.hpp"
 #include "internal/graphic.hpp"
-#include "internal/image.hpp"
 #include "internal/mesh.hpp"
 #include "internal/renderer.hpp"
 #include "internal/shader.hpp"
 #include "internal/swapchain.hpp"
+#include "internal/texture.hpp"
 #include "tria/gfx/context.hpp"
 #include "tria/log/api.hpp"
 #include "tria/pal/window.hpp"
@@ -51,7 +51,7 @@ private:
   internal::DeviceUnique m_device;
   internal::AssetResourceUnique<internal::Shader> m_shaders;
   internal::AssetResourceUnique<internal::Mesh> m_meshes;
-  internal::AssetResourceUnique<internal::Image> m_images;
+  internal::AssetResourceUnique<internal::Texture> m_textures;
   internal::AssetResourceUnique<internal::Graphic> m_graphics;
   VkRenderPass m_vkRenderPass;
   internal::SwapchainUnique m_swapchain;

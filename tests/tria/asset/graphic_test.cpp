@@ -29,7 +29,7 @@ TEST_CASE("[asset] - Graphic", "[asset]") {
     });
   }
 
-  SECTION("Images are optionally loaded as part of the graphic") {
+  SECTION("Textures are optionally loaded as part of the graphic") {
     withTempDir([](const fs::path& dir) {
       writeFile(dir / "test.vert.spv", "");
       writeFile(dir / "test.frag.spv", "");
@@ -41,7 +41,7 @@ TEST_CASE("[asset] - Graphic", "[asset]") {
           "\"vertShader\": \"test.vert.spv\","
           "\"fragShader\": \"test.frag.spv\","
           "\"mesh\": \"test.obj\","
-          "\"images\": [\"test.ppm\"]"
+          "\"textures\": [\"test.ppm\"]"
           "}");
 
       auto db   = Database{nullptr, dir};
@@ -49,8 +49,8 @@ TEST_CASE("[asset] - Graphic", "[asset]") {
       CHECK(gfx->getVertShader()->getShaderKind() == ShaderKind::SpvVertex);
       CHECK(gfx->getFragShader()->getShaderKind() == ShaderKind::SpvFragment);
       CHECK(gfx->getMesh()->getKind() == AssetKind::Mesh);
-      CHECK(gfx->getImageCount() == 1);
-      CHECK(*(*gfx->getImageBegin())->getPixelBegin() == Pixel{1, 42, 137, 255});
+      CHECK(gfx->getTextureCount() == 1);
+      CHECK(*(*gfx->getTextureBegin())->getPixelBegin() == Pixel{1, 42, 137, 255});
     });
   }
 

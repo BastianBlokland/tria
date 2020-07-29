@@ -1,8 +1,8 @@
 #include "graphic.hpp"
 #include "device.hpp"
-#include "image.hpp"
 #include "mesh.hpp"
 #include "shader.hpp"
+#include "texture.hpp"
 #include "utils.hpp"
 #include <array>
 #include <cassert>
@@ -138,7 +138,7 @@ Graphic::Graphic(
     const asset::Graphic* asset,
     AssetResource<Shader>* shaders,
     AssetResource<Mesh>* meshes,
-    AssetResource<Image>* images) :
+    AssetResource<Texture>* textures) :
     m_logger{logger}, m_device{device}, m_asset{asset}, m_vkPipeline{nullptr} {
   assert(m_device);
   assert(m_asset);
@@ -147,9 +147,9 @@ Graphic::Graphic(
   m_fragShader = shaders->get(m_asset->getFragShader());
   m_mesh       = meshes->get(m_asset->getMesh());
 
-  m_images.reserve(m_asset->getImageCount());
-  for (auto itr = m_asset->getImageBegin(); itr != m_asset->getImageEnd(); ++itr) {
-    m_images.push_back(images->get(*itr));
+  m_textures.reserve(m_asset->getTextureCount());
+  for (auto itr = m_asset->getTextureBegin(); itr != m_asset->getTextureEnd(); ++itr) {
+    m_textures.push_back(textures->get(*itr));
   }
 }
 
@@ -164,8 +164,8 @@ auto Graphic::prepareResources(
     Transferer* transferer, UniformContainer* uni, VkRenderPass vkRenderPass) const -> void {
 
   m_mesh->prepareResources(transferer);
-  for (const auto* img : m_images) {
-    img->prepareResources(transferer);
+  for (const auto* tex : m_textures) {
+    tex->prepareResources(transferer);
   }
 
   if (!m_vkPipeline) {

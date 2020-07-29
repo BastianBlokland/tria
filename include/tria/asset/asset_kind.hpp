@@ -7,7 +7,7 @@ namespace tria::asset {
 enum class AssetKind : uint8_t {
   Raw     = 1,
   Mesh    = 2,
-  Image   = 3,
+  Texture = 3,
   Shader  = 4,
   Graphic = 5,
 };
@@ -18,8 +18,8 @@ enum class AssetKind : uint8_t {
     return "raw";
   case AssetKind::Mesh:
     return "mesh";
-  case AssetKind::Image:
-    return "image";
+  case AssetKind::Texture:
+    return "texture";
   case AssetKind::Shader:
     return "shader";
   case AssetKind::Graphic:

@@ -7,28 +7,28 @@
 
 namespace tria::asset {
 
-using ImageSize = math::Vec<uint16_t, 2>;
-using Pixel     = math::Vec<uint8_t, 4>;
+using TextureSize = math::Vec<uint16_t, 2>;
+using Pixel       = math::Vec<uint8_t, 4>;
 
 /*
  * Asset containing pixel data.
  * Each pixel is 32 bit, R, G, B, A with 8 bit per component.
  */
-class Image final : public Asset {
+class Texture final : public Asset {
 public:
-  Image(AssetId id, ImageSize size, std::vector<Pixel> pixels) :
+  Texture(AssetId id, TextureSize size, std::vector<Pixel> pixels) :
       Asset{std::move(id), getKind()}, m_size{size}, m_pixels{std::move(pixels)} {
     assert(m_pixels.size() == static_cast<size_t>(size.x() * size.y()));
     assert(m_pixels.size() > 0);
   }
-  Image(const Image& rhs) = delete;
-  Image(Image&& rhs)      = delete;
-  ~Image() noexcept       = default;
+  Texture(const Texture& rhs) = delete;
+  Texture(Texture&& rhs)      = delete;
+  ~Texture() noexcept         = default;
 
-  auto operator=(const Image& rhs) -> Image& = delete;
-  auto operator=(Image&& rhs) -> Image& = delete;
+  auto operator=(const Texture& rhs) -> Texture& = delete;
+  auto operator=(Texture&& rhs) -> Texture& = delete;
 
-  [[nodiscard]] constexpr static auto getKind() -> AssetKind { return AssetKind::Image; }
+  [[nodiscard]] constexpr static auto getKind() -> AssetKind { return AssetKind::Texture; }
 
   [[nodiscard]] auto getSize() const noexcept { return m_size; }
 
@@ -39,7 +39,7 @@ public:
   }
 
 private:
-  ImageSize m_size;
+  TextureSize m_size;
   std::vector<Pixel> m_pixels;
 };
 

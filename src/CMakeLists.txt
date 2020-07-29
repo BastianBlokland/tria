@@ -2,7 +2,7 @@
 message(STATUS "Configuring asset library")
 add_library(tria_asset STATIC
   tria/asset/internal/graphic_loader.cpp
-  tria/asset/internal/image_ppm_loader.cpp
+  tria/asset/internal/texture_ppm_loader.cpp
   tria/asset/internal/json.cpp
   tria/asset/internal/loader.cpp
   tria/asset/internal/mesh_obj_loader.cpp
@@ -25,7 +25,7 @@ add_library(tria_gfx STATIC
   tria/gfx_vulkan/internal/debug_messenger.cpp
   tria/gfx_vulkan/internal/device.cpp
   tria/gfx_vulkan/internal/graphic.cpp
-  tria/gfx_vulkan/internal/image.cpp
+  tria/gfx_vulkan/internal/texture.cpp
   tria/gfx_vulkan/internal/memory_pool.cpp
   tria/gfx_vulkan/internal/mesh.cpp
   tria/gfx_vulkan/internal/renderer.cpp
