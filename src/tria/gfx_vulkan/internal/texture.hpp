@@ -1,5 +1,5 @@
 #pragma once
-#include "buffer.hpp"
+#include "image.hpp"
 #include "transferer.hpp"
 #include "tria/asset/texture.hpp"
 #include "tria/log/api.hpp"
@@ -29,6 +29,8 @@ public:
 
 private:
   const asset::Texture* m_asset;
+  mutable bool m_imageUploaded;
+  Image m_image;
 };
 
 } // namespace tria::gfx::internal

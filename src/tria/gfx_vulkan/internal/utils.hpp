@@ -35,12 +35,34 @@ constexpr bool falseValue = false;
 
 [[nodiscard]] auto createVkFence(VkDevice vkDevice, bool initialState) -> VkFence;
 
-[[nodiscard]] auto getVkErrStr(VkResult errCode) noexcept -> std::string;
-[[nodiscard]] auto getVkDeviceTypeString(VkPhysicalDeviceType type) noexcept -> std::string;
-[[nodiscard]] auto getVkVendorString(uint32_t vendorId) noexcept -> std::string;
-[[nodiscard]] auto getVkFormatString(VkFormat format) noexcept -> std::string;
-[[nodiscard]] auto getVkColorSpaceString(VkColorSpaceKHR colorSpace) noexcept -> std::string;
-[[nodiscard]] auto getVkPresentModeString(VkPresentModeKHR mode) noexcept -> std::string;
+[[nodiscard]] auto getVkErrStr(VkResult errCode) noexcept -> std::string_view;
+[[nodiscard]] auto getVkDeviceTypeString(VkPhysicalDeviceType type) noexcept -> std::string_view;
+[[nodiscard]] auto getVkVendorString(uint32_t vendorId) noexcept -> std::string_view;
+[[nodiscard]] auto getVkColorSpaceString(VkColorSpaceKHR colorSpace) noexcept -> std::string_view;
+[[nodiscard]] auto getVkPresentModeString(VkPresentModeKHR mode) noexcept -> std::string_view;
+
+struct VkFormatInfo final {
+  std::string_view name;
+  uint32_t size;
+  uint32_t channelCount;
+
+  VkFormatInfo(std::string_view name, uint32_t size, uint32_t channelCount) :
+      name{name}, size{size}, channelCount{channelCount} {}
+};
+
+[[nodiscard]] auto getVkFormatInfo(VkFormat format) noexcept -> VkFormatInfo;
+
+[[nodiscard]] inline auto getVkFormatString(VkFormat format) noexcept -> std::string_view {
+  return getVkFormatInfo(format).name;
+}
+
+[[nodiscard]] inline auto getVkFormatSize(VkFormat format) noexcept -> uint32_t {
+  return getVkFormatInfo(format).size;
+}
+
+[[nodiscard]] inline auto getVkFormatChannelCount(VkFormat format) noexcept -> uint32_t {
+  return getVkFormatInfo(format).channelCount;
+}
 
 inline auto checkVkResult(VkResult result) -> void {
   if (result != VK_SUCCESS) {

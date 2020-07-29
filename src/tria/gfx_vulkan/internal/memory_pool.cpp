@@ -68,6 +68,11 @@ auto MemoryBlock::bindToBuffer(VkBuffer buffer) -> void {
       vkBindBufferMemory(m_chunk->getVkDevice(), buffer, m_chunk->getVkMemory(), m_offset));
 }
 
+auto MemoryBlock::bindToImage(VkImage image) -> void {
+  assert(m_chunk);
+  checkVkResult(vkBindImageMemory(m_chunk->getVkDevice(), image, m_chunk->getVkMemory(), m_offset));
+}
+
 auto MemoryBlock::getMappedPtr() const noexcept -> char* {
   assert(m_chunk);
   auto* basePtr = m_chunk->getMappedPtr();

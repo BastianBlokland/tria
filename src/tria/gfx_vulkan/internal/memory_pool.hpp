@@ -58,6 +58,10 @@ public:
    */
   auto bindToBuffer(VkBuffer buffer) -> void;
 
+  /* Use this block as backing memory for the given image.
+   */
+  auto bindToImage(VkImage image) -> void;
+
   /* Get a mapped pointer to write into.
    * Note: Only valid for 'Host' allocations.
    */
