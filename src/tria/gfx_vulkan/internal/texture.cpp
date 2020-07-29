@@ -24,10 +24,11 @@ Texture::Texture(log::Logger* logger, Device* device, const asset::Texture* asse
       {"memory", log::MemSize{m_image.getMemSize()}});
 }
 
-auto Texture::prepareResources(Transferer* /*unused*/) const -> void {
+auto Texture::prepareResources(Transferer* transferer) const -> void {
   if (!m_imageUploaded) {
 
     // Upload pixels to the image.
+    transferer->queueTransfer(m_asset->getPixelBegin(), m_image);
 
     m_imageUploaded = true;
   }
