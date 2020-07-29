@@ -7,7 +7,7 @@ namespace tria::gfx::internal {
 
 namespace {
 
-// Vulkan spec specefies at least 8 dynamic uniform buffers should be available.
+// Vulkan spec specifies at least 8 dynamic uniform buffers should be available.
 constexpr auto g_maxUniformBuffers = 4U;
 
 // Arbitrary limit of how much data is allowed to be send to a descriptor.

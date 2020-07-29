@@ -34,6 +34,24 @@ namespace {
   return result;
 }
 
+[[nodiscard]] auto createVkImageView(VkDevice vkDevice, VkImage image, VkFormat format)
+    -> VkImageView {
+  VkImageViewCreateInfo createInfo           = {};
+  createInfo.sType                           = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+  createInfo.image                           = image;
+  createInfo.viewType                        = VK_IMAGE_VIEW_TYPE_2D;
+  createInfo.format                          = format;
+  createInfo.subresourceRange.aspectMask     = VK_IMAGE_ASPECT_COLOR_BIT;
+  createInfo.subresourceRange.baseMipLevel   = 0U;
+  createInfo.subresourceRange.levelCount     = 1U;
+  createInfo.subresourceRange.baseArrayLayer = 0U;
+  createInfo.subresourceRange.layerCount     = 1U;
+
+  VkImageView result;
+  checkVkResult(vkCreateImageView(vkDevice, &createInfo, nullptr, &result));
+  return result;
+}
+
 } // namespace
 
 Image::Image(Device* device, ImageSize size, VkFormat vkFormat) :
@@ -50,11 +68,15 @@ Image::Image(Device* device, ImageSize size, VkFormat vkFormat) :
 
   // Bind the memory to the image.
   m_memory.bindToImage(m_vkImage);
+
+  // Create a view over the image.
+  m_vkImageView = createVkImageView(device->getVkDevice(), m_vkImage, vkFormat);
 }
 
 Image::~Image() {
   if (m_vkImage) {
     vkDestroyImage(m_device->getVkDevice(), m_vkImage, nullptr);
+    vkDestroyImageView(m_device->getVkDevice(), m_vkImageView, nullptr);
   }
   // Note: Memory is reclaimed by the destructor of MemoryBlock.
 }
