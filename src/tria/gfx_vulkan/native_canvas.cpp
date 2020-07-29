@@ -81,6 +81,7 @@ NativeCanvas::NativeCanvas(
 
   m_shaders  = std::make_unique<AssetResource<Shader>>(m_logger, m_device.get());
   m_meshes   = std::make_unique<AssetResource<Mesh>>(m_logger, m_device.get());
+  m_images   = std::make_unique<AssetResource<Image>>(m_logger, m_device.get());
   m_graphics = std::make_unique<AssetResource<Graphic>>(m_logger, m_device.get());
 
   m_vkRenderPass = createVkRenderPass(m_device.get());
@@ -99,6 +100,7 @@ NativeCanvas::~NativeCanvas() {
   m_graphics  = nullptr;
   m_shaders   = nullptr;
   m_meshes    = nullptr;
+  m_images    = nullptr;
   m_swapchain = nullptr;
   vkDestroyRenderPass(m_device->getVkDevice(), m_vkRenderPass, nullptr);
   m_device = nullptr;
@@ -146,7 +148,7 @@ auto NativeCanvas::draw(const asset::Graphic* asset, const void* uniData, size_t
     throw err::SyncErr{"Unable record a draw: no draw active"};
   }
 
-  const auto* graphic = m_graphics->get(asset, m_shaders.get(), m_meshes.get());
+  const auto* graphic = m_graphics->get(asset, m_shaders.get(), m_meshes.get(), m_images.get());
   getCurRenderer().draw(m_vkRenderPass, graphic, uniData, uniSize);
 }
 

@@ -1,5 +1,4 @@
 #include "mesh.hpp"
-#include "tria/asset/mesh.hpp"
 #include "utils.hpp"
 #include <cassert>
 
@@ -9,10 +8,10 @@ Mesh::Mesh(log::Logger* logger, Device* device, const asset::Mesh* asset) :
     m_asset{asset}, m_bufferUploaded{false} {
 
   assert(device);
-  assert(asset);
+  assert(m_asset);
 
-  m_vertexDataSize  = sizeof(asset::Vertex) * asset->getVertexCount();
-  m_indexDataSize   = sizeof(IndexType) * asset->getIndexCount();
+  m_vertexDataSize  = sizeof(asset::Vertex) * m_asset->getVertexCount();
+  m_indexDataSize   = sizeof(IndexType) * m_asset->getIndexCount();
   m_indexDataOffset = m_vertexDataSize + padToAlignment(m_vertexDataSize, sizeof(IndexType));
 
   m_buffer = Buffer{
@@ -24,9 +23,9 @@ Mesh::Mesh(log::Logger* logger, Device* device, const asset::Mesh* asset) :
   LOG_D(
       logger,
       "Vulkan mesh created",
-      {"asset", asset->getId()},
-      {"vertices", asset->getVertexCount()},
-      {"indices", asset->getIndexCount()},
+      {"asset", m_asset->getId()},
+      {"vertices", m_asset->getVertexCount()},
+      {"indices", m_asset->getIndexCount()},
       {"memory", log::MemSize{m_buffer.getSize()}});
 }
 

@@ -1,5 +1,6 @@
 #include "graphic.hpp"
 #include "device.hpp"
+#include "image.hpp"
 #include "mesh.hpp"
 #include "shader.hpp"
 #include "utils.hpp"
@@ -136,7 +137,8 @@ Graphic::Graphic(
     const Device* device,
     const asset::Graphic* asset,
     AssetResource<Shader>* shaders,
-    AssetResource<Mesh>* meshes) :
+    AssetResource<Mesh>* meshes,
+    AssetResource<Image>* images) :
     m_logger{logger}, m_device{device}, m_asset{asset}, m_vkPipeline{nullptr} {
   assert(m_device);
   assert(m_asset);
@@ -144,6 +146,11 @@ Graphic::Graphic(
   m_vertShader = shaders->get(m_asset->getVertShader());
   m_fragShader = shaders->get(m_asset->getFragShader());
   m_mesh       = meshes->get(m_asset->getMesh());
+
+  m_images.reserve(m_asset->getImageCount());
+  for (auto itr = m_asset->getImageBegin(); itr != m_asset->getImageEnd(); ++itr) {
+    m_images.push_back(images->get(*itr));
+  }
 }
 
 Graphic::~Graphic() {
@@ -157,6 +164,9 @@ auto Graphic::prepareResources(
     Transferer* transferer, UniformContainer* uni, VkRenderPass vkRenderPass) const -> void {
 
   m_mesh->prepareResources(transferer);
+  for (const auto* img : m_images) {
+    img->prepareResources(transferer);
+  }
 
   if (!m_vkPipeline) {
     m_vkPipelineLayout = createPipelineLayout(m_device->getVkDevice(), uni->getVkDescLayout());

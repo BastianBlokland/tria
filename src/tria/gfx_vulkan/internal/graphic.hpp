@@ -10,6 +10,7 @@ namespace tria::gfx::internal {
 
 class Device;
 class Mesh;
+class Image;
 class Shader;
 
 /* Graphic resource.
@@ -24,7 +25,8 @@ public:
       const Device* device,
       const asset::Graphic* asset,
       AssetResource<Shader>* shaders,
-      AssetResource<Mesh>* meshes);
+      AssetResource<Mesh>* meshes,
+      AssetResource<Image>* images);
   Graphic(const Graphic& rhs) = delete;
   Graphic(Graphic&& rhs)      = delete;
   ~Graphic();
@@ -49,6 +51,7 @@ private:
   const Shader* m_vertShader;
   const Shader* m_fragShader;
   const Mesh* m_mesh;
+  std::vector<const Image*> m_images;
   mutable VkPipelineLayout m_vkPipelineLayout;
   mutable VkPipeline m_vkPipeline;
 };
