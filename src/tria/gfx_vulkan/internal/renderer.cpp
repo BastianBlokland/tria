@@ -140,7 +140,9 @@ auto bindIndexBuffer(VkCommandBuffer vkCommandBuffer, const Buffer& buffer, size
 
 } // namespace
 
-Renderer::Renderer(log::Logger* logger, Device* device) : m_device{device} {
+Renderer::Renderer(
+    log::Logger* logger, Device* device, const VkPhysicalDeviceLimits& deviceLimits) :
+    m_device{device} {
   if (!m_device) {
     throw std::invalid_argument{"Device cannot be null"};
   }
@@ -148,7 +150,7 @@ Renderer::Renderer(log::Logger* logger, Device* device) : m_device{device} {
   m_imgAvailable        = createVkSemaphore(device->getVkDevice());
   m_imgFinished         = createVkSemaphore(device->getVkDevice());
   m_renderDone          = createVkFence(device->getVkDevice(), true);
-  m_transferer          = std::make_unique<Transferer>(logger, device);
+  m_transferer          = std::make_unique<Transferer>(logger, device, deviceLimits);
   m_uni                 = std::make_unique<UniformContainer>(logger, device);
   m_gfxVkCommandBuffers = createGfxVkCommandBuffers<2>(device);
 }

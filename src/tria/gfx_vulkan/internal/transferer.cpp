@@ -78,7 +78,7 @@ auto Transferer::queueTransfer(const void* data, const Buffer& dst, size_t dstOf
   assert(dst.getLocation() == MemoryLocation::Device);
 
   // Upload the data to a transfer buffer.
-  const auto reqAlignment = 1U; // No alignment requirements.
+  const auto reqAlignment = m_deviceLimits.optimalBufferCopyOffsetAlignment;
   const auto src          = getTransferSpace(size, reqAlignment);
   assert(src.second + size < src.first.getSize());
   src.first.upload(data, size, src.second);
@@ -91,8 +91,9 @@ auto Transferer::queueTransfer(const void* data, const Image& dst) -> void {
 
   // Upload the data to a transfer buffer.
   const auto size         = dst.getDataSize();
-  const auto reqAlignment = getVkFormatSize(dst.getVkFormat());
-  const auto src          = getTransferSpace(size, reqAlignment);
+  const auto reqAlignment = std::max<size_t>(
+      getVkFormatSize(dst.getVkFormat()), m_deviceLimits.optimalBufferCopyOffsetAlignment);
+  const auto src = getTransferSpace(size, reqAlignment);
   assert(src.second + size < src.first.getSize());
   src.first.upload(data, size, src.second);
 

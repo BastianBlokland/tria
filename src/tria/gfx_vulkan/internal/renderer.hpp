@@ -19,7 +19,7 @@ class Device;
  */
 class Renderer final {
 public:
-  Renderer(log::Logger* logger, Device* device);
+  Renderer(log::Logger* logger, Device* device, const VkPhysicalDeviceLimits& deviceLimits);
   ~Renderer();
 
   /* The renderer will wait (on the gpu) for this semaphore before starting to render.

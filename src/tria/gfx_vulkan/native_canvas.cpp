@@ -89,7 +89,7 @@ NativeCanvas::NativeCanvas(
   m_swapchain = std::make_unique<Swapchain>(logger, m_device.get(), vSync);
 
   for (auto i = 0U; i != m_renderers.size(); ++i) {
-    m_renderers[i] = std::make_unique<Renderer>(m_logger, m_device.get());
+    m_renderers[i] = std::make_unique<Renderer>(m_logger, m_device.get(), m_device->getLimits());
   }
 }
 
