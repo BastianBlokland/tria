@@ -160,13 +160,13 @@ auto Transferer::getTransferSpace(size_t size, size_t alignment) -> std::pair<Bu
 
   // If no transfer buffers has enough space then create a new one.
   const auto newBuffSize = size > g_minTransferBufferSize ? size : g_minTransferBufferSize;
-  m_transferBuffers.emplace_back(
+  m_transferBuffers.emplace_front(
       Buffer{m_device, newBuffSize, MemoryLocation::Host, BufferUsage::HostTransfer},
       static_cast<uint32_t>(size));
 
   LOG_D(m_logger, "Vulkan transfer buffer created", {"size", log::MemSize{newBuffSize}});
 
-  return {m_transferBuffers.back().first, 0U};
+  return {m_transferBuffers.front().first, 0U};
 }
 
 } // namespace tria::gfx::internal

@@ -3,6 +3,7 @@
 #include "device.hpp"
 #include "image.hpp"
 #include "tria/log/api.hpp"
+#include <forward_list>
 #include <memory>
 #include <utility>
 #include <vector>
@@ -65,7 +66,7 @@ private:
   log::Logger* m_logger;
   Device* m_device;
   const VkPhysicalDeviceLimits& m_deviceLimits;
-  std::vector<std::pair<Buffer, uint32_t>> m_transferBuffers;
+  std::forward_list<std::pair<Buffer, uint32_t>> m_transferBuffers;
   std::vector<BufferWork> m_bufferWork;
   std::vector<ImageWork> m_imageWork;
 
