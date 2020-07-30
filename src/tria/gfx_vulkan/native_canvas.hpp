@@ -28,7 +28,12 @@ public:
       const NativeContext* context,
       const pal::Window* window,
       VSyncMode vSync);
+  NativeCanvas(const NativeCanvas& rhs)     = delete;
+  NativeCanvas(NativeCanvas&& rhs) noexcept = delete;
   ~NativeCanvas();
+
+  auto operator=(const NativeCanvas& rhs) -> NativeCanvas& = delete;
+  auto operator=(NativeCanvas&& rhs) noexcept -> NativeCanvas& = delete;
 
   /* Begin recording draw commands.
    * Returns: false if we failed to begin recordering (for example because the window is minimized).

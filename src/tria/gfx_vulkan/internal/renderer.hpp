@@ -20,7 +20,12 @@ class Device;
 class Renderer final {
 public:
   Renderer(log::Logger* logger, Device* device, const VkPhysicalDeviceLimits& deviceLimits);
+  Renderer(const Renderer& rhs)     = delete;
+  Renderer(Renderer&& rhs) noexcept = delete;
   ~Renderer();
+
+  auto operator=(const Renderer& rhs) -> Renderer& = delete;
+  auto operator=(Renderer&& rhs) noexcept -> Renderer& = delete;
 
   /* The renderer will wait (on the gpu) for this semaphore before starting to render.
    */

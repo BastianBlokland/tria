@@ -15,7 +15,12 @@ namespace tria::gfx::internal {
 class UniformContainer final {
 public:
   UniformContainer(log::Logger* logger, Device* device);
+  UniformContainer(const UniformContainer& rhs)     = delete;
+  UniformContainer(UniformContainer&& rhs) noexcept = delete;
   ~UniformContainer();
+
+  auto operator=(const UniformContainer& rhs) -> UniformContainer& = delete;
+  auto operator=(UniformContainer&& rhs) noexcept -> UniformContainer& = delete;
 
   /* Layout of the descriptor-set that data will be uploaded to.
    * Note: Provides a single binding at location 0.

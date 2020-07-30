@@ -24,7 +24,12 @@ public:
       VkInstance vkInstance,
       VkPhysicalDevice vkPhysicalDevice,
       const pal::Window* window);
+  Device(const Device& rhs)     = delete;
+  Device(Device&& rhs) noexcept = delete;
   ~Device();
+
+  auto operator=(const Device& rhs) -> Device& = delete;
+  auto operator=(Device&& rhs) noexcept -> Device& = delete;
 
   [[nodiscard]] auto getVkPhysicalDevice() const noexcept { return m_vkPhysicalDevice; }
   [[nodiscard]] auto getVkDevice() const noexcept { return m_vkDevice; }

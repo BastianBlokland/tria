@@ -19,7 +19,12 @@ class Transferer final {
 public:
   Transferer(log::Logger* logger, Device* device, const VkPhysicalDeviceLimits& deviceLimits) :
       m_logger{logger}, m_device{device}, m_deviceLimits{deviceLimits} {}
-  ~Transferer() = default;
+  Transferer(const Transferer& rhs)     = delete;
+  Transferer(Transferer&& rhs) noexcept = delete;
+  ~Transferer()                         = default;
+
+  auto operator=(const Transferer& rhs) -> Transferer& = delete;
+  auto operator=(Transferer&& rhs) noexcept -> Transferer& = delete;
 
   /* Reset the transferer.
    * This clears any queued work and frees up the used transfer buffers.

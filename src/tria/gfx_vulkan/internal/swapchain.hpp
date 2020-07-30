@@ -15,7 +15,12 @@ class Device;
 class Swapchain final {
 public:
   Swapchain(log::Logger* logger, const Device* device, VSyncMode vSync);
+  Swapchain(const Swapchain& rhs)     = delete;
+  Swapchain(Swapchain&& rhs) noexcept = delete;
   ~Swapchain();
+
+  auto operator=(const Swapchain& rhs) -> Swapchain& = delete;
+  auto operator=(Swapchain&& rhs) noexcept -> Swapchain& = delete;
 
   [[nodiscard]] auto getExtent() const noexcept { return m_extent; }
   [[nodiscard]] auto getVkFramebuffer(uint32_t imageIndex) const -> const VkFramebuffer&;

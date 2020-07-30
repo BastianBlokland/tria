@@ -11,7 +11,12 @@ namespace tria::gfx::internal {
 class DebugMessenger final {
 public:
   DebugMessenger(log::Logger* logger, VkInstance vkInstance, bool verbose);
+  DebugMessenger(const DebugMessenger& rhs)     = delete;
+  DebugMessenger(DebugMessenger&& rhs) noexcept = delete;
   ~DebugMessenger();
+
+  auto operator=(const DebugMessenger& rhs) -> DebugMessenger& = delete;
+  auto operator=(DebugMessenger&& rhs) noexcept -> DebugMessenger& = delete;
 
   auto handleMessage(
       VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
