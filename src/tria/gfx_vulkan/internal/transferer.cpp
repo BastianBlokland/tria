@@ -48,8 +48,8 @@ auto recordImageToTransferDstLayout(VkCommandBuffer buffer, const Image& img) ->
 }
 
 auto recordImageToShaderReadLayout(VkCommandBuffer buffer, const Image& img) -> void {
-  VkImageLayout oldLayout            = VK_IMAGE_LAYOUT_UNDEFINED;
-  VkImageLayout newLayout            = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+  VkImageLayout oldLayout            = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+  VkImageLayout newLayout            = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
   VkAccessFlags srcAccess            = VK_ACCESS_TRANSFER_WRITE_BIT;
   VkAccessFlags dstAccess            = VK_ACCESS_SHADER_READ_BIT;
   VkPipelineStageFlags srcStageFlags = VK_PIPELINE_STAGE_TRANSFER_BIT;
@@ -122,15 +122,16 @@ auto Transferer::record(VkCommandBuffer buffer) noexcept -> void {
     // Copy the new data to the image.
     VkBufferImageCopy region               = {};
     region.bufferOffset                    = work.src.second;
+    region.bufferRowLength                 = 0U; // Fully tightly packed data.
+    region.bufferImageHeight               = 0U; // Fully tightly packed data.
     region.imageSubresource.aspectMask     = VK_IMAGE_ASPECT_COLOR_BIT;
     region.imageSubresource.mipLevel       = 0U;
     region.imageSubresource.baseArrayLayer = 0U;
     region.imageSubresource.layerCount     = 1U;
     region.imageOffset                     = {0U, 0U, 0U};
-    region.imageExtent                     = {
-        static_cast<uint32_t>(work.dst.getSize().x()),
-        static_cast<uint32_t>(work.dst.getSize().y()),
-        1U};
+    region.imageExtent.width               = static_cast<uint32_t>(work.dst.getSize().x());
+    region.imageExtent.height              = static_cast<uint32_t>(work.dst.getSize().y());
+    region.imageExtent.depth               = 1U;
     vkCmdCopyBufferToImage(
         buffer,
         work.src.first.getVkBuffer(),
