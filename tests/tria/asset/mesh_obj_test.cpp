@@ -9,7 +9,7 @@ namespace tria::asset {
 
 // Pretty output for vertices in case of test failures.
 auto operator<<(std::ostream& out, const Vertex& rhs) -> std::ostream& {
-  out << "{" << rhs.position << ", " << rhs.color << "}";
+  out << "{" << rhs.position << ", " << rhs.color << ", " << rhs.texcoord << "}";
   return out;
 }
 
@@ -31,9 +31,10 @@ TEST_CASE("[asset] - Mesh Wavefront Obj", "[asset]") {
       auto vertices = std::vector<Vertex>(mesh->getVertexBegin(), mesh->getVertexEnd());
       CHECK(
           vertices ==
-          std::vector<Vertex>{{{1.0, 4.0, 7.0}, math::color::white()},
-                              {{2.0, 5.0, 8.0}, math::color::white()},
-                              {{3.0, 6.0, 9.0}, math::color::white()}});
+          std::vector<Vertex>{
+              {{1.0, 4.0, 7.0}, math::color::white(), {0.0, 0.0}},
+              {{2.0, 5.0, 8.0}, math::color::white(), {0.0, 0.0}},
+              {{3.0, 6.0, 9.0}, math::color::white(), {0.0, 0.0}}});
     });
   }
 
@@ -51,9 +52,56 @@ TEST_CASE("[asset] - Mesh Wavefront Obj", "[asset]") {
       auto vertices = std::vector<Vertex>(mesh->getVertexBegin(), mesh->getVertexEnd());
       CHECK(
           vertices ==
-          std::vector<Vertex>{{{1.0, 4.0, 7.0}, math::color::red()},
-                              {{2.0, 5.0, 8.0}, math::color::lime()},
-                              {{3.0, 6.0, 9.0}, math::color::blue()}});
+          std::vector<Vertex>{
+              {{1.0, 4.0, 7.0}, math::color::red(), {0.0, 0.0}},
+              {{2.0, 5.0, 8.0}, math::color::lime(), {0.0, 0.0}},
+              {{3.0, 6.0, 9.0}, math::color::blue(), {0.0, 0.0}}});
+    });
+  }
+
+  SECTION("Texture coordinates are read") {
+    withTempDir([](const fs::path& dir) {
+      writeFile(
+          dir / "test.obj",
+          "v 1.0 4.0 7.0\n"
+          "v 2.0 5.0 8.0\n"
+          "v 3.0 6.0 9.0\n"
+          "vt 0.1 0.5\n"
+          "vt 0.3 0.5\n"
+          "vt 0.5 0.5\n"
+          "f 1/1 2/2 3/3 \n");
+
+      auto db       = Database{nullptr, dir};
+      auto mesh     = db.get("test.obj")->downcast<Mesh>();
+      auto vertices = std::vector<Vertex>(mesh->getVertexBegin(), mesh->getVertexEnd());
+      CHECK(
+          vertices ==
+          std::vector<Vertex>{
+              {{1.0, 4.0, 7.0}, math::color::white(), {0.1, 0.5}},
+              {{2.0, 5.0, 8.0}, math::color::white(), {0.3, 0.5}},
+              {{3.0, 6.0, 9.0}, math::color::white(), {0.5, 0.5}}});
+    });
+  }
+
+  SECTION("Texture coordinates can be reused") {
+    withTempDir([](const fs::path& dir) {
+      writeFile(
+          dir / "test.obj",
+          "v 1.0 4.0 7.0\n"
+          "v 2.0 5.0 8.0\n"
+          "v 3.0 6.0 9.0\n"
+          "vt 0.5 0.5\n"
+          "f 1/1 2/1 3/1 \n");
+
+      auto db       = Database{nullptr, dir};
+      auto mesh     = db.get("test.obj")->downcast<Mesh>();
+      auto vertices = std::vector<Vertex>(mesh->getVertexBegin(), mesh->getVertexEnd());
+      CHECK(
+          vertices ==
+          std::vector<Vertex>{
+              {{1.0, 4.0, 7.0}, math::color::white(), {0.5, 0.5}},
+              {{2.0, 5.0, 8.0}, math::color::white(), {0.5, 0.5}},
+              {{3.0, 6.0, 9.0}, math::color::white(), {0.5, 0.5}}});
     });
   }
 
@@ -89,10 +137,11 @@ TEST_CASE("[asset] - Mesh Wavefront Obj", "[asset]") {
       auto indices  = std::vector<IndexType>(mesh->getIndexBegin(), mesh->getIndexEnd());
       CHECK(
           vertices ==
-          std::vector<Vertex>{{{-0.5, -0.5, 0.0}, math::color::white()},
-                              {{+0.5, -0.5, 0.0}, math::color::white()},
-                              {{-0.5, +0.5, 0.0}, math::color::white()},
-                              {{+0.5, +0.5, 0.0}, math::color::white()}});
+          std::vector<Vertex>{
+              {{-0.5, -0.5, 0.0}, math::color::white(), {0.0, 0.0}},
+              {{+0.5, -0.5, 0.0}, math::color::white(), {0.0, 0.0}},
+              {{-0.5, +0.5, 0.0}, math::color::white(), {0.0, 0.0}},
+              {{+0.5, +0.5, 0.0}, math::color::white(), {0.0, 0.0}}});
       CHECK(indices == std::vector<IndexType>{0, 1, 2, 0, 2, 3});
     });
   }

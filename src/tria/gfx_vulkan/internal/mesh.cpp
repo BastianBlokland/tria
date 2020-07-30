@@ -58,20 +58,28 @@ auto Mesh::getVkVertexAttributeDescriptions() const noexcept
   static_assert(
       sizeof(asset::Vertex::position) == sizeof(float) * 3, "Unexpected vertex position size");
   static_assert(sizeof(asset::Vertex::color) == sizeof(float) * 4, "Unexpected vertex color size");
+  static_assert(
+      sizeof(asset::Vertex::texcoord) == sizeof(float) * 2, "Unexpected vertex texcoord size");
 
-  auto result = std::vector<VkVertexInputAttributeDescription>{2};
+  auto result = std::vector<VkVertexInputAttributeDescription>{3};
 
   // Position.
   result[0].binding  = 0;
   result[0].location = 0;
-  result[0].format   = VK_FORMAT_R32G32B32_SFLOAT;
+  result[0].format   = VK_FORMAT_R32G32B32_SFLOAT; // vec3
   result[0].offset   = offsetof(asset::Vertex, position);
 
   // Color.
   result[1].binding  = 0;
   result[1].location = 1;
-  result[1].format   = VK_FORMAT_R32G32B32A32_SFLOAT;
+  result[1].format   = VK_FORMAT_R32G32B32A32_SFLOAT; // vec4
   result[1].offset   = offsetof(asset::Vertex, color);
+
+  // Uv.
+  result[2].binding  = 0;
+  result[2].location = 2;
+  result[2].format   = VK_FORMAT_R32G32_SFLOAT; // vec2
+  result[2].offset   = offsetof(asset::Vertex, texcoord);
 
   return result;
 }
