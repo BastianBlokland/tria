@@ -16,6 +16,11 @@ enum class MemoryLocation {
   Device, // Memory on the gpu itself, memory need to be explicitly transferred.
 };
 
+enum class MemoryAccessType {
+  Linear,    // Normal memory (for example buffers).
+  NonLinear, // Images that use a tiling mode different then 'VK_IMAGE_TILING_LINEAR'.
+};
+
 /* Continuous block of allocated memory.
  * Is automatically freed in the destructor.
  */
@@ -91,6 +96,7 @@ public:
       log::Logger* logger,
       VkDevice vkDevice,
       MemoryLocation loc,
+      MemoryAccessType accessType,
       uint32_t memoryType,
       uint32_t size,
       uint32_t flushAlignment);
@@ -103,6 +109,7 @@ public:
 
   [[nodiscard]] auto getLocation() const noexcept { return m_loc; }
   [[nodiscard]] auto getMemType() const noexcept { return m_memType; }
+  [[nodiscard]] auto getMemAccessType() const noexcept { return m_accessType; }
   [[nodiscard]] auto getVkDevice() const noexcept { return m_vkDevice; }
   [[nodiscard]] auto getVkMemory() const noexcept { return m_vkMemory; }
   [[nodiscard]] auto getMappedPtr() const noexcept { return m_map; }
@@ -126,6 +133,7 @@ private:
   log::Logger* m_logger;
   VkDevice m_vkDevice;
   MemoryLocation m_loc;
+  MemoryAccessType m_accessType;
   uint32_t m_memType;
   uint32_t m_size;
   uint32_t m_flushAlignment; // Alignment that must be respected when flushing mapped memory.
@@ -160,7 +168,8 @@ public:
 
   /* Allocate a block of memory that satisfies the given requirements.
    */
-  [[nodiscard]] auto allocate(MemoryLocation location, VkMemoryRequirements requirements)
+  [[nodiscard]] auto
+  allocate(MemoryLocation location, MemoryAccessType accessType, VkMemoryRequirements requirements)
       -> MemoryBlock;
 
   /* Allocate a block of memory.
@@ -168,8 +177,11 @@ public:
    * this allocation.
    */
   [[nodiscard]] auto allocate(
-      MemoryLocation location, uint32_t alignment, uint32_t size, uint32_t allowedMemTypes = ~0U)
-      -> MemoryBlock;
+      MemoryLocation location,
+      MemoryAccessType accessType,
+      uint32_t alignment,
+      uint32_t size,
+      uint32_t allowedMemTypes = ~0U) -> MemoryBlock;
 
 private:
   log::Logger* m_logger;

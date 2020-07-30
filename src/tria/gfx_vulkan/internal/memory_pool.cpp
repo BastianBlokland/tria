@@ -48,6 +48,16 @@ constexpr auto g_chunkInitialFreeBlocksCapacity = 128U;
   return "unknown";
 }
 
+[[nodiscard]] constexpr auto getName(MemoryAccessType accessType) noexcept -> std::string_view {
+  switch (accessType) {
+  case MemoryAccessType::Linear:
+    return "linear";
+  case MemoryAccessType::NonLinear:
+    return "non-linear";
+  }
+  return "unknown";
+}
+
 /* Check if the given memory blocks overlap.
  */
 [[maybe_unused]] [[nodiscard]] auto doesOverlap(const MemoryBlock& a, const MemoryBlock& b) {
@@ -88,12 +98,14 @@ MemoryChunk::MemoryChunk(
     log::Logger* logger,
     VkDevice vkDevice,
     MemoryLocation loc,
+    MemoryAccessType accessType,
     uint32_t memoryType,
     uint32_t size,
     uint32_t flushAlignment) :
     m_logger{logger},
     m_vkDevice{vkDevice},
     m_loc{loc},
+    m_accessType{accessType},
     m_memType{memoryType},
     m_size{size},
     m_flushAlignment{flushAlignment} {
@@ -115,6 +127,7 @@ MemoryChunk::MemoryChunk(
       m_logger,
       "Vulkan memory chunk allocated",
       {"location", getName(m_loc)},
+      {"accessType", getName(m_accessType)},
       {"type", m_memType},
       {"size", log::MemSize{size}},
       {"flushAlignment", log::MemSize{m_flushAlignment}});
@@ -130,7 +143,12 @@ MemoryChunk::~MemoryChunk() {
   }
   vkFreeMemory(m_vkDevice, m_vkMemory, nullptr);
 
-  LOG_I(m_logger, "Vulkan memory chunk freed", {"location", getName(m_loc)}, {"type", m_memType});
+  LOG_I(
+      m_logger,
+      "Vulkan memory chunk freed",
+      {"location", getName(m_loc)},
+      {"accessType", getName(m_accessType)},
+      {"type", m_memType});
 }
 
 auto MemoryChunk::allocate(uint32_t alignment, uint32_t size) noexcept
@@ -247,23 +265,28 @@ auto MemoryChunk::getFreeSize() const noexcept -> uint32_t {
   return result;
 }
 
-auto MemoryPool::allocate(MemoryLocation location, VkMemoryRequirements requirements)
+auto MemoryPool::allocate(
+    MemoryLocation location, MemoryAccessType accessType, VkMemoryRequirements requirements)
     -> MemoryBlock {
   return allocate(
       location,
+      accessType,
       static_cast<uint32_t>(requirements.alignment),
       static_cast<uint32_t>(requirements.size),
       requirements.memoryTypeBits);
 }
 
 auto MemoryPool::allocate(
-    MemoryLocation location, uint32_t alignment, uint32_t size, uint32_t supportedMemoryTypes)
-    -> MemoryBlock {
+    MemoryLocation location,
+    MemoryAccessType accessType,
+    uint32_t alignment,
+    uint32_t size,
+    uint32_t supportedMemoryTypes) -> MemoryBlock {
 
   // Attempt to allocate from an existing chunk.
   for (auto& chunk : m_chunks) {
     const auto isSupported = (supportedMemoryTypes & (1U << chunk.getMemType())) != 0;
-    if (chunk.getLocation() == location && isSupported) {
+    if (chunk.getLocation() == location && chunk.getMemAccessType() == accessType && isSupported) {
       auto allocation = chunk.allocate(alignment, size);
       if (allocation) {
         return std::move(*allocation);
@@ -278,6 +301,7 @@ auto MemoryPool::allocate(
       m_logger,
       m_vkDevice,
       location,
+      accessType,
       newChunkMemType,
       newChunkSize,
       static_cast<uint32_t>(m_deviceLimits.nonCoherentAtomSize));

@@ -64,7 +64,8 @@ Image::Image(Device* device, ImageSize size, VkFormat vkFormat) :
 
   // Allocate device memory for it.
   auto memoryRequirements = getVkMemoryRequirements(device->getVkDevice(), m_vkImage);
-  m_memory = device->getMemory().allocate(MemoryLocation::Device, memoryRequirements);
+  m_memory                = device->getMemory().allocate(
+      MemoryLocation::Device, MemoryAccessType::NonLinear, memoryRequirements);
 
   // Bind the memory to the image.
   m_memory.bindToImage(m_vkImage);
