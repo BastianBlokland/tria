@@ -70,6 +70,14 @@ target_include_directories(tria_log PUBLIC ${PROJECT_SOURCE_DIR}/include)
 target_link_libraries(tria_log PRIVATE Threads::Threads)
 target_link_libraries(tria_log PRIVATE tria_pal)
 
+# Math (math utlities library).
+message(STATUS "Configuring math library")
+add_library(tria_math STATIC
+  tria/math/utils.cpp)
+target_compile_features(tria_math PRIVATE cxx_std_17)
+target_include_directories(tria_math PUBLIC ${PROJECT_SOURCE_DIR}/include)
+target_include_directories(tria_math PRIVATE ${tinyobjloader_INCLUDE_DIRS})
+
 # Pal (Platform abstraction layer).
 if(${TRIA_PLATFORM} STREQUAL "linux_xcb")
 

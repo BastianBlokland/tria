@@ -22,6 +22,7 @@ target_compile_features(tria_tests PUBLIC cxx_std_17)
 target_link_libraries(tria_tests PRIVATE Catch2::Catch2)
 target_link_libraries(tria_tests PRIVATE tria_asset)
 target_link_libraries(tria_tests PRIVATE tria_log)
+target_link_libraries(tria_tests PRIVATE tria_math)
 target_link_libraries(tria_tests PRIVATE tria_pal)
 
 # Register tests to CTest.

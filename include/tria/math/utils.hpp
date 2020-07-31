@@ -1,5 +1,6 @@
 #pragma once
 #include <cmath>
+#include <cstdint>
 #include <limits>
 
 namespace tria::math {
@@ -40,5 +41,14 @@ template <typename T>
 [[nodiscard]] constexpr auto unlerp(T x, T y, T value) noexcept -> float {
   return (x == y) ? T{} : (value - x) / (y - x);
 }
+
+/* Returns how many bits are set in a mask.
+ */
+[[nodiscard]] auto popCount(uint32_t mask) -> unsigned int;
+
+/* Returns the amount of trailing zeroes in a mask.
+ * Note: returns 32 for a mask with 0 set bits.
+ */
+[[nodiscard]] auto countTrailingZeroes(uint32_t mask) -> unsigned int;
 
 } // namespace tria::math
