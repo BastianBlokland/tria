@@ -23,6 +23,8 @@ public:
   auto operator=(const Texture& rhs) -> Texture& = delete;
   auto operator=(Texture&& rhs) -> Texture& = delete;
 
+  [[nodiscard]] auto getImage() const noexcept -> const Image& { return m_image; }
+
   /* Note: Call this before accessing any resources from this texture.
    */
   auto prepareResources(Transferer* transferer) const -> void;

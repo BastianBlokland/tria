@@ -208,27 +208,38 @@ auto Renderer::draw(
   vkCmdBindPipeline(
       m_drawVkCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphic->getVkPipeline());
 
-  // Upload and bind any uniform data.
+  // Bind the descriptors.
   if (uniData && uniSize > 0) {
+    // Upload and bind per-draw uniform data in addition to the graphic's own descriptors (for
+    // example textures).
     auto [uniDescSet, uniOffset] = m_uni->upload(uniData, uniSize);
 
-    std::array<VkDescriptorSet, 1> descriptors = {
-        uniDescSet,
-    };
-    std::array<uint32_t, 1> descriptorOffsets = {
-        uniOffset,
-    };
+    std::array<VkDescriptorSet, 2> descs = {graphic->getDescriptors(), uniDescSet};
+    std::array<uint32_t, 1> descOffsets  = {uniOffset};
     vkCmdBindDescriptorSets(
         m_drawVkCommandBuffer,
         VK_PIPELINE_BIND_POINT_GRAPHICS,
         graphic->getVkPipelineLayout(),
         0U,
-        descriptors.size(),
-        descriptors.data(),
-        descriptorOffsets.size(),
-        descriptorOffsets.data());
+        descs.size(),
+        descs.data(),
+        descOffsets.size(),
+        descOffsets.data());
+  } else {
+    // Bind only the graphics descriptors themselves (for example textures).
+    std::array<VkDescriptorSet, 1> descs = {graphic->getDescriptors()};
+    vkCmdBindDescriptorSets(
+        m_drawVkCommandBuffer,
+        VK_PIPELINE_BIND_POINT_GRAPHICS,
+        graphic->getVkPipelineLayout(),
+        0U,
+        descs.size(),
+        descs.data(),
+        0U,
+        nullptr);
   }
 
+  // Bind the vertex and index buffers.
   const auto* mesh = graphic->getMesh();
   bindVertexBuffer(m_drawVkCommandBuffer, mesh->getBuffer(), mesh->getBufferVertexOffset());
   bindIndexBuffer(m_drawVkCommandBuffer, mesh->getBuffer(), mesh->getBufferIndexOffset());

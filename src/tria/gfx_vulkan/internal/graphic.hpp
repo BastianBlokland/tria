@@ -1,5 +1,6 @@
 #pragma once
 #include "asset_resource.hpp"
+#include "image_sampler.hpp"
 #include "transferer.hpp"
 #include "tria/asset/graphic.hpp"
 #include "tria/log/api.hpp"
@@ -43,15 +44,29 @@ public:
   [[nodiscard]] auto getMesh() const noexcept { return m_mesh; }
   [[nodiscard]] auto getVkPipeline() const noexcept { return m_vkPipeline; }
   [[nodiscard]] auto getVkPipelineLayout() const noexcept { return m_vkPipelineLayout; }
+  [[nodiscard]] auto getDescriptors() const noexcept { return m_vkDescSet; }
 
 private:
+  struct TextureData final {
+    const Texture* texture;
+    ImageSampler sampler;
+
+    TextureData(const Texture* texture, ImageSampler sampler) :
+        texture{texture}, sampler{std::move(sampler)} {}
+  };
+
   log::Logger* m_logger;
   const Device* m_device;
   const asset::Graphic* m_asset;
   const Shader* m_vertShader;
   const Shader* m_fragShader;
   const Mesh* m_mesh;
-  std::vector<const Texture*> m_textures;
+
+  std::vector<TextureData> m_textures;
+  VkDescriptorSetLayout m_vkDescLayout;
+  VkDescriptorPool m_vkDescPool;
+  VkDescriptorSet m_vkDescSet;
+
   mutable VkPipelineLayout m_vkPipelineLayout;
   mutable VkPipeline m_vkPipeline;
 };

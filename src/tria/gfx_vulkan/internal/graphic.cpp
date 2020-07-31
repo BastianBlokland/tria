@@ -11,11 +11,92 @@ namespace tria::gfx::internal {
 
 namespace {
 
-[[nodiscard]] auto createPipelineLayout(VkDevice vkDevice, VkDescriptorSetLayout uniDescLayout) {
+[[nodiscard]] auto createVkDescriptorSetLayout(const Device* device, uint32_t texCount)
+    -> VkDescriptorSetLayout {
+
+  std::vector<VkDescriptorSetLayoutBinding> bindings =
+      std::vector<VkDescriptorSetLayoutBinding>{texCount};
+  for (auto i = 0U; i != texCount; ++i) {
+    bindings[i].binding         = i;
+    bindings[i].descriptorType  = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    bindings[i].descriptorCount = 1U;
+    bindings[i].stageFlags      = VK_SHADER_STAGE_FRAGMENT_BIT;
+  }
+
+  VkDescriptorSetLayoutCreateInfo layoutInfo = {};
+  layoutInfo.sType                           = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+  layoutInfo.bindingCount                    = texCount;
+  layoutInfo.pBindings                       = bindings.data();
+
+  VkDescriptorSetLayout result;
+  checkVkResult(vkCreateDescriptorSetLayout(device->getVkDevice(), &layoutInfo, nullptr, &result));
+  return result;
+}
+
+[[nodiscard]] auto createVkDescriptorPool(const Device* device, uint32_t texCount)
+    -> VkDescriptorPool {
+  VkDescriptorPoolSize poolSize = {};
+  poolSize.type                 = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+  poolSize.descriptorCount      = std::max(1U, texCount);
+
+  VkDescriptorPoolCreateInfo poolInfo = {};
+  poolInfo.sType                      = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+  poolInfo.poolSizeCount              = 1U;
+  poolInfo.pPoolSizes                 = &poolSize;
+  poolInfo.maxSets                    = std::max(1U, texCount);
+
+  VkDescriptorPool result;
+  checkVkResult(vkCreateDescriptorPool(device->getVkDevice(), &poolInfo, nullptr, &result));
+  return result;
+}
+
+[[nodiscard]] auto allocVkDescriptorSet(
+    const Device* device, const VkDescriptorPool pool, const VkDescriptorSetLayout layout)
+    -> VkDescriptorSet {
+
+  VkDescriptorSetAllocateInfo allocInfo = {};
+  allocInfo.sType                       = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+  allocInfo.descriptorPool              = pool;
+  allocInfo.descriptorSetCount          = 1U;
+  allocInfo.pSetLayouts                 = &layout;
+
+  VkDescriptorSet result;
+  checkVkResult(vkAllocateDescriptorSets(device->getVkDevice(), &allocInfo, &result));
+  return result;
+}
+
+auto configureVkDescriptorSet(
+    const Device* device,
+    VkDescriptorSet descSet,
+    uint32_t dstBinding,
+    const Image& img,
+    const ImageSampler& sampler) -> void {
+
+  VkDescriptorImageInfo imgInfo = {};
+  imgInfo.imageLayout           = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+  imgInfo.imageView             = img.getVkImageView();
+  imgInfo.sampler               = sampler.getVkSampler();
+
+  VkWriteDescriptorSet descriptorWrite = {};
+  descriptorWrite.sType                = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+  descriptorWrite.dstSet               = descSet;
+  descriptorWrite.dstBinding           = dstBinding;
+  descriptorWrite.dstArrayElement      = 0U;
+  descriptorWrite.descriptorType       = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+  descriptorWrite.descriptorCount      = 1U;
+  descriptorWrite.pImageInfo           = &imgInfo;
+
+  vkUpdateDescriptorSets(device->getVkDevice(), 1U, &descriptorWrite, 0U, nullptr);
+}
+
+template <uint32_t DescriptorSetCount>
+[[nodiscard]] auto createPipelineLayout(
+    VkDevice vkDevice, const std::array<VkDescriptorSetLayout, DescriptorSetCount> descLayouts) {
+
   VkPipelineLayoutCreateInfo pipelineLayoutInfo = {};
   pipelineLayoutInfo.sType                      = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-  pipelineLayoutInfo.setLayoutCount             = 1;
-  pipelineLayoutInfo.pSetLayouts                = &uniDescLayout;
+  pipelineLayoutInfo.setLayoutCount             = DescriptorSetCount;
+  pipelineLayoutInfo.pSetLayouts                = descLayouts.data();
 
   VkPipelineLayout result;
   checkVkResult(vkCreatePipelineLayout(vkDevice, &pipelineLayoutInfo, nullptr, &result));
@@ -143,13 +224,21 @@ Graphic::Graphic(
   assert(m_device);
   assert(m_asset);
 
+  m_vkDescLayout = createVkDescriptorSetLayout(device, asset->getTextureCount());
+  m_vkDescPool   = createVkDescriptorPool(device, asset->getTextureCount());
+  m_vkDescSet    = allocVkDescriptorSet(device, m_vkDescPool, m_vkDescLayout);
+
   m_vertShader = shaders->get(m_asset->getVertShader());
   m_fragShader = shaders->get(m_asset->getFragShader());
   m_mesh       = meshes->get(m_asset->getMesh());
 
   m_textures.reserve(m_asset->getTextureCount());
+  auto dstBinding = 0U;
   for (auto itr = m_asset->getTextureBegin(); itr != m_asset->getTextureEnd(); ++itr) {
-    m_textures.push_back(textures->get(*itr));
+    const auto* tex = textures->get(*itr);
+    auto sampler    = ImageSampler{device};
+    configureVkDescriptorSet(device, m_vkDescSet, dstBinding++, tex->getImage(), sampler);
+    m_textures.emplace_back(tex, std::move(sampler));
   }
 }
 
@@ -158,26 +247,34 @@ Graphic::~Graphic() {
     vkDestroyPipelineLayout(m_device->getVkDevice(), m_vkPipelineLayout, nullptr);
     vkDestroyPipeline(m_device->getVkDevice(), m_vkPipeline, nullptr);
   }
+  vkDestroyDescriptorSetLayout(m_device->getVkDevice(), m_vkDescLayout, nullptr);
+  vkDestroyDescriptorPool(m_device->getVkDevice(), m_vkDescPool, nullptr);
 }
 
 auto Graphic::prepareResources(
     Transferer* transferer, UniformContainer* uni, VkRenderPass vkRenderPass) const -> void {
 
   m_mesh->prepareResources(transferer);
-  for (const auto* tex : m_textures) {
-    tex->prepareResources(transferer);
+  for (const auto& texData : m_textures) {
+    texData.texture->prepareResources(transferer);
   }
 
   if (!m_vkPipeline) {
-    m_vkPipelineLayout = createPipelineLayout(m_device->getVkDevice(), uni->getVkDescLayout());
-    m_vkPipeline       = createPipeline(
+    m_vkPipelineLayout =
+        createPipelineLayout<2>(m_device->getVkDevice(), {m_vkDescLayout, uni->getVkDescLayout()});
+    m_vkPipeline = createPipeline(
         m_device->getVkDevice(),
         vkRenderPass,
         m_vkPipelineLayout,
         m_vertShader,
         m_fragShader,
         m_mesh);
-    LOG_D(m_logger, "Vulkan pipline created", {"asset", m_asset->getId()});
+
+    LOG_D(
+        m_logger,
+        "Vulkan pipline created",
+        {"asset", m_asset->getId()},
+        {"texCount", m_textures.size()});
   }
 }
 
