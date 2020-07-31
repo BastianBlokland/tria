@@ -185,6 +185,9 @@ Device::Device(
   m_memory =
       std::make_unique<MemoryPool>(m_logger, m_vkDevice, m_memProperties, m_properties.limits);
 
+  // Create a global pool to allocate descriptors from.
+  m_descManager = std::make_unique<DescriptorManager>(m_logger, m_vkDevice);
+
   LOG_I(
       m_logger,
       "Vulkan device created",
@@ -197,13 +200,19 @@ Device::Device(
 }
 
 Device::~Device() {
-  // Wait for all rendering to be done before destroying the device.
-  vkDeviceWaitIdle(m_vkDevice);
+  try {
+    // Wait for all rendering to be done before destroying the device.
+    checkVkResult(vkDeviceWaitIdle(m_vkDevice));
 
-  m_memory = nullptr;
-  vkDestroyCommandPool(m_vkDevice, m_graphicsVkCommandPool, nullptr);
-  vkDestroyDevice(m_vkDevice, nullptr);
-  vkDestroySurfaceKHR(m_vkInstance, m_vkSurface, nullptr);
+    m_memory      = nullptr;
+    m_descManager = nullptr;
+    vkDestroyCommandPool(m_vkDevice, m_graphicsVkCommandPool, nullptr);
+    vkDestroyDevice(m_vkDevice, nullptr);
+    vkDestroySurfaceKHR(m_vkInstance, m_vkSurface, nullptr);
+
+  } catch (...) {
+    LOG_E(m_logger, "Failed to cleanup vulkan device");
+  }
 }
 
 auto Device::queryVkSurfaceCapabilities() const -> VkSurfaceCapabilitiesKHR {

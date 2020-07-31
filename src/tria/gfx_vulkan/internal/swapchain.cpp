@@ -115,15 +115,11 @@ namespace {
   createInfo.image                           = surfaceImage;
   createInfo.viewType                        = VK_IMAGE_VIEW_TYPE_2D;
   createInfo.format                          = device->getVkSurfaceFormat().format;
-  createInfo.components.r                    = VK_COMPONENT_SWIZZLE_IDENTITY;
-  createInfo.components.g                    = VK_COMPONENT_SWIZZLE_IDENTITY;
-  createInfo.components.b                    = VK_COMPONENT_SWIZZLE_IDENTITY;
-  createInfo.components.a                    = VK_COMPONENT_SWIZZLE_IDENTITY;
   createInfo.subresourceRange.aspectMask     = VK_IMAGE_ASPECT_COLOR_BIT;
-  createInfo.subresourceRange.baseMipLevel   = 0;
-  createInfo.subresourceRange.levelCount     = 1;
-  createInfo.subresourceRange.baseArrayLayer = 0;
-  createInfo.subresourceRange.layerCount     = 1;
+  createInfo.subresourceRange.baseMipLevel   = 0U;
+  createInfo.subresourceRange.levelCount     = 1U;
+  createInfo.subresourceRange.baseArrayLayer = 0U;
+  createInfo.subresourceRange.layerCount     = 1U;
 
   VkImageView result;
   checkVkResult(vkCreateImageView(device->getVkDevice(), &createInfo, nullptr, &result));
@@ -161,20 +157,24 @@ Swapchain::Swapchain(log::Logger* logger, const Device* device, VSyncMode vSync)
 }
 
 Swapchain::~Swapchain() {
-  // Wait for all rendering to be done.
-  vkDeviceWaitIdle(m_device->getVkDevice());
+  try {
+    // Wait for all rendering to be done.
+    checkVkResult(vkDeviceWaitIdle(m_device->getVkDevice()));
 
-  for (const auto& vkImageView : m_vkImageViews) {
-    vkDestroyImageView(m_device->getVkDevice(), vkImageView, nullptr);
-  }
-  for (const auto& vkFramebuffer : m_vkFramebuffers) {
-    vkDestroyFramebuffer(m_device->getVkDevice(), vkFramebuffer, nullptr);
-  }
-  if (m_vkSwapchain) {
-    vkDestroySwapchainKHR(m_device->getVkDevice(), m_vkSwapchain, nullptr);
-  }
+    for (const auto& vkImageView : m_vkImageViews) {
+      vkDestroyImageView(m_device->getVkDevice(), vkImageView, nullptr);
+    }
+    for (const auto& vkFramebuffer : m_vkFramebuffers) {
+      vkDestroyFramebuffer(m_device->getVkDevice(), vkFramebuffer, nullptr);
+    }
+    if (m_vkSwapchain) {
+      vkDestroySwapchainKHR(m_device->getVkDevice(), m_vkSwapchain, nullptr);
+    }
+    LOG_D(m_logger, "Vulkan swapchain destroyed");
 
-  LOG_D(m_logger, "Vulkan swapchain destroyed");
+  } catch (...) {
+    LOG_E(m_logger, "Failed to cleanup vulkan swapchain");
+  }
 }
 
 auto Swapchain::getVkFramebuffer(uint32_t imageIndex) const -> const VkFramebuffer& {

@@ -1,4 +1,5 @@
 #include "buffer.hpp"
+#include "memory_pool.hpp"
 #include "tria/gfx/err/gfx_err.hpp"
 #include "utils.hpp"
 #include "vulkan/vulkan_core.h"
@@ -53,7 +54,7 @@ Buffer::Buffer(Device* device, size_t size, MemoryLocation location, BufferUsage
 
   // Allocate memory for it.
   auto memoryRequirements = getVkMemoryRequirements(device->getVkDevice(), m_vkBuffer);
-  m_memory                = device->getMemory().allocate(location, memoryRequirements);
+  m_memory = device->getMemory().allocate(location, MemoryAccessType::Linear, memoryRequirements);
 
   // Bind the memory to the buffer.
   m_memory.bindToBuffer(m_vkBuffer);

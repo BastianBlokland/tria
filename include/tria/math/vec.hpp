@@ -13,6 +13,8 @@ class Vec final {
   static_assert(std::is_arithmetic_v<Type>, "Type has to be arithmetic");
 
 public:
+  constexpr Vec() noexcept : m_comps{} {}
+
   template <typename OtherType>
   constexpr Vec(const Vec<OtherType, Size>& rhs) noexcept {
     for (auto i = 0U; i != Size; ++i) {
@@ -20,7 +22,9 @@ public:
     }
   }
 
-  template <typename... Components>
+  template <
+      typename... Components,
+      std::enable_if_t<sizeof...(Components) == Size, void*> = nullptr>
   constexpr Vec(const Components&... comps) noexcept : m_comps{static_cast<Type>(comps)...} {}
 
   [[nodiscard]] constexpr auto getSize() noexcept -> size_t { return Size; }

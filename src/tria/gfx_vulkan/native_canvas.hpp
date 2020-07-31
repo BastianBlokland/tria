@@ -6,6 +6,7 @@
 #include "internal/renderer.hpp"
 #include "internal/shader.hpp"
 #include "internal/swapchain.hpp"
+#include "internal/texture.hpp"
 #include "tria/gfx/context.hpp"
 #include "tria/log/api.hpp"
 #include "tria/pal/window.hpp"
@@ -27,7 +28,12 @@ public:
       const NativeContext* context,
       const pal::Window* window,
       VSyncMode vSync);
+  NativeCanvas(const NativeCanvas& rhs)     = delete;
+  NativeCanvas(NativeCanvas&& rhs) noexcept = delete;
   ~NativeCanvas();
+
+  auto operator=(const NativeCanvas& rhs) -> NativeCanvas& = delete;
+  auto operator=(NativeCanvas&& rhs) noexcept -> NativeCanvas& = delete;
 
   /* Begin recording draw commands.
    * Returns: false if we failed to begin recordering (for example because the window is minimized).
@@ -50,6 +56,7 @@ private:
   internal::DeviceUnique m_device;
   internal::AssetResourceUnique<internal::Shader> m_shaders;
   internal::AssetResourceUnique<internal::Mesh> m_meshes;
+  internal::AssetResourceUnique<internal::Texture> m_textures;
   internal::AssetResourceUnique<internal::Graphic> m_graphics;
   VkRenderPass m_vkRenderPass;
   internal::SwapchainUnique m_swapchain;

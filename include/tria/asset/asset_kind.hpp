@@ -7,8 +7,9 @@ namespace tria::asset {
 enum class AssetKind : uint8_t {
   Raw     = 1,
   Mesh    = 2,
-  Shader  = 3,
-  Graphic = 4,
+  Texture = 3,
+  Shader  = 4,
+  Graphic = 5,
 };
 
 [[nodiscard]] constexpr auto getName(AssetKind kind) noexcept -> std::string_view {
@@ -17,6 +18,8 @@ enum class AssetKind : uint8_t {
     return "raw";
   case AssetKind::Mesh:
     return "mesh";
+  case AssetKind::Texture:
+    return "texture";
   case AssetKind::Shader:
     return "shader";
   case AssetKind::Graphic:

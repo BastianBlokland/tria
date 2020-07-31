@@ -39,11 +39,11 @@ auto runApp(pal::Platform& platform, asset::Database& db, gfx::Context& gfx) {
 
     if (canvas.drawBegin(math::color::gray())) {
 
-      canvas.draw(triangle, pos);
+      canvas.draw(quad, pos);
 
       const auto isMouseDown = win.isKeyDown(pal::Key::MouseLeft);
       const auto ndcMousePos = win.getMousePosNrm() * 2 - math::Vec2f{1, 1};
-      canvas.draw(isMouseDown ? quad : triangle, math::Vec3f{ndcMousePos.x(), ndcMousePos.y(), 0});
+      canvas.draw(isMouseDown ? triangle : quad, math::Vec3f{ndcMousePos.x(), ndcMousePos.y(), 0});
 
       canvas.drawEnd();
     } else {

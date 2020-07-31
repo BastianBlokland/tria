@@ -54,14 +54,22 @@ auto loadMeshObj(
 
   for (const auto& shape : shapes) {
     for (const auto& index : shape.mesh.indices) {
-      auto pos = math::Vec3f{attrib.vertices[index.vertex_index * 3 + 0],
-                             attrib.vertices[index.vertex_index * 3 + 1],
-                             attrib.vertices[index.vertex_index * 3 + 2]};
-      auto col = math::Color{attrib.colors[index.vertex_index * 3 + 0],
-                             attrib.colors[index.vertex_index * 3 + 1],
-                             attrib.colors[index.vertex_index * 3 + 2],
-                             1.0f};
-      meshBuilder.pushVertex(Vertex{pos, col});
+      auto pos = math::Vec3f{
+          attrib.vertices[index.vertex_index * 3 + 0],
+          attrib.vertices[index.vertex_index * 3 + 1],
+          attrib.vertices[index.vertex_index * 3 + 2]};
+      auto col = math::Color{
+          attrib.colors[index.vertex_index * 3 + 0],
+          attrib.colors[index.vertex_index * 3 + 1],
+          attrib.colors[index.vertex_index * 3 + 2],
+          1.0f};
+
+      auto texcoord = index.texcoord_index < 0
+          ? math::Vec2f{}
+          : math::Vec2f{
+                attrib.texcoords[index.texcoord_index * 2 + 0],
+                1.0f - attrib.texcoords[index.texcoord_index * 2 + 1]};
+      meshBuilder.pushVertex(Vertex{pos, col, texcoord});
     }
   }
   return std::make_unique<Mesh>(std::move(id), std::move(vertices), std::move(indices));

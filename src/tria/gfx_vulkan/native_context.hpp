@@ -15,7 +15,12 @@ class NativeCanvas;
 class NativeContext final {
 public:
   NativeContext(log::Logger* logger);
+  NativeContext(const NativeContext& rhs)     = delete;
+  NativeContext(NativeContext&& rhs) noexcept = delete;
   ~NativeContext();
+
+  auto operator=(const NativeContext& rhs) -> NativeContext& = delete;
+  auto operator=(NativeContext&& rhs) noexcept -> NativeContext& = delete;
 
   [[nodiscard]] auto getVkInstance() const noexcept { return m_vkInstance; }
 

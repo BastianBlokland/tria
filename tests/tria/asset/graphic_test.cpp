@@ -29,6 +29,31 @@ TEST_CASE("[asset] - Graphic", "[asset]") {
     });
   }
 
+  SECTION("Textures are optionally loaded as part of the graphic") {
+    withTempDir([](const fs::path& dir) {
+      writeFile(dir / "test.vert.spv", "");
+      writeFile(dir / "test.frag.spv", "");
+      writeFile(dir / "test.obj", "v 0.0 0.0 0.0\nf 1 1 1\n");
+      writeFile(dir / "test.ppm", "P3 1 1 255 1 42 137");
+      writeFile(
+          dir / "test.gfx",
+          "{"
+          "\"vertShader\": \"test.vert.spv\","
+          "\"fragShader\": \"test.frag.spv\","
+          "\"mesh\": \"test.obj\","
+          "\"textures\": [\"test.ppm\"]"
+          "}");
+
+      auto db   = Database{nullptr, dir};
+      auto* gfx = db.get("test.gfx")->downcast<Graphic>();
+      CHECK(gfx->getVertShader()->getShaderKind() == ShaderKind::SpvVertex);
+      CHECK(gfx->getFragShader()->getShaderKind() == ShaderKind::SpvFragment);
+      CHECK(gfx->getMesh()->getKind() == AssetKind::Mesh);
+      CHECK(gfx->getTextureCount() == 1);
+      CHECK(*(*gfx->getTextureBegin())->getPixelBegin() == Pixel{1, 42, 137, 255});
+    });
+  }
+
   SECTION("Loading a graphic with invalid json throws") {
     withTempDir([](const fs::path& dir) {
       writeFile(

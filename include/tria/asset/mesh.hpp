@@ -13,11 +13,13 @@ using IndexType = uint16_t;
 struct Vertex final {
   math::Vec3f position;
   math::Color color;
+  math::Vec2f texcoord;
 
-  constexpr Vertex(math::Vec3f position, math::Color color) : position{position}, color{color} {}
+  constexpr Vertex(math::Vec3f position, math::Color color, math::Vec2f texcoord) :
+      position{position}, color{color}, texcoord{texcoord} {}
 
   [[nodiscard]] constexpr auto operator==(const Vertex& rhs) const noexcept -> bool {
-    return position == rhs.position && color == rhs.color;
+    return position == rhs.position && color == rhs.color && texcoord == rhs.texcoord;
   }
 
   [[nodiscard]] constexpr auto operator!=(const Vertex& rhs) const noexcept -> bool {

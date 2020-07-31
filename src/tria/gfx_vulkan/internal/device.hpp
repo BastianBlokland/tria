@@ -1,4 +1,5 @@
 #pragma once
+#include "descriptor_manager.hpp"
 #include "memory_pool.hpp"
 #include "tria/log/api.hpp"
 #include "tria/pal/window.hpp"
@@ -24,7 +25,12 @@ public:
       VkInstance vkInstance,
       VkPhysicalDevice vkPhysicalDevice,
       const pal::Window* window);
+  Device(const Device& rhs)     = delete;
+  Device(Device&& rhs) noexcept = delete;
   ~Device();
+
+  auto operator=(const Device& rhs) -> Device& = delete;
+  auto operator=(Device&& rhs) noexcept -> Device& = delete;
 
   [[nodiscard]] auto getVkPhysicalDevice() const noexcept { return m_vkPhysicalDevice; }
   [[nodiscard]] auto getVkDevice() const noexcept { return m_vkDevice; }
@@ -43,6 +49,7 @@ public:
   [[nodiscard]] auto getGraphicsVkCommandPool() const noexcept { return m_graphicsVkCommandPool; }
 
   [[nodiscard]] auto getMemory() noexcept -> MemoryPool& { return *m_memory; }
+  [[nodiscard]] auto getDescManager() noexcept -> DescriptorManager& { return *m_descManager; }
 
   [[nodiscard]] auto queryVkSurfaceCapabilities() const -> VkSurfaceCapabilitiesKHR;
 
@@ -66,6 +73,7 @@ private:
   VkCommandPool m_graphicsVkCommandPool;
 
   internal::MemoryPoolUnique m_memory;
+  internal::DescriptorManagerUnique m_descManager;
 };
 
 using DeviceUnique = std::unique_ptr<Device>;

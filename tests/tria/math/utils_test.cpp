@@ -56,6 +56,27 @@ TEST_CASE("[math] - Utils", "[math]") {
     const auto val = lerp(x, y, t);
     CHECK(approx(unlerp(x, y, val), t));
   }
+
+  SECTION("Mask population count") {
+    CHECK(popCount(0b0000'0000'0000'0000'0000'0000'0000'0000) == 0);
+    CHECK(popCount(0b0000'0000'0000'0000'0000'0000'0000'0001) == 1);
+    CHECK(popCount(0b1000'0000'0000'0000'0000'0000'0000'0000) == 1);
+    CHECK(popCount(0b0001'0000'0000'0000'0000'0000'0000'0000) == 1);
+    CHECK(popCount(0b0000'0010'0000'0000'0000'0000'0100'0000) == 2);
+    CHECK(popCount(0b1000'0010'0000'0010'0010'0100'0100'0101) == 8);
+    CHECK(popCount(0xFFFF'FFFF) == 32);
+  }
+
+  SECTION("Mask count trailing zeroes") {
+    CHECK(countTrailingZeroes(0b0100'0100'0100'0100'0100'0100'1100'0111) == 0);
+    CHECK(countTrailingZeroes(0b0100'0100'0100'0100'0100'0100'1100'0110) == 1);
+    CHECK(countTrailingZeroes(0b0100'0100'0100'0100'0100'0100'1100'0100) == 2);
+    CHECK(countTrailingZeroes(0b0100'0100'0100'0100'0100'0100'1100'0000) == 6);
+    CHECK(countTrailingZeroes(0b0100'0100'0100'0100'0100'0100'1000'0000) == 7);
+    CHECK(countTrailingZeroes(0b0100'0100'0100'0100'0100'0100'0000'0000) == 10);
+    CHECK(countTrailingZeroes(0b1000'0000'0000'0000'0000'0000'0000'0000) == 31);
+    CHECK(countTrailingZeroes(0b0000'0000'0000'0000'0000'0000'0000'0000) == 32);
+  }
 }
 
 } // namespace tria::math::tests

@@ -2,6 +2,7 @@
 #include "device.hpp"
 #include "mesh.hpp"
 #include "shader.hpp"
+#include "texture.hpp"
 #include "utils.hpp"
 #include <array>
 #include <cassert>
@@ -10,11 +11,14 @@ namespace tria::gfx::internal {
 
 namespace {
 
-[[nodiscard]] auto createPipelineLayout(VkDevice vkDevice, VkDescriptorSetLayout uniDescLayout) {
+template <uint32_t DescriptorSetCount>
+[[nodiscard]] auto createPipelineLayout(
+    VkDevice vkDevice, const std::array<VkDescriptorSetLayout, DescriptorSetCount> descLayouts) {
+
   VkPipelineLayoutCreateInfo pipelineLayoutInfo = {};
   pipelineLayoutInfo.sType                      = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-  pipelineLayoutInfo.setLayoutCount             = 1;
-  pipelineLayoutInfo.pSetLayouts                = &uniDescLayout;
+  pipelineLayoutInfo.setLayoutCount             = DescriptorSetCount;
+  pipelineLayoutInfo.pSetLayouts                = descLayouts.data();
 
   VkPipelineLayout result;
   checkVkResult(vkCreatePipelineLayout(vkDevice, &pipelineLayoutInfo, nullptr, &result));
@@ -133,10 +137,11 @@ namespace {
 
 Graphic::Graphic(
     log::Logger* logger,
-    const Device* device,
+    Device* device,
     const asset::Graphic* asset,
     AssetResource<Shader>* shaders,
-    AssetResource<Mesh>* meshes) :
+    AssetResource<Mesh>* meshes,
+    AssetResource<Texture>* textures) :
     m_logger{logger}, m_device{device}, m_asset{asset}, m_vkPipeline{nullptr} {
   assert(m_device);
   assert(m_asset);
@@ -144,6 +149,20 @@ Graphic::Graphic(
   m_vertShader = shaders->get(m_asset->getVertShader());
   m_fragShader = shaders->get(m_asset->getFragShader());
   m_mesh       = meshes->get(m_asset->getMesh());
+
+  // Create a descriptor for the per graphic resources.
+  m_descSet = device->getDescManager().allocate(
+      DescriptorInfo{static_cast<uint32_t>(asset->getTextureCount()), 0U, 0U});
+
+  // Create the texture resources and bind them to our descriptor.
+  m_textures.reserve(m_asset->getTextureCount());
+  auto dstBinding = 0U;
+  for (auto itr = m_asset->getTextureBegin(); itr != m_asset->getTextureEnd(); ++itr) {
+    const auto* tex = textures->get(*itr);
+    auto sampler    = ImageSampler{device};
+    m_descSet.bindImage(dstBinding++, tex->getImage(), sampler);
+    m_textures.emplace_back(tex, std::move(sampler));
+  }
 }
 
 Graphic::~Graphic() {
@@ -157,17 +176,32 @@ auto Graphic::prepareResources(
     Transferer* transferer, UniformContainer* uni, VkRenderPass vkRenderPass) const -> void {
 
   m_mesh->prepareResources(transferer);
+  for (const auto& texData : m_textures) {
+    texData.texture->prepareResources(transferer);
+  }
 
   if (!m_vkPipeline) {
-    m_vkPipelineLayout = createPipelineLayout(m_device->getVkDevice(), uni->getVkDescLayout());
-    m_vkPipeline       = createPipeline(
+    // Bind to our own resources like textures (if any) and any per-draw uniform data.
+    if (m_descSet.hasBindingPoints()) {
+      m_vkPipelineLayout = createPipelineLayout<2>(
+          m_device->getVkDevice(), {m_descSet.getVkLayout(), uni->getVkDescLayout()});
+    } else {
+      m_vkPipelineLayout =
+          createPipelineLayout<1>(m_device->getVkDevice(), {uni->getVkDescLayout()});
+    }
+    m_vkPipeline = createPipeline(
         m_device->getVkDevice(),
         vkRenderPass,
         m_vkPipelineLayout,
         m_vertShader,
         m_fragShader,
         m_mesh);
-    LOG_D(m_logger, "Vulkan pipline created", {"asset", m_asset->getId()});
+
+    LOG_D(
+        m_logger,
+        "Vulkan pipline created",
+        {"asset", m_asset->getId()},
+        {"texCount", m_textures.size()});
   }
 }
 

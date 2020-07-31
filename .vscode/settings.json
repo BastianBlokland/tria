@@ -11,5 +11,6 @@
   "editor.rulers": [
     100
   ],
-  "clangd.semanticHighlighting": true
+  "clangd.semanticHighlighting": true,
+  "glsllint.glslangValidatorArgs": "-V -o /dev/null"
 }

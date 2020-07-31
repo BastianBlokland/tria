@@ -2,6 +2,7 @@
 message(STATUS "Configuring asset library")
 add_library(tria_asset STATIC
   tria/asset/internal/graphic_loader.cpp
+  tria/asset/internal/texture_ppm_loader.cpp
   tria/asset/internal/json.cpp
   tria/asset/internal/loader.cpp
   tria/asset/internal/mesh_obj_loader.cpp
@@ -22,13 +23,17 @@ message(STATUS "Configuring gfx vulkan library")
 add_library(tria_gfx STATIC
   tria/gfx_vulkan/internal/buffer.cpp
   tria/gfx_vulkan/internal/debug_messenger.cpp
+  tria/gfx_vulkan/internal/descriptor_manager.cpp
   tria/gfx_vulkan/internal/device.cpp
   tria/gfx_vulkan/internal/graphic.cpp
+  tria/gfx_vulkan/internal/image.cpp
+  tria/gfx_vulkan/internal/image_sampler.cpp
   tria/gfx_vulkan/internal/memory_pool.cpp
   tria/gfx_vulkan/internal/mesh.cpp
   tria/gfx_vulkan/internal/renderer.cpp
   tria/gfx_vulkan/internal/shader.cpp
   tria/gfx_vulkan/internal/swapchain.cpp
+  tria/gfx_vulkan/internal/texture.cpp
   tria/gfx_vulkan/internal/transferer.cpp
   tria/gfx_vulkan/internal/uniform_container.cpp
   tria/gfx_vulkan/internal/utils.cpp
@@ -51,8 +56,9 @@ endif()
 
 target_compile_features(tria_gfx PRIVATE cxx_std_17)
 target_include_directories(tria_gfx PUBLIC ${PROJECT_SOURCE_DIR}/include)
-target_link_libraries(tria_gfx PRIVATE tria_pal)
 target_link_libraries(tria_gfx PRIVATE tria_log)
+target_link_libraries(tria_gfx PRIVATE tria_math)
+target_link_libraries(tria_gfx PRIVATE tria_pal)
 
 # Log (logging library).
 message(STATUS "Configuring log library")
@@ -65,6 +71,14 @@ target_compile_features(tria_log PRIVATE cxx_std_17)
 target_include_directories(tria_log PUBLIC ${PROJECT_SOURCE_DIR}/include)
 target_link_libraries(tria_log PRIVATE Threads::Threads)
 target_link_libraries(tria_log PRIVATE tria_pal)
+
+# Math (math utlities library).
+message(STATUS "Configuring math library")
+add_library(tria_math STATIC
+  tria/math/utils.cpp)
+target_compile_features(tria_math PRIVATE cxx_std_17)
+target_include_directories(tria_math PUBLIC ${PROJECT_SOURCE_DIR}/include)
+target_include_directories(tria_math PRIVATE ${tinyobjloader_INCLUDE_DIRS})
 
 # Pal (Platform abstraction layer).
 if(${TRIA_PLATFORM} STREQUAL "linux_xcb")

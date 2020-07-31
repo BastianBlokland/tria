@@ -140,7 +140,9 @@ auto bindIndexBuffer(VkCommandBuffer vkCommandBuffer, const Buffer& buffer, size
 
 } // namespace
 
-Renderer::Renderer(log::Logger* logger, Device* device) : m_device{device} {
+Renderer::Renderer(
+    log::Logger* logger, Device* device, const VkPhysicalDeviceLimits& deviceLimits) :
+    m_logger{logger}, m_device{device} {
   if (!m_device) {
     throw std::invalid_argument{"Device cannot be null"};
   }
@@ -148,25 +150,30 @@ Renderer::Renderer(log::Logger* logger, Device* device) : m_device{device} {
   m_imgAvailable        = createVkSemaphore(device->getVkDevice());
   m_imgFinished         = createVkSemaphore(device->getVkDevice());
   m_renderDone          = createVkFence(device->getVkDevice(), true);
-  m_transferer          = std::make_unique<Transferer>(logger, device);
+  m_transferer          = std::make_unique<Transferer>(logger, device, deviceLimits);
   m_uni                 = std::make_unique<UniformContainer>(logger, device);
   m_gfxVkCommandBuffers = createGfxVkCommandBuffers<2>(device);
 }
 
 Renderer::~Renderer() {
-  // Wait for this renderer to be done executing on the gpu.
-  waitForDone();
+  try {
+    // Wait for this renderer to be done executing on the gpu.
+    waitForDone();
 
-  vkFreeCommandBuffers(
-      m_device->getVkDevice(),
-      m_device->getGraphicsVkCommandPool(),
-      m_gfxVkCommandBuffers.size(),
-      m_gfxVkCommandBuffers.data());
-  m_transferer = nullptr;
-  m_uni        = nullptr;
-  vkDestroySemaphore(m_device->getVkDevice(), m_imgAvailable, nullptr);
-  vkDestroySemaphore(m_device->getVkDevice(), m_imgFinished, nullptr);
-  vkDestroyFence(m_device->getVkDevice(), m_renderDone, nullptr);
+    vkFreeCommandBuffers(
+        m_device->getVkDevice(),
+        m_device->getGraphicsVkCommandPool(),
+        m_gfxVkCommandBuffers.size(),
+        m_gfxVkCommandBuffers.data());
+    m_transferer = nullptr;
+    m_uni        = nullptr;
+    vkDestroySemaphore(m_device->getVkDevice(), m_imgAvailable, nullptr);
+    vkDestroySemaphore(m_device->getVkDevice(), m_imgFinished, nullptr);
+    vkDestroyFence(m_device->getVkDevice(), m_renderDone, nullptr);
+
+  } catch (...) {
+    LOG_E(m_logger, "Failed to cleanup vulkan renderer");
+  }
 }
 
 auto Renderer::waitUntilReady() -> void {
@@ -206,27 +213,34 @@ auto Renderer::draw(
   vkCmdBindPipeline(
       m_drawVkCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphic->getVkPipeline());
 
-  // Upload and bind any uniform data.
-  if (uniData && uniSize > 0) {
-    auto [uniDescSet, uniOffset] = m_uni->upload(uniData, uniSize);
+  // Bind the descriptors.
+  constexpr auto maxDescSets = 2U;
+  std::array<VkDescriptorSet, maxDescSets> descSets;
+  std::array<uint32_t, maxDescSets> descDynamicOffsets;
+  auto descSetsCount           = 0U;
+  auto descDynamicOffsetsCount = 0U;
 
-    std::array<VkDescriptorSet, 1> descriptors = {
-        uniDescSet,
-    };
-    std::array<uint32_t, 1> descriptorOffsets = {
-        uniOffset,
-    };
-    vkCmdBindDescriptorSets(
-        m_drawVkCommandBuffer,
-        VK_PIPELINE_BIND_POINT_GRAPHICS,
-        graphic->getVkPipelineLayout(),
-        0U,
-        descriptors.size(),
-        descriptors.data(),
-        descriptorOffsets.size(),
-        descriptorOffsets.data());
+  // Bind any descriptors from the graphic itself (for example textures).
+  if (graphic->getVkDescriptorSet()) {
+    descSets[descSetsCount++] = graphic->getVkDescriptorSet();
   }
+  // Bind the provided per-draw uniform data (if any).
+  if (uniData && uniSize > 0) {
+    auto [uniDescSet, uniOffset]                  = m_uni->upload(uniData, uniSize);
+    descSets[descSetsCount++]                     = uniDescSet;
+    descDynamicOffsets[descDynamicOffsetsCount++] = uniOffset;
+  }
+  vkCmdBindDescriptorSets(
+      m_drawVkCommandBuffer,
+      VK_PIPELINE_BIND_POINT_GRAPHICS,
+      graphic->getVkPipelineLayout(),
+      0U,
+      descSetsCount,
+      descSets.data(),
+      descDynamicOffsetsCount,
+      descDynamicOffsets.data());
 
+  // Bind the vertex and index buffers.
   const auto* mesh = graphic->getMesh();
   bindVertexBuffer(m_drawVkCommandBuffer, mesh->getBuffer(), mesh->getBufferVertexOffset());
   bindIndexBuffer(m_drawVkCommandBuffer, mesh->getBuffer(), mesh->getBufferIndexOffset());
