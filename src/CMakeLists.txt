@@ -23,6 +23,7 @@ message(STATUS "Configuring gfx vulkan library")
 add_library(tria_gfx STATIC
   tria/gfx_vulkan/internal/buffer.cpp
   tria/gfx_vulkan/internal/debug_messenger.cpp
+  tria/gfx_vulkan/internal/descriptor_manager.cpp
   tria/gfx_vulkan/internal/device.cpp
   tria/gfx_vulkan/internal/graphic.cpp
   tria/gfx_vulkan/internal/image.cpp
@@ -55,8 +56,9 @@ endif()
 
 target_compile_features(tria_gfx PRIVATE cxx_std_17)
 target_include_directories(tria_gfx PUBLIC ${PROJECT_SOURCE_DIR}/include)
-target_link_libraries(tria_gfx PRIVATE tria_pal)
 target_link_libraries(tria_gfx PRIVATE tria_log)
+target_link_libraries(tria_gfx PRIVATE tria_math)
+target_link_libraries(tria_gfx PRIVATE tria_pal)
 
 # Log (logging library).
 message(STATUS "Configuring log library")

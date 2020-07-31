@@ -58,6 +58,7 @@ public:
   auto drawEnd() -> void;
 
 private:
+  log::Logger* m_logger;
   const Device* m_device;
   VkSemaphore m_imgAvailable;
   VkSemaphore m_imgFinished;

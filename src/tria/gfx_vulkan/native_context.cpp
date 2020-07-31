@@ -7,6 +7,7 @@
 #include <algorithm>
 #include <array>
 #include <cstring>
+#include <exception>
 
 namespace tria::gfx {
 
@@ -102,10 +103,19 @@ NativeContext::~NativeContext() {
   // Destroy created resources.
   m_dbgMessenger = nullptr;
 
-  // Destroy the vulkan instance.
-  vkDestroyInstance(m_vkInstance, nullptr);
+  // TODO(bastian): 'vkDestroyInstance' on some drivers can block for a very long time when trying
+  // to destroy an instance that's in an invalid state. At the moment the workaround is just to not
+  // even try to destroy the instance when we have an uncaught exception. However this can lead to
+  // resource leaks that could be prevented. Its not a very high priority issue as most likely the
+  // app will just try to gracefully exit and not try to keep running.
+  if (!std::uncaught_exception()) {
 
-  LOG_I(m_logger, "Vulkan instance destroyed");
+    vkDestroyInstance(m_vkInstance, nullptr);
+
+    LOG_I(m_logger, "Vulkan instance destroyed");
+  } else {
+    LOG_E(m_logger, "Failed to cleanup vulkan context");
+  }
 }
 
 auto NativeContext::createCanvas(const pal::Window* window, VSyncMode vSync)

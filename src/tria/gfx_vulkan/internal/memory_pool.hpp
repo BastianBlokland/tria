@@ -82,7 +82,7 @@ private:
   uint32_t m_offset;
   uint32_t m_size;
 
-  MemoryBlock(MemoryChunk* chunk, uint32_t offset, uint32_t size) :
+  MemoryBlock(MemoryChunk* chunk, uint32_t offset, uint32_t size) noexcept :
       m_chunk{chunk}, m_offset{offset}, m_size{size} {};
 };
 

@@ -1,5 +1,6 @@
 #pragma once
 #include "asset_resource.hpp"
+#include "device.hpp"
 #include "image_sampler.hpp"
 #include "transferer.hpp"
 #include "tria/asset/graphic.hpp"
@@ -9,7 +10,6 @@
 
 namespace tria::gfx::internal {
 
-class Device;
 class Mesh;
 class Texture;
 class Shader;
@@ -23,7 +23,7 @@ public:
 
   Graphic(
       log::Logger* logger,
-      const Device* device,
+      Device* device,
       const asset::Graphic* asset,
       AssetResource<Shader>* shaders,
       AssetResource<Mesh>* meshes,
@@ -44,7 +44,7 @@ public:
   [[nodiscard]] auto getMesh() const noexcept { return m_mesh; }
   [[nodiscard]] auto getVkPipeline() const noexcept { return m_vkPipeline; }
   [[nodiscard]] auto getVkPipelineLayout() const noexcept { return m_vkPipelineLayout; }
-  [[nodiscard]] auto getDescriptors() const noexcept { return m_vkDescSet; }
+  [[nodiscard]] auto getVkDescriptorSet() const noexcept { return m_descSet.getVkDescSet(); }
 
 private:
   struct TextureData final {
@@ -62,10 +62,8 @@ private:
   const Shader* m_fragShader;
   const Mesh* m_mesh;
 
+  DescriptorSet m_descSet;
   std::vector<TextureData> m_textures;
-  VkDescriptorSetLayout m_vkDescLayout;
-  VkDescriptorPool m_vkDescPool;
-  VkDescriptorSet m_vkDescSet;
 
   mutable VkPipelineLayout m_vkPipelineLayout;
   mutable VkPipeline m_vkPipeline;

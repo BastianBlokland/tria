@@ -157,20 +157,24 @@ Swapchain::Swapchain(log::Logger* logger, const Device* device, VSyncMode vSync)
 }
 
 Swapchain::~Swapchain() {
-  // Wait for all rendering to be done.
-  vkDeviceWaitIdle(m_device->getVkDevice());
+  try {
+    // Wait for all rendering to be done.
+    checkVkResult(vkDeviceWaitIdle(m_device->getVkDevice()));
 
-  for (const auto& vkImageView : m_vkImageViews) {
-    vkDestroyImageView(m_device->getVkDevice(), vkImageView, nullptr);
-  }
-  for (const auto& vkFramebuffer : m_vkFramebuffers) {
-    vkDestroyFramebuffer(m_device->getVkDevice(), vkFramebuffer, nullptr);
-  }
-  if (m_vkSwapchain) {
-    vkDestroySwapchainKHR(m_device->getVkDevice(), m_vkSwapchain, nullptr);
-  }
+    for (const auto& vkImageView : m_vkImageViews) {
+      vkDestroyImageView(m_device->getVkDevice(), vkImageView, nullptr);
+    }
+    for (const auto& vkFramebuffer : m_vkFramebuffers) {
+      vkDestroyFramebuffer(m_device->getVkDevice(), vkFramebuffer, nullptr);
+    }
+    if (m_vkSwapchain) {
+      vkDestroySwapchainKHR(m_device->getVkDevice(), m_vkSwapchain, nullptr);
+    }
+    LOG_D(m_logger, "Vulkan swapchain destroyed");
 
-  LOG_D(m_logger, "Vulkan swapchain destroyed");
+  } catch (...) {
+    LOG_E(m_logger, "Failed to cleanup vulkan swapchain");
+  }
 }
 
 auto Swapchain::getVkFramebuffer(uint32_t imageIndex) const -> const VkFramebuffer& {
