@@ -1,4 +1,5 @@
 #include "uniform_container.hpp"
+#include "debug_utils.hpp"
 #include "tria/gfx/err/gfx_err.hpp"
 #include "utils.hpp"
 #include <cassert>
@@ -60,6 +61,9 @@ auto UniformContainer::upload(const void* data, size_t size)
   auto descSet = m_device->getDescManager().allocate(m_descInfo);
   auto buffer =
       Buffer{m_device, g_uniformBufferSize, MemoryLocation::Host, BufferUsage::HostUniformData};
+
+  DBG_BUFFER_NAME(m_device, buffer.getVkBuffer(), "uniform_container");
+
   descSet.bindUniformBufferDynamic(0U, buffer, g_maxUniformDataSize);
   m_sets.emplace_back(std::move(descSet), std::move(buffer), paddedSize);
 

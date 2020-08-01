@@ -1,4 +1,5 @@
 #include "shader.hpp"
+#include "debug_utils.hpp"
 #include "device.hpp"
 #include "utils.hpp"
 #include <cassert>
@@ -25,6 +26,7 @@ Shader::Shader(log::Logger* logger, const Device* device, const asset::Shader* a
   assert(asset);
 
   m_vkModule = createShaderModule(m_device->getVkDevice(), *asset);
+  DBG_SHADER_NAME(m_device, m_vkModule, asset->getId());
 
   LOG_D(m_logger, "Vulkan shader module created", {"asset", asset->getId()});
 }

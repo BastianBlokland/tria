@@ -15,14 +15,22 @@ using namespace internal;
 
 namespace {
 
-constexpr std::array<const char*, 1> validationLayers = {
+constexpr std::array<const char*, 1> g_validationLayers = {
     "VK_LAYER_KHRONOS_validation",
 };
+
+PFN_vkSetDebugUtilsObjectNameEXT g_funcSetDebugUtilsObjectName = nullptr;
+
+[[maybe_unused]] auto initDebugUtilsExtention(VkInstance vkInstance) -> void {
+  // Load debug extension function pointers.
+  g_funcSetDebugUtilsObjectName = reinterpret_cast<PFN_vkSetDebugUtilsObjectNameEXT>(
+      vkGetInstanceProcAddr(vkInstance, "vkSetDebugUtilsObjectNameEXT"));
+}
 
 [[maybe_unused]] auto checkValidationLayersSupport(const std::vector<VkLayerProperties>& available)
     -> bool {
   // Check if all validation layers are present in the list of available layers.
-  for (const auto* required : validationLayers) {
+  for (const auto* required : g_validationLayers) {
     if (!std::any_of(available.begin(), available.end(), [required](const VkLayerProperties& l) {
           return std::strcmp(required, l.layerName) == 0;
         })) {
@@ -68,8 +76,8 @@ auto makeVkInstance(const std::string appName, bool enableValidation) -> VkInsta
   createInfo.enabledExtensionCount   = reqInstanceExts.size();
   createInfo.ppEnabledExtensionNames = reqInstanceExts.data();
   if (enableValidation) {
-    createInfo.enabledLayerCount   = validationLayers.size();
-    createInfo.ppEnabledLayerNames = validationLayers.data();
+    createInfo.enabledLayerCount   = g_validationLayers.size();
+    createInfo.ppEnabledLayerNames = g_validationLayers.data();
   }
 
   VkInstance result;
@@ -95,6 +103,7 @@ NativeContext::NativeContext(log::Logger* logger) :
   LOG_I(m_logger, "Vulkan instance created", {"validation", enableValidationlayers});
 
   if (enableValidationlayers) {
+    initDebugUtilsExtention(m_vkInstance);
     m_dbgMessenger = std::make_unique<DebugMessenger>(m_logger, m_vkInstance, false);
   }
 }
@@ -121,6 +130,19 @@ NativeContext::~NativeContext() {
 auto NativeContext::createCanvas(const pal::Window* window, VSyncMode vSync)
     -> std::unique_ptr<NativeCanvas> {
   return std::make_unique<NativeCanvas>(m_logger, this, window, vSync);
+}
+
+auto NativeContext::setDebugName(
+    VkDevice vkDevice, VkObjectType vkType, uint64_t vkHandle, std::string_view name) const noexcept
+    -> void {
+  if (g_funcSetDebugUtilsObjectName) {
+    VkDebugUtilsObjectNameInfoEXT nameInfo = {};
+    nameInfo.sType                         = VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT;
+    nameInfo.objectType                    = vkType;
+    nameInfo.objectHandle                  = vkHandle;
+    nameInfo.pObjectName                   = name.data();
+    g_funcSetDebugUtilsObjectName(vkDevice, &nameInfo);
+  }
 }
 
 } // namespace tria::gfx

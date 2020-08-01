@@ -7,7 +7,11 @@
 #include <vector>
 #include <vulkan/vulkan.h>
 
-namespace tria::gfx::internal {
+namespace tria::gfx {
+
+class NativeContext;
+
+namespace internal {
 
 /* Abstraction of a graphics device and a surface (window) to render to.
  * Reason why the device is combined with the surface is that you might want / need different device
@@ -22,7 +26,7 @@ class Device final {
 public:
   Device(
       log::Logger* logger,
-      VkInstance vkInstance,
+      const NativeContext* context,
       VkPhysicalDevice vkPhysicalDevice,
       const pal::Window* window);
   Device(const Device& rhs)     = delete;
@@ -39,6 +43,9 @@ public:
   [[nodiscard]] auto getLimits() const noexcept -> const VkPhysicalDeviceLimits& {
     return m_properties.limits;
   }
+  [[nodiscard]] auto getMemProperties() const noexcept -> const VkPhysicalDeviceMemoryProperties& {
+    return m_memProperties;
+  }
 
   [[nodiscard]] auto getVkGraphicsQueue() const noexcept { return m_graphicsQueue; }
   [[nodiscard]] auto getVkGraphicsQueueIdx() const noexcept { return m_graphicsQueueIdx; }
@@ -53,9 +60,12 @@ public:
 
   [[nodiscard]] auto queryVkSurfaceCapabilities() const -> VkSurfaceCapabilitiesKHR;
 
+  auto setDebugName(VkObjectType vkType, uint64_t vkHandle, std::string_view name) const noexcept
+      -> void;
+
 private:
   log::Logger* m_logger;
-  VkInstance m_vkInstance;
+  const NativeContext* m_context;
   VkPhysicalDevice m_vkPhysicalDevice;
   VkPhysicalDeviceProperties m_properties;
   VkPhysicalDeviceFeatures m_features;
@@ -81,7 +91,10 @@ using DeviceUnique = std::unique_ptr<Device>;
 /* Construct a device that is capable of rendering to the given window.
  * Note: returns null if no suitable device is found.
  */
-[[nodiscard]] auto getDevice(log::Logger* logger, VkInstance vkInstance, const pal::Window* window)
+[[nodiscard]] auto
+getDevice(log::Logger* logger, const NativeContext* context, const pal::Window* window)
     -> DeviceUnique;
 
-} // namespace tria::gfx::internal
+} // namespace internal
+
+} // namespace tria::gfx

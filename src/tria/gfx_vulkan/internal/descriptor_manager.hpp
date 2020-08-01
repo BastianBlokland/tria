@@ -10,6 +10,7 @@ namespace tria::gfx::internal {
 // TODO(bastian): Needs testing to what number of sets per VkDescriptorPool makes sense.
 constexpr auto g_descriptorSetsPerGroup = 6;
 
+class Device;
 class Image;
 class ImageSampler;
 class Buffer;
@@ -113,7 +114,7 @@ private:
 class DescriptorGroup final {
 public:
   DescriptorGroup() = delete;
-  DescriptorGroup(log::Logger* logger, VkDevice vkDevice, DescriptorInfo info);
+  DescriptorGroup(log::Logger* logger, const Device* device, DescriptorInfo info, uint32_t groupId);
   DescriptorGroup(const DescriptorGroup& rhs) = delete;
   DescriptorGroup(DescriptorGroup&& rhs)      = delete;
   ~DescriptorGroup();
@@ -157,8 +158,9 @@ public:
 
 private:
   tria::log::Logger* m_logger;
-  VkDevice m_vkDevice;
+  const Device* m_device;
   DescriptorInfo m_info;
+  uint32_t m_groupId;
   VkDescriptorPool m_vkPool;
   VkDescriptorSetLayout m_vkLayout;
   std::array<VkDescriptorSet, g_descriptorSetsPerGroup> m_sets;
@@ -170,8 +172,8 @@ private:
  */
 class DescriptorManager final {
 public:
-  DescriptorManager(log::Logger* logger, VkDevice vkDevice) :
-      m_logger{logger}, m_vkDevice{vkDevice} {}
+  DescriptorManager(log::Logger* logger, const Device* device) :
+      m_logger{logger}, m_device{device}, m_groupIdCounter{0U} {}
   DescriptorManager(const DescriptorManager& rhs)     = delete;
   DescriptorManager(DescriptorManager&& rhs) noexcept = delete;
   ~DescriptorManager()                                = default;
@@ -189,7 +191,8 @@ public:
 
 private:
   log::Logger* m_logger;
-  VkDevice m_vkDevice;
+  const Device* m_device;
+  uint32_t m_groupIdCounter;
   std::forward_list<DescriptorGroup> m_groups;
 };
 

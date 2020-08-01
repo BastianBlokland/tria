@@ -1,5 +1,6 @@
 #include "descriptor_manager.hpp"
 #include "buffer.hpp"
+#include "debug_utils.hpp"
 #include "image.hpp"
 #include "image_sampler.hpp"
 #include "tria/math/utils.hpp"
@@ -11,7 +12,7 @@ namespace tria::gfx::internal {
 
 namespace {
 
-[[nodiscard]] auto createVkDescriptorSetLayout(VkDevice vkDevice, const DescriptorInfo& info)
+[[nodiscard]] auto createVkDescriptorSetLayout(const Device* device, const DescriptorInfo& info)
     -> VkDescriptorSetLayout {
 
   std::vector<VkDescriptorSetLayoutBinding> bindings;
@@ -57,11 +58,11 @@ namespace {
   layoutInfo.pBindings                       = bindings.data();
 
   VkDescriptorSetLayout result;
-  checkVkResult(vkCreateDescriptorSetLayout(vkDevice, &layoutInfo, nullptr, &result));
+  checkVkResult(vkCreateDescriptorSetLayout(device->getVkDevice(), &layoutInfo, nullptr, &result));
   return result;
 }
 
-[[nodiscard]] auto createVkDescriptorPool(VkDevice vkDevice, const DescriptorInfo& info)
+[[nodiscard]] auto createVkDescriptorPool(const Device* device, const DescriptorInfo& info)
     -> VkDescriptorPool {
   constexpr auto maxDescPoolSizes = 3U;
 
@@ -94,13 +95,13 @@ namespace {
   poolInfo.maxSets                    = g_descriptorSetsPerGroup;
 
   VkDescriptorPool result;
-  checkVkResult(vkCreateDescriptorPool(vkDevice, &poolInfo, nullptr, &result));
+  checkVkResult(vkCreateDescriptorPool(device->getVkDevice(), &poolInfo, nullptr, &result));
   return result;
 }
 
 template <unsigned int Count>
 auto allocVkDescriptorSets(
-    VkDevice vkDevice,
+    const Device* device,
     const VkDescriptorPool pool,
     const VkDescriptorSetLayout layout,
     std::array<VkDescriptorSet, Count>& output) -> void {
@@ -117,7 +118,7 @@ auto allocVkDescriptorSets(
   allocInfo.descriptorSetCount          = Count;
   allocInfo.pSetLayouts                 = layouts.data();
 
-  checkVkResult(vkAllocateDescriptorSets(vkDevice, &allocInfo, output.data()));
+  checkVkResult(vkAllocateDescriptorSets(device->getVkDevice(), &allocInfo, output.data()));
 }
 
 } // namespace
@@ -153,14 +154,24 @@ auto DescriptorSet::bindUniformBufferDynamic(
   m_group->bindUniformBufferDynamic(this, binding, buffer, maxSize);
 }
 
-DescriptorGroup::DescriptorGroup(log::Logger* logger, VkDevice vkDevice, DescriptorInfo info) :
-    m_logger{logger}, m_vkDevice{vkDevice}, m_info{info} {
+DescriptorGroup::DescriptorGroup(
+    log::Logger* logger, const Device* device, DescriptorInfo info, uint32_t groupId) :
+    m_logger{logger}, m_device{device}, m_info{info}, m_groupId{groupId} {
 
-  m_vkPool   = createVkDescriptorPool(vkDevice, m_info);
-  m_vkLayout = createVkDescriptorSetLayout(vkDevice, m_info);
+  m_vkPool   = createVkDescriptorPool(device, m_info);
+  m_vkLayout = createVkDescriptorSetLayout(device, m_info);
+
+  DBG_DESCPOOL_NAME(device, m_vkPool, "descgroup_" + std::to_string(groupId));
+  DBG_DESCLAYOUT_NAME(device, m_vkLayout, "descgroup_" + std::to_string(groupId));
 
   // Preallocate all the descriptor sets.
-  allocVkDescriptorSets<g_descriptorSetsPerGroup>(m_vkDevice, m_vkPool, m_vkLayout, m_sets);
+  allocVkDescriptorSets<g_descriptorSetsPerGroup>(device, m_vkPool, m_vkLayout, m_sets);
+
+  // Give a debug name to all the sets (turns into no-op in non-debug mode).
+  for (auto i = 0U; i != g_descriptorSetsPerGroup; ++i) {
+    DBG_DESCSET_NAME(
+        device, m_sets[i], "descgroup_" + std::to_string(groupId) + "_set_" + std::to_string(i));
+  }
 
   // Mark the allocated sets as 'free'.
   m_free = 0U;
@@ -171,6 +182,7 @@ DescriptorGroup::DescriptorGroup(log::Logger* logger, VkDevice vkDevice, Descrip
   LOG_I(
       m_logger,
       "Vulkan descriptor group allocated",
+      {"id", m_groupId},
       {"setCount", g_descriptorSetsPerGroup},
       {"setImgCount", info.getImageCount()},
       {"setUniformBuffCount", info.getUniformBufferCount()},
@@ -185,10 +197,10 @@ DescriptorGroup::~DescriptorGroup() {
   }
 #endif
 
-  vkDestroyDescriptorPool(m_vkDevice, m_vkPool, nullptr);
-  vkDestroyDescriptorSetLayout(m_vkDevice, m_vkLayout, nullptr);
+  vkDestroyDescriptorPool(m_device->getVkDevice(), m_vkPool, nullptr);
+  vkDestroyDescriptorSetLayout(m_device->getVkDevice(), m_vkLayout, nullptr);
 
-  LOG_I(m_logger, "Vulkan descriptor group freed");
+  LOG_I(m_logger, "Vulkan descriptor group freed", {"id", m_groupId});
 }
 
 auto DescriptorGroup::allocate() noexcept -> std::optional<DescriptorSet> {
@@ -221,7 +233,7 @@ auto DescriptorGroup::bindImage(
   descriptorWrite.descriptorCount      = 1U;
   descriptorWrite.pImageInfo           = &imgInfo;
 
-  vkUpdateDescriptorSets(m_vkDevice, 1U, &descriptorWrite, 0U, nullptr);
+  vkUpdateDescriptorSets(m_device->getVkDevice(), 1U, &descriptorWrite, 0U, nullptr);
 }
 
 auto DescriptorGroup::bindUniformBuffer(DescriptorSet* set, uint32_t binding, const Buffer& buffer)
@@ -245,7 +257,7 @@ auto DescriptorGroup::bindUniformBuffer(DescriptorSet* set, uint32_t binding, co
   descriptorWrite.descriptorCount      = 1U;
   descriptorWrite.pBufferInfo          = &bufferInfo;
 
-  vkUpdateDescriptorSets(m_vkDevice, 1U, &descriptorWrite, 0U, nullptr);
+  vkUpdateDescriptorSets(m_device->getVkDevice(), 1U, &descriptorWrite, 0U, nullptr);
 }
 
 auto DescriptorGroup::bindUniformBufferDynamic(
@@ -269,7 +281,7 @@ auto DescriptorGroup::bindUniformBufferDynamic(
   descriptorWrite.descriptorCount      = 1U;
   descriptorWrite.pBufferInfo          = &bufferInfo;
 
-  vkUpdateDescriptorSets(m_vkDevice, 1U, &descriptorWrite, 0U, nullptr);
+  vkUpdateDescriptorSets(m_device->getVkDevice(), 1U, &descriptorWrite, 0U, nullptr);
 }
 
 auto DescriptorGroup::free(DescriptorSet* set) noexcept -> void {
@@ -295,7 +307,7 @@ auto DescriptorManager::getVkLayout(const DescriptorInfo& info) -> VkDescriptorS
   }
 
   // If no group has the same descriptor-info then create a new group.
-  m_groups.emplace_front(m_logger, m_vkDevice, info);
+  m_groups.emplace_front(m_logger, m_device, info, m_groupIdCounter++);
   return m_groups.front().getVkLayout();
 }
 
@@ -316,7 +328,7 @@ auto DescriptorManager::allocate(const DescriptorInfo& info) -> DescriptorSet {
   }
 
   // If no existing group has space then greate a new group.
-  m_groups.emplace_front(m_logger, m_vkDevice, info);
+  m_groups.emplace_front(m_logger, m_device, info, m_groupIdCounter++);
 
   // Allocate from the new group.
   return *m_groups.front().allocate();

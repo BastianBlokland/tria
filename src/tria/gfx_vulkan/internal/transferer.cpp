@@ -1,4 +1,5 @@
 #include "transferer.hpp"
+#include "debug_utils.hpp"
 #include "utils.hpp"
 
 namespace tria::gfx::internal {
@@ -78,7 +79,7 @@ auto Transferer::queueTransfer(const void* data, const Buffer& dst, size_t dstOf
   assert(dst.getLocation() == MemoryLocation::Device);
 
   // Upload the data to a transfer buffer.
-  const auto reqAlignment = m_deviceLimits.optimalBufferCopyOffsetAlignment;
+  const auto reqAlignment = m_device->getLimits().optimalBufferCopyOffsetAlignment;
   const auto src          = getTransferSpace(size, reqAlignment);
   assert(src.second + size < src.first.getSize());
   src.first.upload(data, size, src.second);
@@ -92,7 +93,7 @@ auto Transferer::queueTransfer(const void* data, const Image& dst) -> void {
   // Upload the data to a transfer buffer.
   const auto size         = dst.getDataSize();
   const auto reqAlignment = std::max<size_t>(
-      getVkFormatSize(dst.getVkFormat()), m_deviceLimits.optimalBufferCopyOffsetAlignment);
+      getVkFormatSize(dst.getVkFormat()), m_device->getLimits().optimalBufferCopyOffsetAlignment);
   const auto src = getTransferSpace(size, reqAlignment);
   assert(src.second + size < src.first.getSize());
   src.first.upload(data, size, src.second);
@@ -161,9 +162,10 @@ auto Transferer::getTransferSpace(size_t size, size_t alignment) -> std::pair<Bu
 
   // If no transfer buffers has enough space then create a new one.
   const auto newBuffSize = size > g_minTransferBufferSize ? size : g_minTransferBufferSize;
-  m_transferBuffers.emplace_front(
-      Buffer{m_device, newBuffSize, MemoryLocation::Host, BufferUsage::HostTransfer},
-      static_cast<uint32_t>(size));
+  auto newBuffer = Buffer{m_device, newBuffSize, MemoryLocation::Host, BufferUsage::HostTransfer};
+  DBG_BUFFER_NAME(m_device, newBuffer.getVkBuffer(), "transferer");
+
+  m_transferBuffers.emplace_front(std::move(newBuffer), static_cast<uint32_t>(size));
 
   LOG_D(m_logger, "Vulkan transfer buffer created", {"size", log::MemSize{newBuffSize}});
 

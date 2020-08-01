@@ -1,4 +1,6 @@
 #include "device.hpp"
+#include "../native_context.hpp"
+#include "debug_utils.hpp"
 #include "tria/gfx/err/gfx_err.hpp"
 #include "tria/pal/native.hpp"
 #include "utils.hpp"
@@ -13,7 +15,7 @@ namespace tria::gfx::internal {
 
 namespace {
 
-constexpr std::array<const char*, 1> requiredDeviceExtensions = {
+constexpr std::array<const char*, 1> g_requiredDeviceExtensions = {
     VK_KHR_SWAPCHAIN_EXTENSION_NAME,
 };
 
@@ -106,8 +108,8 @@ createVkDevice(VkPhysicalDevice vkPhysicalDevice, std::set<uint32_t> queueFamili
   createInfo.sType                   = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
   createInfo.pQueueCreateInfos       = queueCreateInfos.data();
   createInfo.queueCreateInfoCount    = queueCreateInfos.size();
-  createInfo.enabledExtensionCount   = requiredDeviceExtensions.size();
-  createInfo.ppEnabledExtensionNames = requiredDeviceExtensions.data();
+  createInfo.enabledExtensionCount   = g_requiredDeviceExtensions.size();
+  createInfo.ppEnabledExtensionNames = g_requiredDeviceExtensions.data();
   createInfo.pEnabledFeatures        = &deviceFeatures;
 
   VkDevice result;
@@ -131,10 +133,10 @@ createVkDevice(VkPhysicalDevice vkPhysicalDevice, std::set<uint32_t> queueFamili
 
 Device::Device(
     log::Logger* logger,
-    VkInstance vkInstance,
+    const NativeContext* context,
     VkPhysicalDevice vkPhysicalDevice,
     const pal::Window* window) :
-    m_logger{logger}, m_vkInstance{vkInstance}, m_vkPhysicalDevice{vkPhysicalDevice} {
+    m_logger{logger}, m_context{context}, m_vkPhysicalDevice{vkPhysicalDevice} {
 
   // Query supported properties and supported features.
   vkGetPhysicalDeviceProperties(m_vkPhysicalDevice, &m_properties);
@@ -142,7 +144,7 @@ Device::Device(
   vkGetPhysicalDeviceMemoryProperties(vkPhysicalDevice, &m_memProperties);
 
   // Create a vulkan surface targetting the given window.
-  m_vkSurface = createVkSurfaceKhr(vkInstance, window);
+  m_vkSurface = createVkSurfaceKhr(m_context->getVkInstance(), window);
 
   // Find a format to use for the vkSurface.
   try {
@@ -153,7 +155,7 @@ Device::Device(
       throw err::GfxErr{"Selected vulkan device is missing a suitable surface format"};
     }
   } catch (...) {
-    vkDestroySurfaceKHR(m_vkInstance, m_vkSurface, nullptr);
+    vkDestroySurfaceKHR(m_context->getVkInstance(), m_vkSurface, nullptr);
     throw;
   }
 
@@ -182,11 +184,16 @@ Device::Device(
   m_graphicsVkCommandPool = createVkCommandPool(m_vkDevice, m_graphicsQueueIdx);
 
   // Create a global memory pool to allocate from.
-  m_memory =
-      std::make_unique<MemoryPool>(m_logger, m_vkDevice, m_memProperties, m_properties.limits);
+  m_memory = std::make_unique<MemoryPool>(m_logger, this);
 
   // Create a global pool to allocate descriptors from.
-  m_descManager = std::make_unique<DescriptorManager>(m_logger, m_vkDevice);
+  m_descManager = std::make_unique<DescriptorManager>(m_logger, this);
+
+  DBG_PHYSDEVICE_NAME(this, m_vkPhysicalDevice, "gpu");
+  DBG_DEVICE_NAME(this, m_vkDevice, "gpu");
+  DBG_QUEUE_NAME(this, m_graphicsQueue, "graphics");
+  DBG_QUEUE_NAME(this, m_presentQueue, "present");
+  DBG_COMMANDPOOL_NAME(this, m_graphicsVkCommandPool, "graphics");
 
   LOG_I(
       m_logger,
@@ -208,7 +215,7 @@ Device::~Device() {
     m_descManager = nullptr;
     vkDestroyCommandPool(m_vkDevice, m_graphicsVkCommandPool, nullptr);
     vkDestroyDevice(m_vkDevice, nullptr);
-    vkDestroySurfaceKHR(m_vkInstance, m_vkSurface, nullptr);
+    vkDestroySurfaceKHR(m_context->getVkInstance(), m_vkSurface, nullptr);
 
   } catch (...) {
     LOG_E(m_logger, "Failed to cleanup vulkan device");
@@ -222,13 +229,19 @@ auto Device::queryVkSurfaceCapabilities() const -> VkSurfaceCapabilitiesKHR {
   return result;
 }
 
-[[nodiscard]] auto getDevice(log::Logger* logger, VkInstance vkInstance, const pal::Window* window)
+auto Device::setDebugName(VkObjectType vkType, uint64_t vkHandle, std::string_view name) const
+    noexcept -> void {
+  m_context->setDebugName(m_vkDevice, vkType, vkHandle, name);
+}
+
+[[nodiscard]] auto
+getDevice(log::Logger* logger, const NativeContext* context, const pal::Window* window)
     -> DeviceUnique {
 
   // List of devices sorted by score.
   auto devices = std::multimap<unsigned int, VkPhysicalDevice>{};
 
-  for (const auto& vkPhysicalDevice : getVkPhysicalDevices(vkInstance)) {
+  for (const auto& vkPhysicalDevice : getVkPhysicalDevices(context->getVkInstance())) {
     VkPhysicalDeviceProperties properties;
     vkGetPhysicalDeviceProperties(vkPhysicalDevice, &properties);
 
@@ -236,7 +249,7 @@ auto Device::queryVkSurfaceCapabilities() const -> VkSurfaceCapabilitiesKHR {
 
     auto deviceIsSuitable = true;
     // Check if the device supports all the extensions we want.
-    for (const auto& required : requiredDeviceExtensions) {
+    for (const auto& required : g_requiredDeviceExtensions) {
       if (!std::any_of(
               availableExts.begin(),
               availableExts.end(),
@@ -269,7 +282,7 @@ auto Device::queryVkSurfaceCapabilities() const -> VkSurfaceCapabilitiesKHR {
   // Select the device with the highest score.
   return devices.empty()
       ? nullptr
-      : std::make_unique<Device>(logger, vkInstance, devices.rbegin()->second, window);
+      : std::make_unique<Device>(logger, context, devices.rbegin()->second, window);
 }
 
 } // namespace tria::gfx::internal

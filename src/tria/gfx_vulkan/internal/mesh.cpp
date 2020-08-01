@@ -1,4 +1,5 @@
 #include "mesh.hpp"
+#include "debug_utils.hpp"
 #include "utils.hpp"
 #include <cassert>
 
@@ -14,11 +15,11 @@ Mesh::Mesh(log::Logger* logger, Device* device, const asset::Mesh* asset) :
   m_indexDataSize   = sizeof(IndexType) * m_asset->getIndexCount();
   m_indexDataOffset = m_vertexDataSize + padToAlignment(m_vertexDataSize, sizeof(IndexType));
 
-  m_buffer = Buffer{
-      device,
-      m_indexDataOffset + m_indexDataSize,
-      MemoryLocation::Device,
-      BufferUsage::DeviceVertexAndIndexData};
+  m_buffer = Buffer{device,
+                    m_indexDataOffset + m_indexDataSize,
+                    MemoryLocation::Device,
+                    BufferUsage::DeviceVertexAndIndexData};
+  DBG_BUFFER_NAME(device, m_buffer.getVkBuffer(), asset->getId());
 
   LOG_D(
       logger,

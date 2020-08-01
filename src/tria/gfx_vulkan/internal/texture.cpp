@@ -1,4 +1,5 @@
 #include "texture.hpp"
+#include "debug_utils.hpp"
 #include "utils.hpp"
 #include <cassert>
 
@@ -14,6 +15,9 @@ Texture::Texture(log::Logger* logger, Device* device, const asset::Texture* asse
   assert(getVkFormatSize(vkFormat) == sizeof(asset::Pixel));
   assert(getVkFormatChannelCount(vkFormat) == 4U);
   m_image = Image{device, m_asset->getSize(), vkFormat};
+
+  DBG_IMG_NAME(device, m_image.getVkImage(), asset->getId());
+  DBG_IMGVIEW_NAME(device, m_image.getVkImageView(), asset->getId());
 
   LOG_D(
       logger,
