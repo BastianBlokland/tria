@@ -9,6 +9,7 @@
 
 namespace tria::gfx::internal {
 
+class Device;
 class MemoryChunk;
 
 enum class MemoryLocation {
@@ -94,12 +95,12 @@ public:
   MemoryChunk() = delete;
   MemoryChunk(
       log::Logger* logger,
-      VkDevice vkDevice,
+      const Device* device,
       MemoryLocation loc,
       MemoryAccessType accessType,
       uint32_t memoryType,
       uint32_t size,
-      uint32_t flushAlignment);
+      uint32_t chunkId);
   MemoryChunk(const MemoryChunk& rhs) = delete;
   MemoryChunk(MemoryChunk&& rhs)      = delete;
   ~MemoryChunk();
@@ -110,7 +111,7 @@ public:
   [[nodiscard]] auto getLocation() const noexcept { return m_loc; }
   [[nodiscard]] auto getMemType() const noexcept { return m_memType; }
   [[nodiscard]] auto getMemAccessType() const noexcept { return m_accessType; }
-  [[nodiscard]] auto getVkDevice() const noexcept { return m_vkDevice; }
+  [[nodiscard]] auto getDevice() const noexcept { return m_device; }
   [[nodiscard]] auto getVkMemory() const noexcept { return m_vkMemory; }
   [[nodiscard]] auto getMappedPtr() const noexcept { return m_map; }
 
@@ -131,12 +132,12 @@ public:
 
 private:
   log::Logger* m_logger;
-  VkDevice m_vkDevice;
+  const Device* m_device;
   MemoryLocation m_loc;
   MemoryAccessType m_accessType;
   uint32_t m_memType;
   uint32_t m_size;
-  uint32_t m_flushAlignment; // Alignment that must be respected when flushing mapped memory.
+  uint32_t m_chunkId;
   VkDeviceMemory m_vkMemory;
   std::vector<MemoryBlock> m_freeBlocks;
   char* m_map;
@@ -150,15 +151,8 @@ private:
  */
 class MemoryPool final {
 public:
-  MemoryPool(
-      log::Logger* logger,
-      VkDevice vkDevice,
-      const VkPhysicalDeviceMemoryProperties& deviceMemProperties,
-      const VkPhysicalDeviceLimits& deviceLimits) :
-      m_logger{logger},
-      m_vkDevice{vkDevice},
-      m_deviceMemProperties{deviceMemProperties},
-      m_deviceLimits{deviceLimits} {}
+  MemoryPool(log::Logger* logger, const Device* device) :
+      m_logger{logger}, m_device{device}, m_chunkIdCounter{0U} {}
   MemoryPool(const MemoryPool& rhs) = delete;
   MemoryPool(MemoryPool&& rhs)      = delete;
   ~MemoryPool()                     = default;
@@ -185,9 +179,8 @@ public:
 
 private:
   log::Logger* m_logger;
-  VkDevice m_vkDevice;
-  const VkPhysicalDeviceMemoryProperties& m_deviceMemProperties;
-  const VkPhysicalDeviceLimits& m_deviceLimits;
+  const Device* m_device;
+  uint32_t m_chunkIdCounter;
   std::forward_list<MemoryChunk> m_chunks;
 
   [[nodiscard]] auto getMemoryType(VkMemoryPropertyFlags properties, uint32_t allowedMemTypes)

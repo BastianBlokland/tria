@@ -19,7 +19,7 @@ class Device;
  */
 class Renderer final {
 public:
-  Renderer(log::Logger* logger, Device* device, const VkPhysicalDeviceLimits& deviceLimits);
+  Renderer(log::Logger* logger, Device* device);
   Renderer(const Renderer& rhs)     = delete;
   Renderer(Renderer&& rhs) noexcept = delete;
   ~Renderer();

@@ -1,4 +1,6 @@
 #include "memory_pool.hpp"
+#include "debug_utils.hpp"
+#include "device.hpp"
 #include "tria/gfx/err/gfx_err.hpp"
 #include "utils.hpp"
 #include <cassert>
@@ -20,7 +22,7 @@ constexpr auto g_chunkInitialFreeBlocksCapacity = 128U;
   }
 }
 
-[[nodiscard]] auto allocVkMemory(VkDevice vkDevice, uint32_t size, uint32_t memoryType)
+[[nodiscard]] auto allocVkMemory(const Device* device, uint32_t size, uint32_t memoryType)
     -> VkDeviceMemory {
   VkMemoryAllocateInfo allocInfo = {};
   allocInfo.sType                = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
@@ -28,13 +30,13 @@ constexpr auto g_chunkInitialFreeBlocksCapacity = 128U;
   allocInfo.memoryTypeIndex      = memoryType;
 
   VkDeviceMemory result;
-  checkVkResult(vkAllocateMemory(vkDevice, &allocInfo, nullptr, &result));
+  checkVkResult(vkAllocateMemory(device->getVkDevice(), &allocInfo, nullptr, &result));
   return result;
 };
 
-[[nodiscard]] auto mapVkMemory(VkDevice vkDevice, VkDeviceMemory vkMemory) -> char* {
+[[nodiscard]] auto mapVkMemory(const Device* device, VkDeviceMemory vkMemory) -> char* {
   void* map;
-  checkVkResult(vkMapMemory(vkDevice, vkMemory, 0, VK_WHOLE_SIZE, 0, &map));
+  checkVkResult(vkMapMemory(device->getVkDevice(), vkMemory, 0, VK_WHOLE_SIZE, 0, &map));
   return static_cast<char*>(map);
 }
 
@@ -74,13 +76,14 @@ MemoryBlock::~MemoryBlock() {
 
 auto MemoryBlock::bindToBuffer(VkBuffer buffer) -> void {
   assert(m_chunk);
-  checkVkResult(
-      vkBindBufferMemory(m_chunk->getVkDevice(), buffer, m_chunk->getVkMemory(), m_offset));
+  checkVkResult(vkBindBufferMemory(
+      m_chunk->getDevice()->getVkDevice(), buffer, m_chunk->getVkMemory(), m_offset));
 }
 
 auto MemoryBlock::bindToImage(VkImage image) -> void {
   assert(m_chunk);
-  checkVkResult(vkBindImageMemory(m_chunk->getVkDevice(), image, m_chunk->getVkMemory(), m_offset));
+  checkVkResult(vkBindImageMemory(
+      m_chunk->getDevice()->getVkDevice(), image, m_chunk->getVkMemory(), m_offset));
 }
 
 auto MemoryBlock::getMappedPtr() const noexcept -> char* {
@@ -96,22 +99,24 @@ auto MemoryBlock::flush() -> void {
 
 MemoryChunk::MemoryChunk(
     log::Logger* logger,
-    VkDevice vkDevice,
+    const Device* device,
     MemoryLocation loc,
     MemoryAccessType accessType,
     uint32_t memoryType,
     uint32_t size,
-    uint32_t flushAlignment) :
+    uint32_t chunkId) :
     m_logger{logger},
-    m_vkDevice{vkDevice},
+    m_device{device},
     m_loc{loc},
     m_accessType{accessType},
     m_memType{memoryType},
     m_size{size},
-    m_flushAlignment{flushAlignment} {
+    m_chunkId{chunkId} {
 
   // Allocate backing memory from Vulkan.
-  m_vkMemory = allocVkMemory(vkDevice, size, m_memType);
+  m_vkMemory = allocVkMemory(device, size, m_memType);
+
+  DBG_MEM_NAME(m_device, m_vkMemory, "memorychunk_" + std::to_string(chunkId));
 
   // Start with a single free block spanning the whole size.
   m_freeBlocks.reserve(g_chunkInitialFreeBlocksCapacity);
@@ -121,16 +126,16 @@ MemoryChunk::MemoryChunk(
   assert(getOccupiedSize() == 0U);
 
   // For host memory we map the range so we can write into it.
-  m_map = loc == MemoryLocation::Host ? mapVkMemory(m_vkDevice, m_vkMemory) : nullptr;
+  m_map = loc == MemoryLocation::Host ? mapVkMemory(m_device, m_vkMemory) : nullptr;
 
   LOG_I(
       m_logger,
       "Vulkan memory chunk allocated",
+      {"id", m_chunkId},
       {"location", getName(m_loc)},
       {"accessType", getName(m_accessType)},
       {"type", m_memType},
-      {"size", log::MemSize{size}},
-      {"flushAlignment", log::MemSize{m_flushAlignment}});
+      {"size", log::MemSize{size}});
 }
 
 MemoryChunk::~MemoryChunk() {
@@ -139,13 +144,14 @@ MemoryChunk::~MemoryChunk() {
   assert(getOccupiedSize() == 0);
 
   if (m_loc == MemoryLocation::Host) {
-    vkUnmapMemory(m_vkDevice, m_vkMemory);
+    vkUnmapMemory(m_device->getVkDevice(), m_vkMemory);
   }
-  vkFreeMemory(m_vkDevice, m_vkMemory, nullptr);
+  vkFreeMemory(m_device->getVkDevice(), m_vkMemory, nullptr);
 
   LOG_I(
       m_logger,
       "Vulkan memory chunk freed",
+      {"id", m_chunkId},
       {"location", getName(m_loc)},
       {"accessType", getName(m_accessType)},
       {"type", m_memType});
@@ -239,12 +245,14 @@ auto MemoryChunk::free(MemoryBlock* block) noexcept -> void {
 auto MemoryChunk::flush(uint32_t offset, uint32_t size) -> void {
   assert(m_map); // Only mapped memory can be flushed.
 
+  const auto flushAlignment = static_cast<uint32_t>(m_device->getLimits().nonCoherentAtomSize);
+
   // Align the offset to be a multiple of 'flushAlignment'.
-  auto alignedOffset = offset / m_flushAlignment * m_flushAlignment;
-  assert(offset >= alignedOffset && offset - alignedOffset < m_flushAlignment);
+  auto alignedOffset = offset / flushAlignment * flushAlignment;
+  assert(offset >= alignedOffset && offset - alignedOffset < flushAlignment);
 
   // Pad the size to be aligned (or until the end of the chunk).
-  auto paddedSize = size + padToAlignment(size, m_flushAlignment);
+  auto paddedSize = size + padToAlignment(size, flushAlignment);
   if (offset + paddedSize > m_size) {
     paddedSize = m_size - offset;
   }
@@ -254,7 +262,7 @@ auto MemoryChunk::flush(uint32_t offset, uint32_t size) -> void {
   mappedMemoryRange.memory              = m_vkMemory;
   mappedMemoryRange.offset              = alignedOffset;
   mappedMemoryRange.size                = paddedSize;
-  checkVkResult(vkFlushMappedMemoryRanges(m_vkDevice, 1, &mappedMemoryRange));
+  checkVkResult(vkFlushMappedMemoryRanges(m_device->getVkDevice(), 1, &mappedMemoryRange));
 }
 
 auto MemoryChunk::getFreeSize() const noexcept -> uint32_t {
@@ -298,13 +306,7 @@ auto MemoryPool::allocate(
   const auto newChunkSize    = size > g_minChunkSize ? size : g_minChunkSize;
   const auto newChunkMemType = getMemoryType(getVkMemoryProperties(location), supportedMemoryTypes);
   m_chunks.emplace_front(
-      m_logger,
-      m_vkDevice,
-      location,
-      accessType,
-      newChunkMemType,
-      newChunkSize,
-      static_cast<uint32_t>(m_deviceLimits.nonCoherentAtomSize));
+      m_logger, m_device, location, accessType, newChunkMemType, newChunkSize, m_chunkIdCounter++);
 
   // Allocate from the new chunk.
   return *m_chunks.front().allocate(alignment, size);
@@ -314,10 +316,10 @@ auto MemoryPool::getMemoryType(VkMemoryPropertyFlags properties, uint32_t allowe
     -> uint32_t {
   // Find a memory-type that is allowed from the 'allowedMemTypes' bit-mask and that satisfies the
   // requested properties.
-  for (uint32_t i = 0; i < m_deviceMemProperties.memoryTypeCount; i++) {
+  for (uint32_t i = 0; i < m_device->getMemProperties().memoryTypeCount; i++) {
     const auto isAllowed = allowedMemTypes & (1U << i);
     const auto hasProperties =
-        (m_deviceMemProperties.memoryTypes[i].propertyFlags & properties) == properties;
+        (m_device->getMemProperties().memoryTypes[i].propertyFlags & properties) == properties;
     if (isAllowed && hasProperties) {
       return i;
     }

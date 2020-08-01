@@ -1,4 +1,5 @@
 #include "renderer.hpp"
+#include "debug_utils.hpp"
 #include "device.hpp"
 #include "mesh.hpp"
 #include "utils.hpp"
@@ -140,19 +141,26 @@ auto bindIndexBuffer(VkCommandBuffer vkCommandBuffer, const Buffer& buffer, size
 
 } // namespace
 
-Renderer::Renderer(
-    log::Logger* logger, Device* device, const VkPhysicalDeviceLimits& deviceLimits) :
-    m_logger{logger}, m_device{device} {
+Renderer::Renderer(log::Logger* logger, Device* device) : m_logger{logger}, m_device{device} {
   if (!m_device) {
     throw std::invalid_argument{"Device cannot be null"};
   }
 
-  m_imgAvailable        = createVkSemaphore(device->getVkDevice());
-  m_imgFinished         = createVkSemaphore(device->getVkDevice());
-  m_renderDone          = createVkFence(device->getVkDevice(), true);
-  m_transferer          = std::make_unique<Transferer>(logger, device, deviceLimits);
+  m_imgAvailable = createVkSemaphore(device->getVkDevice());
+  DBG_SEMPAHORE_NAME(m_device, m_imgAvailable, "image_available");
+
+  m_imgFinished = createVkSemaphore(device->getVkDevice());
+  DBG_SEMPAHORE_NAME(m_device, m_imgFinished, "image_finished");
+
+  m_renderDone = createVkFence(device->getVkDevice(), true);
+  DBG_FENCE_NAME(m_device, m_renderDone, "render_done");
+
+  m_transferer          = std::make_unique<Transferer>(logger, device);
   m_uni                 = std::make_unique<UniformContainer>(logger, device);
   m_gfxVkCommandBuffers = createGfxVkCommandBuffers<2>(device);
+
+  DBG_COMMANDBUFFER_NAME(m_device, m_transferVkCommandBuffer, "transfer");
+  DBG_COMMANDBUFFER_NAME(m_device, m_drawVkCommandBuffer, "draw");
 }
 
 Renderer::~Renderer() {

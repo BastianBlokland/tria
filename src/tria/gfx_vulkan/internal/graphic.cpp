@@ -1,4 +1,5 @@
 #include "graphic.hpp"
+#include "debug_utils.hpp"
 #include "device.hpp"
 #include "mesh.hpp"
 #include "shader.hpp"
@@ -160,6 +161,8 @@ Graphic::Graphic(
   for (auto itr = m_asset->getTextureBegin(); itr != m_asset->getTextureEnd(); ++itr) {
     const auto* tex = textures->get(*itr);
     auto sampler    = ImageSampler{device};
+    DBG_SAMPLER_NAME(m_device, sampler.getVkSampler(), m_asset->getId());
+
     m_descSet.bindImage(dstBinding++, tex->getImage(), sampler);
     m_textures.emplace_back(tex, std::move(sampler));
   }
@@ -196,6 +199,9 @@ auto Graphic::prepareResources(
         m_vertShader,
         m_fragShader,
         m_mesh);
+
+    DBG_PIPELINELAYOUT_NAME(m_device, m_vkPipelineLayout, m_asset->getId());
+    DBG_PIPELINE_NAME(m_device, m_vkPipeline, m_asset->getId());
 
     LOG_D(
         m_logger,

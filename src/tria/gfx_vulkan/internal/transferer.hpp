@@ -17,8 +17,7 @@ namespace tria::gfx::internal {
  */
 class Transferer final {
 public:
-  Transferer(log::Logger* logger, Device* device, const VkPhysicalDeviceLimits& deviceLimits) :
-      m_logger{logger}, m_device{device}, m_deviceLimits{deviceLimits} {}
+  Transferer(log::Logger* logger, Device* device) : m_logger{logger}, m_device{device} {}
   Transferer(const Transferer& rhs)     = delete;
   Transferer(Transferer&& rhs) noexcept = delete;
   ~Transferer()                         = default;
@@ -70,7 +69,6 @@ private:
 
   log::Logger* m_logger;
   Device* m_device;
-  const VkPhysicalDeviceLimits& m_deviceLimits;
   std::forward_list<std::pair<Buffer, uint32_t>> m_transferBuffers;
   std::vector<BufferWork> m_bufferWork;
   std::vector<ImageWork> m_imageWork;

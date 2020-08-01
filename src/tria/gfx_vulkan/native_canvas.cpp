@@ -74,7 +74,7 @@ NativeCanvas::NativeCanvas(
   assert(m_context);
   assert(m_window);
 
-  m_device = getDevice(m_logger, m_context->getVkInstance(), window);
+  m_device = getDevice(m_logger, m_context, window);
   if (!m_device) {
     throw err::GfxErr{"No device found with vulkan support"};
   }
@@ -89,7 +89,7 @@ NativeCanvas::NativeCanvas(
   m_swapchain = std::make_unique<Swapchain>(logger, m_device.get(), vSync);
 
   for (auto i = 0U; i != m_renderers.size(); ++i) {
-    m_renderers[i] = std::make_unique<Renderer>(m_logger, m_device.get(), m_device->getLimits());
+    m_renderers[i] = std::make_unique<Renderer>(m_logger, m_device.get());
   }
 }
 

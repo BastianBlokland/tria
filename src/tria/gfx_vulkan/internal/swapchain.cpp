@@ -1,4 +1,5 @@
 #include "swapchain.hpp"
+#include "debug_utils.hpp"
 #include "device.hpp"
 #include "utils.hpp"
 #include <array>
@@ -288,15 +289,26 @@ auto Swapchain::initSwapchain(VkRenderPass vkRenderPass) -> bool {
       createVkSwapchain(m_device, m_vkSwapchain, m_imgCount, m_extent, transform, presentMode);
   m_vkImages = getSwapchainVkImages(m_device->getVkDevice(), m_vkSwapchain);
 
+  DBG_SWAPCHAIN_NAME(m_device, m_vkSwapchain, "swapchain");
+
   // Create an imageview for every swapchain image.
-  for (const auto& vkImage : m_vkImages) {
-    m_vkImageViews.push_back(createSurfaceImageView(m_device, vkImage));
+  for (auto i = 0U; i != m_vkImages.size(); ++i) {
+    auto imgView = createSurfaceImageView(m_device, m_vkImages[i]);
+
+    DBG_IMG_NAME(m_device, m_vkImages[i], "swapchain_" + std::to_string(i));
+    DBG_IMGVIEW_NAME(m_device, imgView, "swapchain_" + std::to_string(i));
+
+    m_vkImageViews.push_back(imgView);
   }
 
   // Create a framebuffer for every swapchain image-view.
-  for (const auto& vkImageView : m_vkImageViews) {
-    m_vkFramebuffers.push_back(
-        createSurfaceFramebuffer(m_device, vkRenderPass, vkImageView, m_extent));
+  for (auto i = 0U; i != m_vkImages.size(); ++i) {
+    auto frameBuffer =
+        createSurfaceFramebuffer(m_device, vkRenderPass, m_vkImageViews[i], m_extent);
+
+    DBG_FRAMEBUFFER_NAME(m_device, frameBuffer, "swapchain_" + std::to_string(i));
+
+    m_vkFramebuffers.push_back(frameBuffer);
   }
 
   LOG_D(

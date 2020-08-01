@@ -27,6 +27,10 @@ public:
   [[nodiscard]] auto createCanvas(const pal::Window* window, VSyncMode vSync)
       -> std::unique_ptr<NativeCanvas>;
 
+  auto setDebugName(
+      VkDevice vkDevice, VkObjectType vkType, uint64_t vkHandle, std::string_view name) const
+      noexcept -> void;
+
 private:
   log::Logger* m_logger;
   std::string m_appName;
