@@ -5,24 +5,29 @@
 
 namespace tria::gfx::internal {
 
+enum class SamplerFilterMode : uint8_t {
+  Nearest = 0,
+  Linear  = 1,
+};
+
 /*
- * Handle to a image resource on the gpu.
+ * Handle to a sampler resource on the gpu.
  */
-class ImageSampler final {
+class Sampler final {
 public:
-  ImageSampler() = default;
-  ImageSampler(const Device* device);
-  ImageSampler(const ImageSampler& rhs) = delete;
-  ImageSampler(ImageSampler&& rhs) noexcept {
+  Sampler() = default;
+  Sampler(const Device* device, SamplerFilterMode filterMode);
+  Sampler(const Sampler& rhs) = delete;
+  Sampler(Sampler&& rhs) noexcept {
     m_device        = rhs.m_device;
     m_vkSampler     = rhs.m_vkSampler;
     rhs.m_vkSampler = nullptr;
   }
-  ~ImageSampler();
+  ~Sampler();
 
-  auto operator=(const ImageSampler& rhs) -> ImageSampler& = delete;
+  auto operator=(const Sampler& rhs) -> Sampler& = delete;
 
-  auto operator=(ImageSampler&& rhs) noexcept -> ImageSampler& {
+  auto operator=(Sampler&& rhs) noexcept -> Sampler& {
     m_device        = rhs.m_device;
     m_vkSampler     = rhs.m_vkSampler;
     rhs.m_vkSampler = nullptr;

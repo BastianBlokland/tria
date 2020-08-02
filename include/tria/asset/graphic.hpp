@@ -8,6 +8,30 @@
 namespace tria::asset {
 
 /*
+ * Contains a reference to a texture and sample settings.
+ */
+class TextureSampler final {
+public:
+  enum class FilterMode : uint8_t {
+    Nearest = 0,
+    Linear  = 1,
+  };
+
+  TextureSampler() = delete;
+  TextureSampler(const Texture* texture, FilterMode filterMode) :
+      m_texture{texture}, m_filterMode{filterMode} {
+    assert(texture);
+  }
+
+  [[nodiscard]] auto getTexture() const noexcept { return m_texture; }
+  [[nodiscard]] auto getFilterMode() const noexcept { return m_filterMode; }
+
+private:
+  const Texture* m_texture;
+  FilterMode m_filterMode;
+};
+
+/*
  * Asset containing data needed for a drawing graphic.
  */
 class Graphic final : public Asset {
@@ -17,12 +41,12 @@ public:
       const Shader* vertShader,
       const Shader* fragShader,
       const Mesh* mesh,
-      std::vector<const Texture*> textures) :
+      std::vector<TextureSampler> samplers) :
       Asset{std::move(id), getKind()},
       m_vertShader{vertShader},
       m_fragShader{fragShader},
       m_mesh{mesh},
-      m_textures{std::move(textures)} {
+      m_samplers{std::move(samplers)} {
     assert(m_vertShader);
     assert(m_fragShader);
     assert(m_mesh);
@@ -40,19 +64,19 @@ public:
   [[nodiscard]] auto getFragShader() const noexcept { return m_fragShader; }
   [[nodiscard]] auto getMesh() const noexcept { return m_mesh; }
 
-  [[nodiscard]] auto getTextureCount() const noexcept { return m_textures.size(); }
-  [[nodiscard]] auto getTextureBegin() const noexcept -> const Texture* const* {
-    return m_textures.data();
+  [[nodiscard]] auto getSamplerCount() const noexcept { return m_samplers.size(); }
+  [[nodiscard]] auto getSamplerBegin() const noexcept -> const TextureSampler* {
+    return m_samplers.data();
   }
-  [[nodiscard]] auto getTextureEnd() const noexcept -> const Texture* const* {
-    return m_textures.data() + m_textures.size();
+  [[nodiscard]] auto getSamplerEnd() const noexcept -> const TextureSampler* {
+    return m_samplers.data() + m_samplers.size();
   }
 
 private:
   const Shader* m_vertShader;
   const Shader* m_fragShader;
   const Mesh* m_mesh;
-  std::vector<const Texture*> m_textures;
+  std::vector<TextureSampler> m_samplers;
 };
 
 } // namespace tria::asset
