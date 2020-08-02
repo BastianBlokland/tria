@@ -163,7 +163,7 @@ Graphic::Graphic(
     const auto* tex = textures->get(itr->getTexture());
 
     const auto filterMode = static_cast<SamplerFilterMode>(itr->getFilterMode());
-    auto sampler          = Sampler{device, filterMode};
+    auto sampler          = Sampler{device, filterMode, tex->getImage().getMipLevels()};
     DBG_SAMPLER_NAME(m_device, sampler.getVkSampler(), m_asset->getId());
 
     m_descSet.bindImage(dstBinding++, tex->getImage(), sampler);

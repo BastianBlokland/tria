@@ -16,7 +16,7 @@ enum class SamplerFilterMode : uint8_t {
 class Sampler final {
 public:
   Sampler() = default;
-  Sampler(const Device* device, SamplerFilterMode filterMode);
+  Sampler(const Device* device, SamplerFilterMode filterMode, uint32_t mipLevels);
   Sampler(const Sampler& rhs) = delete;
   Sampler(Sampler&& rhs) noexcept {
     m_device        = rhs.m_device;
