@@ -15,7 +15,9 @@ namespace tria::math {
  */
 template <typename T>
 class PodVector final {
-  static_assert(std::is_pod<T>::value, "Type has to be plain-old-data");
+  static_assert(std::is_trivially_destructible_v<T>, "Type has to be trivially destructible");
+  static_assert(std::is_trivially_copyable_v<T>, "Type has to be trivially copyable");
+  static_assert(std::is_standard_layout_v<T>, "Type has to have a standard-layout");
 
   constexpr static auto s_minCapacity = 8U;
 

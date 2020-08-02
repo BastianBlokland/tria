@@ -11,10 +11,12 @@ namespace tria::math {
 template <typename Type, size_t Size>
 class Vec final {
   static_assert(std::is_arithmetic_v<Type>, "Type has to be arithmetic");
-  static_assert(std::is_pod<Type>::value, "Type has to be plain-old-data");
+  static_assert(std::is_trivially_destructible_v<Type>, "Type has to be trivially destructible");
+  static_assert(std::is_trivially_copyable_v<Type>, "Type has to be trivially copyable");
+  static_assert(std::is_standard_layout_v<Type>, "Type has to have a standard-layout");
 
 public:
-  constexpr Vec() noexcept = default;
+  constexpr Vec() noexcept : m_comps{} {}
 
   template <typename OtherType>
   constexpr Vec(const Vec<OtherType, Size>& rhs) noexcept {
