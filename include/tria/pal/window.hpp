@@ -53,6 +53,14 @@ public:
    */
   [[nodiscard]] auto getSize() const noexcept -> WindowSize;
 
+  /* Get the aspect ratio of the window (width / height).
+   * Note: Can return NaN if window size is 0 (can happen while minimized).
+   */
+  [[nodiscard]] auto getAspect() const noexcept -> float {
+    const auto size = getSize();
+    return static_cast<float>(size.x()) / static_cast<float>(size.y());
+  }
+
   /* Get the current fullscreen mode.
    */
   [[nodiscard]] auto getFullscreenMode() const noexcept -> FullscreenMode;

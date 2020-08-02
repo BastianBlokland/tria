@@ -30,7 +30,15 @@ public:
 
   [[nodiscard]] constexpr static auto getKind() -> AssetKind { return AssetKind::Texture; }
 
+  /* Get the size in pixels of the texture.
+   */
   [[nodiscard]] auto getSize() const noexcept { return m_size; }
+
+  /* Get the aspect ratio of the texture (width / height).
+   */
+  [[nodiscard]] auto getAspect() const noexcept -> float {
+    return static_cast<float>(m_size.x()) / static_cast<float>(m_size.y());
+  }
 
   [[nodiscard]] auto getPixelCount() const noexcept { return m_pixels.size(); }
   [[nodiscard]] auto getPixelBegin() const noexcept -> const Pixel* { return m_pixels.data(); }
