@@ -184,7 +184,9 @@ TEST_CASE("[asset] - Texture Portable Pixmap", "[asset]") {
           dir / "test.ppm",
           "P6 2 2 255\n"
           "\xFF\x1\x1"
-          "\x1\xFF\x1");
+          "\x1\xFF\x1"
+          "\x1\x1\x1"
+          "\x1\x1\x1");
 
       auto db     = Database{nullptr, dir};
       auto* tex   = db.get("test.ppm")->downcast<Texture>();
@@ -192,7 +194,7 @@ TEST_CASE("[asset] - Texture Portable Pixmap", "[asset]") {
       CHECK(tex->getSize() == TextureSize{2, 2});
       CHECK(
           pixels ==
-          std::vector<Pixel>{{255, 1, 1, 255}, {1, 255, 1, 255}, {0, 0, 0, 255}, {0, 0, 0, 255}});
+          std::vector<Pixel>{{255, 1, 1, 255}, {1, 255, 1, 255}, {1, 1, 1, 255}, {1, 1, 1, 255}});
     });
   }
 

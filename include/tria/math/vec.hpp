@@ -11,9 +11,10 @@ namespace tria::math {
 template <typename Type, size_t Size>
 class Vec final {
   static_assert(std::is_arithmetic_v<Type>, "Type has to be arithmetic");
+  static_assert(std::is_pod<Type>::value, "Type has to be plain-old-data");
 
 public:
-  constexpr Vec() noexcept : m_comps{} {}
+  constexpr Vec() noexcept = default;
 
   template <typename OtherType>
   constexpr Vec(const Vec<OtherType, Size>& rhs) noexcept {

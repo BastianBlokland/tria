@@ -1,9 +1,9 @@
 #pragma once
 #include "tria/asset/asset.hpp"
+#include "tria/math/pod_vector.hpp"
 #include "tria/math/vec.hpp"
 #include <cassert>
 #include <cstdint>
-#include <vector>
 
 namespace tria::asset {
 
@@ -16,7 +16,7 @@ using Pixel       = math::Vec<uint8_t, 4>;
  */
 class Texture final : public Asset {
 public:
-  Texture(AssetId id, TextureSize size, std::vector<Pixel> pixels) :
+  Texture(AssetId id, TextureSize size, math::PodVector<Pixel> pixels) :
       Asset{std::move(id), getKind()}, m_size{size}, m_pixels{std::move(pixels)} {
     assert(m_pixels.size() == static_cast<size_t>(size.x() * size.y()));
     assert(m_pixels.size() > 0);
@@ -41,14 +41,12 @@ public:
   }
 
   [[nodiscard]] auto getPixelCount() const noexcept { return m_pixels.size(); }
-  [[nodiscard]] auto getPixelBegin() const noexcept -> const Pixel* { return m_pixels.data(); }
-  [[nodiscard]] auto getPixelEnd() const noexcept -> const Pixel* {
-    return m_pixels.data() + m_pixels.size();
-  }
+  [[nodiscard]] auto getPixelBegin() const noexcept { return m_pixels.begin(); }
+  [[nodiscard]] auto getPixelEnd() const noexcept { return m_pixels.end(); }
 
 private:
   TextureSize m_size;
-  std::vector<Pixel> m_pixels;
+  math::PodVector<Pixel> m_pixels;
 };
 
 } // namespace tria::asset

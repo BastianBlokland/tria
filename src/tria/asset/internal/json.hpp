@@ -1,6 +1,6 @@
 #pragma once
 #include "simdjson.h"
-#include <vector>
+#include "tria/math/pod_vector.hpp"
 
 namespace tria::asset::internal {
 
@@ -12,6 +12,6 @@ using JsonParseResult = simdjson::simdjson_result<simdjson::dom::element>;
  * Safe to be called concurrently but results should not be shared among threads.
  * Note: Input buffer has to be padded with x bytes, current DatabaseImpl provides that guarantee.
  */
-[[nodiscard]] auto parseJson(const std::vector<char>& raw) noexcept -> JsonParseResult;
+[[nodiscard]] auto parseJson(const math::RawData& raw) noexcept -> JsonParseResult;
 
 } // namespace tria::asset::internal

@@ -3,6 +3,8 @@
 
 namespace tria::asset::internal {
 
+using RawData = math::RawData;
+
 auto loadGraphic(log::Logger*, DatabaseImpl*, AssetId, const fs::path&, RawData) -> AssetUnique;
 auto loadMeshObj(log::Logger*, DatabaseImpl*, AssetId, const fs::path&, RawData) -> AssetUnique;
 auto loadTexturePpm(log::Logger*, DatabaseImpl*, AssetId, const fs::path&, RawData) -> AssetUnique;

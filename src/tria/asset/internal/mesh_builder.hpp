@@ -14,7 +14,7 @@ namespace tria::asset::internal {
  */
 class MeshBuilder final {
 public:
-  MeshBuilder(std::vector<Vertex>* verticesOut, std::vector<IndexType>* indicesOut) :
+  MeshBuilder(math::PodVector<Vertex>* verticesOut, math::PodVector<IndexType>* indicesOut) :
       m_verticesOut{verticesOut}, m_indicesOut{indicesOut} {
     assert(m_verticesOut);
     assert(m_indicesOut);
@@ -35,8 +35,8 @@ public:
   }
 
 private:
-  std::vector<Vertex>* m_verticesOut;
-  std::vector<IndexType>* m_indicesOut;
+  math::PodVector<Vertex>* m_verticesOut;
+  math::PodVector<IndexType>* m_indicesOut;
   std::unordered_map<Vertex, IndexType> m_uniqueVertices;
 };
 

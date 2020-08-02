@@ -27,7 +27,7 @@ auto withTempDir(TestFunc func) {
     auto* assetPtr = asset;                                                                        \
     REQUIRE(assetPtr->getKind() == AssetKind::Raw);                                                \
     auto contentStr = std::string(                                                                 \
-        assetPtr->downcast<RawAsset>()->getData(), assetPtr->downcast<RawAsset>()->getSize());     \
+        assetPtr->downcast<RawAsset>()->getBegin(), assetPtr->downcast<RawAsset>()->getSize());    \
     auto expectedStr = std::string{expected};                                                      \
     CHECK(contentStr == expectedStr);                                                              \
   } while (false)

@@ -27,10 +27,13 @@ public:
 } // namespace
 
 auto loadMeshObj(
-    log::Logger* logger, DatabaseImpl* /*unused*/, AssetId id, const fs::path& path, RawData raw)
-    -> AssetUnique {
+    log::Logger* logger,
+    DatabaseImpl* /*unused*/,
+    AssetId id,
+    const fs::path& path,
+    math::RawData raw) -> AssetUnique {
 
-  auto input     = IMemStream{raw.data(), raw.size()};
+  auto input     = IMemStream{raw.begin(), raw.size()};
   auto attrib    = tinyobj::attrib_t{};
   auto shapes    = std::vector<tinyobj::shape_t>{};
   auto materials = std::vector<tinyobj::material_t>{};
@@ -48,27 +51,24 @@ auto loadMeshObj(
     throw err::AssetLoadErr{path, "No shape found in obj"};
   }
 
-  auto vertices    = std::vector<Vertex>{};
-  auto indices     = std::vector<IndexType>{};
+  auto vertices    = math::PodVector<Vertex>{};
+  auto indices     = math::PodVector<IndexType>{};
   auto meshBuilder = MeshBuilder{&vertices, &indices};
 
   for (const auto& shape : shapes) {
     for (const auto& index : shape.mesh.indices) {
-      auto pos = math::Vec3f{
-          attrib.vertices[index.vertex_index * 3 + 0],
-          attrib.vertices[index.vertex_index * 3 + 1],
-          attrib.vertices[index.vertex_index * 3 + 2]};
-      auto col = math::Color{
-          attrib.colors[index.vertex_index * 3 + 0],
-          attrib.colors[index.vertex_index * 3 + 1],
-          attrib.colors[index.vertex_index * 3 + 2],
-          1.0f};
+      auto pos = math::Vec3f{attrib.vertices[index.vertex_index * 3 + 0],
+                             attrib.vertices[index.vertex_index * 3 + 1],
+                             attrib.vertices[index.vertex_index * 3 + 2]};
+      auto col = math::Color{attrib.colors[index.vertex_index * 3 + 0],
+                             attrib.colors[index.vertex_index * 3 + 1],
+                             attrib.colors[index.vertex_index * 3 + 2],
+                             1.0f};
 
       auto texcoord = index.texcoord_index < 0
           ? math::Vec2f{}
-          : math::Vec2f{
-                attrib.texcoords[index.texcoord_index * 2 + 0],
-                1.0f - attrib.texcoords[index.texcoord_index * 2 + 1]};
+          : math::Vec2f{attrib.texcoords[index.texcoord_index * 2 + 0],
+                        1.0f - attrib.texcoords[index.texcoord_index * 2 + 1]};
       meshBuilder.pushVertex(Vertex{pos, col, texcoord});
     }
   }

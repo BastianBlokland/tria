@@ -1,6 +1,6 @@
 #pragma once
 #include "tria/asset/asset.hpp"
-#include <vector>
+#include "tria/math/pod_vector.hpp"
 
 namespace tria::asset {
 
@@ -9,7 +9,7 @@ namespace tria::asset {
  */
 class RawAsset final : public Asset {
 public:
-  RawAsset(AssetId id, std::vector<char> data) :
+  RawAsset(AssetId id, math::RawData data) :
       Asset{std::move(id), getKind()}, m_data{std::move(data)} {}
   RawAsset(const RawAsset& rhs) = delete;
   RawAsset(RawAsset&& rhs)      = delete;
@@ -21,10 +21,11 @@ public:
   [[nodiscard]] constexpr static auto getKind() -> AssetKind { return AssetKind::Raw; }
 
   [[nodiscard]] auto getSize() const noexcept { return m_data.size(); }
-  [[nodiscard]] auto getData() const noexcept -> const char* { return m_data.data(); }
+  [[nodiscard]] auto getBegin() const noexcept { return m_data.begin(); }
+  [[nodiscard]] auto getEnd() const noexcept { return m_data.end(); }
 
 private:
-  std::vector<char> m_data;
+  math::RawData m_data;
 };
 
 } // namespace tria::asset

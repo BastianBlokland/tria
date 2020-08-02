@@ -24,7 +24,7 @@ using TexFilterMode = TextureSampler::FilterMode;
 } // namespace
 
 auto loadGraphic(
-    log::Logger* /*unused*/, DatabaseImpl* db, AssetId id, const fs::path& path, RawData raw)
+    log::Logger* /*unused*/, DatabaseImpl* db, AssetId id, const fs::path& path, math::RawData raw)
     -> AssetUnique {
 
   simdjson::dom::object obj;

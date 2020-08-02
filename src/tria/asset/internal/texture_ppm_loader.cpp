@@ -126,8 +126,8 @@ private:
 }
 
 [[nodiscard]] auto readPixelsAscii(Reader& reader, unsigned int count) noexcept
-    -> std::vector<Pixel> {
-  auto result = std::vector<Pixel>(count);
+    -> math::PodVector<Pixel> {
+  auto result = math::PodVector<Pixel>(count);
   for (auto i = 0U; i != count; ++i) {
     reader.consumeWhitespaceOrComment();
     result[i].r() = reader.consumeInt();
@@ -141,14 +141,14 @@ private:
 }
 
 [[nodiscard]] auto readPixelsBinary(Reader& reader, unsigned int count) noexcept
-    -> std::vector<Pixel> {
+    -> math::PodVector<Pixel> {
 
   // A single character should separate the header and the data.
   // Note: this means you cannot use a windows style line-ending between the header and data, but a
   // space would work fine.
   reader.consumeChar();
 
-  auto result = std::vector<Pixel>(count);
+  auto result = math::PodVector<Pixel>(count);
   for (auto i = 0U; i != count; ++i) {
     result[i].r() = reader.consumeChar();
     result[i].g() = reader.consumeChar();
@@ -165,9 +165,9 @@ auto loadTexturePpm(
     DatabaseImpl* /*unused*/,
     AssetId id,
     const fs::path& path,
-    RawData raw) -> AssetUnique {
+    math::RawData raw) -> AssetUnique {
 
-  auto reader = Reader{raw.data(), raw.data() + raw.size()};
+  auto reader = Reader{raw.begin(), raw.end()};
   auto header = readHeader(reader);
 
   if (header.type == PixmapType::Unknown) {
@@ -188,6 +188,9 @@ auto loadTexturePpm(
   auto pixels     = header.type == PixmapType::Ascii ? readPixelsAscii(reader, pixelCount)
                                                  : readPixelsBinary(reader, pixelCount);
 
+  if (pixels.size() < pixelCount) {
+    throw err::AssetLoadErr{path, "Not enough pixel data in file for specified amount of pixels"};
+  }
   return std::make_unique<Texture>(std::move(id), size, std::move(pixels));
 }
 

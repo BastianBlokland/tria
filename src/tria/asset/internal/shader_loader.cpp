@@ -31,7 +31,7 @@ auto loadShader(
     DatabaseImpl* /*unused*/,
     AssetId id,
     const fs::path& path,
-    RawData raw) -> AssetUnique {
+    math::RawData raw) -> AssetUnique {
 
   auto shaderKind = getShaderKind(path);
   if (!shaderKind) {

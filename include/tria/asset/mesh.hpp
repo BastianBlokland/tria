@@ -1,7 +1,7 @@
 #pragma once
 #include "tria/asset/asset.hpp"
+#include "tria/math/pod_vector.hpp"
 #include "tria/math/vec.hpp"
-#include <vector>
 
 namespace tria::asset {
 
@@ -15,6 +15,7 @@ struct Vertex final {
   math::Color color;
   math::Vec2f texcoord;
 
+  constexpr Vertex() noexcept = default;
   constexpr Vertex(math::Vec3f position, math::Color color, math::Vec2f texcoord) :
       position{position}, color{color}, texcoord{texcoord} {}
 
@@ -33,7 +34,7 @@ struct Vertex final {
  */
 class Mesh final : public Asset {
 public:
-  Mesh(AssetId id, std::vector<Vertex> vertices, std::vector<IndexType> indices) :
+  Mesh(AssetId id, math::PodVector<Vertex> vertices, math::PodVector<IndexType> indices) :
       Asset{std::move(id), getKind()},
       m_vertices{std::move(vertices)},
       m_indices{std::move(indices)} {}
@@ -47,20 +48,16 @@ public:
   [[nodiscard]] constexpr static auto getKind() -> AssetKind { return AssetKind::Mesh; }
 
   [[nodiscard]] auto getVertexCount() const noexcept { return m_vertices.size(); }
-  [[nodiscard]] auto getVertexBegin() const noexcept -> const Vertex* { return m_vertices.data(); }
-  [[nodiscard]] auto getVertexEnd() const noexcept -> const Vertex* {
-    return m_vertices.data() + m_vertices.size();
-  }
+  [[nodiscard]] auto getVertexBegin() const noexcept { return m_vertices.begin(); }
+  [[nodiscard]] auto getVertexEnd() const noexcept { return m_vertices.end(); }
 
   [[nodiscard]] auto getIndexCount() const noexcept { return m_indices.size(); }
-  [[nodiscard]] auto getIndexBegin() const noexcept -> const IndexType* { return m_indices.data(); }
-  [[nodiscard]] auto getIndexEnd() const noexcept -> const IndexType* {
-    return m_indices.data() + m_indices.size();
-  }
+  [[nodiscard]] auto getIndexBegin() const noexcept { return m_indices.begin(); }
+  [[nodiscard]] auto getIndexEnd() const noexcept { return m_indices.end(); }
 
 private:
-  std::vector<Vertex> m_vertices;
-  std::vector<IndexType> m_indices;
+  math::PodVector<Vertex> m_vertices;
+  math::PodVector<IndexType> m_indices;
 };
 
 } // namespace tria::asset

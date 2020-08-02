@@ -4,12 +4,12 @@
 #include "tria/asset/err/asset_load_err.hpp"
 #include <cassert>
 #include <chrono>
+#include <cstring>
 #include <fstream>
 
 namespace tria::asset {
 
-using RawData = std::vector<char>;
-using Clock   = std::chrono::high_resolution_clock;
+using Clock = std::chrono::high_resolution_clock;
 
 namespace {
 
@@ -20,7 +20,7 @@ constexpr size_t g_fileBufferPadding = 32;
 // Maximum file size we support, guard against allocating huge amounts of memory.
 constexpr size_t g_maxFileSize = 512 * 1024 * 1024;
 
-auto loadRaw(const fs::path& path) -> RawData {
+auto loadRaw(const fs::path& path) -> math::RawData {
   if (!fs::is_regular_file(path)) {
     throw err::AssetLoadErr(path, "Path is not a file");
   }
@@ -35,12 +35,15 @@ auto loadRaw(const fs::path& path) -> RawData {
   if (static_cast<size_t>(fileSize) > g_maxFileSize) {
     throw err::AssetLoadErr(path, "File too big");
   }
-  auto buffer = std::vector<char>(static_cast<size_t>(fileSize) + g_fileBufferPadding);
+  auto buffer = math::RawData{static_cast<size_t>(fileSize) + g_fileBufferPadding};
   file.seekg(0);
-  file.read(buffer.data(), fileSize);
+  file.read(buffer.begin(), fileSize);
   file.close();
-  // Make the buffer size match the actual file size, note: this will not remove the zero padding we
-  // added after the file.
+
+  // Zero initialize the padding area.
+  std::memset(buffer.end() - g_fileBufferPadding, 0, g_fileBufferPadding);
+
+  // Make the buffer size match the actual file size.
   buffer.resize(fileSize);
   return buffer;
 }

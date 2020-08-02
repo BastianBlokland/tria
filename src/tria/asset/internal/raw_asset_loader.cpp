@@ -8,7 +8,7 @@ auto loadRawAsset(
     DatabaseImpl* /*unused*/,
     AssetId id,
     const fs::path& /*unused*/,
-    RawData raw) -> AssetUnique {
+    math::RawData raw) -> AssetUnique {
 
   return std::make_unique<RawAsset>(std::move(id), std::move(raw));
 }

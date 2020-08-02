@@ -12,7 +12,7 @@ namespace {
   VkShaderModuleCreateInfo createInfo = {};
   createInfo.sType                    = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
   createInfo.codeSize                 = asset.getSize();
-  createInfo.pCode                    = reinterpret_cast<const uint32_t*>(asset.getData());
+  createInfo.pCode                    = reinterpret_cast<const uint32_t*>(asset.getBegin());
   VkShaderModule result;
   checkVkResult(vkCreateShaderModule(vkDevice, &createInfo, nullptr, &result));
   return result;

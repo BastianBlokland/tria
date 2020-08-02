@@ -1,6 +1,6 @@
 #pragma once
 #include "tria/asset/asset.hpp"
-#include <vector>
+#include "tria/math/pod_vector.hpp"
 
 namespace tria::asset {
 
@@ -15,7 +15,7 @@ enum class ShaderKind : uint8_t {
  */
 class Shader final : public Asset {
 public:
-  Shader(AssetId id, ShaderKind shaderKind, std::vector<char> data) :
+  Shader(AssetId id, ShaderKind shaderKind, math::RawData data) :
       Asset{std::move(id), getKind()}, m_shaderKind{shaderKind}, m_data{std::move(data)} {}
   Shader(const Shader& rhs) = delete;
   Shader(Shader&& rhs)      = delete;
@@ -29,11 +29,12 @@ public:
   [[nodiscard]] auto getShaderKind() const noexcept { return m_shaderKind; }
 
   [[nodiscard]] auto getSize() const noexcept { return m_data.size(); }
-  [[nodiscard]] auto getData() const noexcept -> const char* { return m_data.data(); }
+  [[nodiscard]] auto getBegin() const noexcept { return m_data.begin(); }
+  [[nodiscard]] auto getEnd() const noexcept { return m_data.end(); }
 
 private:
   ShaderKind m_shaderKind;
-  std::vector<char> m_data;
+  math::RawData m_data;
 };
 
 } // namespace tria::asset
