@@ -1,2 +1,6 @@
 # Use unix line-ending for all text files.
 * text eol=lf
+
+# Treat ppm files as binary (don't touch the line-ending), even though it has an ascii mode (P3) its
+# dangerous to change line-endings for the binary version (P6).
+*.ppm binary
