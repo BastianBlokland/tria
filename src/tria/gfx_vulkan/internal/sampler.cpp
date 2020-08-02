@@ -4,7 +4,8 @@ namespace tria::gfx::internal {
 
 namespace {
 
-[[nodiscard]] auto createVkSampler(const Device* device, SamplerFilterMode filterMode)
+[[nodiscard]] auto
+createVkSampler(const Device* device, SamplerFilterMode filterMode, uint32_t mipLevels)
     -> VkSampler {
   VkSamplerCreateInfo samplerInfo = {};
   samplerInfo.sType               = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
@@ -31,7 +32,7 @@ namespace {
   samplerInfo.mipmapMode              = VK_SAMPLER_MIPMAP_MODE_LINEAR;
   samplerInfo.mipLodBias              = 0.0f;
   samplerInfo.minLod                  = 0.0f;
-  samplerInfo.maxLod                  = 0.0f;
+  samplerInfo.maxLod                  = mipLevels;
 
   VkSampler result;
   checkVkResult(vkCreateSampler(device->getVkDevice(), &samplerInfo, nullptr, &result));
@@ -40,8 +41,9 @@ namespace {
 
 } // namespace
 
-Sampler::Sampler(const Device* device, SamplerFilterMode filterMode) : m_device{device} {
-  m_vkSampler = createVkSampler(device, filterMode);
+Sampler::Sampler(const Device* device, SamplerFilterMode filterMode, uint32_t mipLevels) :
+    m_device{device} {
+  m_vkSampler = createVkSampler(device, filterMode, mipLevels);
 }
 
 Sampler::~Sampler() {

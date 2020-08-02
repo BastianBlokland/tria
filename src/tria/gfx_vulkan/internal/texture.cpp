@@ -14,7 +14,7 @@ Texture::Texture(log::Logger* logger, Device* device, const asset::Texture* asse
   const auto vkFormat = VK_FORMAT_R8G8B8A8_SRGB;
   assert(getVkFormatSize(vkFormat) == sizeof(asset::Pixel));
   assert(getVkFormatChannelCount(vkFormat) == 4U);
-  m_image = Image{device, m_asset->getSize(), vkFormat};
+  m_image = Image{device, m_asset->getSize(), vkFormat, ImageMipMode::Generate};
 
   DBG_IMG_NAME(device, m_image.getVkImage(), asset->getId());
   DBG_IMGVIEW_NAME(device, m_image.getVkImageView(), asset->getId());
@@ -23,7 +23,9 @@ Texture::Texture(log::Logger* logger, Device* device, const asset::Texture* asse
       logger,
       "Vulkan texture created",
       {"asset", asset->getId()},
-      {"size", asset->getSize()},
+      {"size", m_image.getSize()},
+      {"mipMode", getName(m_image.getMipMode())},
+      {"mipLevels", m_image.getMipLevels()},
       {"format", getVkFormatString(vkFormat)},
       {"memory", log::MemSize{m_image.getMemSize()}});
 }
