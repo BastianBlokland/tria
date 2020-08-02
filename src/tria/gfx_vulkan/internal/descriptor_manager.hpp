@@ -12,7 +12,7 @@ constexpr auto g_descriptorSetsPerGroup = 6;
 
 class Device;
 class Image;
-class ImageSampler;
+class Sampler;
 class Buffer;
 class DescriptorGroup;
 
@@ -97,7 +97,7 @@ public:
   [[nodiscard]] auto getVkLayout() const noexcept -> VkDescriptorSetLayout;
   [[nodiscard]] auto getVkDescSet() const noexcept -> VkDescriptorSet;
 
-  auto bindImage(uint32_t binding, const Image& img, const ImageSampler& sampler) -> void;
+  auto bindImage(uint32_t binding, const Image& img, const Sampler& sampler) -> void;
   auto bindUniformBuffer(uint32_t binding, const Buffer& buffer) -> void;
   auto bindUniformBufferDynamic(uint32_t binding, const Buffer& buffer, uint32_t maxSize) -> void;
 
@@ -138,8 +138,7 @@ public:
 
   /* Bind an image to an allocated DescriptorSet.
    */
-  auto
-  bindImage(DescriptorSet* set, uint32_t binding, const Image& img, const ImageSampler& sampler)
+  auto bindImage(DescriptorSet* set, uint32_t binding, const Image& img, const Sampler& sampler)
       -> void;
 
   /* Bind a uniform-buffer to an allocated DescriptorSet.

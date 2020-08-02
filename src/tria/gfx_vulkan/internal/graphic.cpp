@@ -153,14 +153,17 @@ Graphic::Graphic(
 
   // Create a descriptor for the per graphic resources.
   m_descSet = device->getDescManager().allocate(
-      DescriptorInfo{static_cast<uint32_t>(asset->getTextureCount()), 0U, 0U});
+      DescriptorInfo{static_cast<uint32_t>(asset->getSamplerCount()), 0U, 0U});
 
   // Create the texture resources and bind them to our descriptor.
-  m_textures.reserve(m_asset->getTextureCount());
+  m_textures.reserve(m_asset->getSamplerCount());
   auto dstBinding = 0U;
-  for (auto itr = m_asset->getTextureBegin(); itr != m_asset->getTextureEnd(); ++itr) {
-    const auto* tex = textures->get(*itr);
-    auto sampler    = ImageSampler{device};
+  for (auto itr = m_asset->getSamplerBegin(); itr != m_asset->getSamplerEnd(); ++itr) {
+    // Create a gpu resource for the texture.
+    const auto* tex = textures->get(itr->getTexture());
+
+    const auto filterMode = static_cast<SamplerFilterMode>(itr->getFilterMode());
+    auto sampler          = Sampler{device, filterMode};
     DBG_SAMPLER_NAME(m_device, sampler.getVkSampler(), m_asset->getId());
 
     m_descSet.bindImage(dstBinding++, tex->getImage(), sampler);

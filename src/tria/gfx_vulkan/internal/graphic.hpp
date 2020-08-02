@@ -1,7 +1,7 @@
 #pragma once
 #include "asset_resource.hpp"
 #include "device.hpp"
-#include "image_sampler.hpp"
+#include "sampler.hpp"
 #include "transferer.hpp"
 #include "tria/asset/graphic.hpp"
 #include "tria/log/api.hpp"
@@ -49,9 +49,9 @@ public:
 private:
   struct TextureData final {
     const Texture* texture;
-    ImageSampler sampler;
+    Sampler sampler;
 
-    TextureData(const Texture* texture, ImageSampler sampler) :
+    TextureData(const Texture* texture, Sampler sampler) :
         texture{texture}, sampler{std::move(sampler)} {}
   };
 

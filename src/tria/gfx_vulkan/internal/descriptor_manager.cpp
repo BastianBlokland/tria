@@ -2,7 +2,7 @@
 #include "buffer.hpp"
 #include "debug_utils.hpp"
 #include "image.hpp"
-#include "image_sampler.hpp"
+#include "sampler.hpp"
 #include "tria/math/utils.hpp"
 #include "utils.hpp"
 #include "vulkan/vulkan_core.h"
@@ -140,8 +140,7 @@ auto DescriptorSet::getVkDescSet() const noexcept -> VkDescriptorSet {
   return m_group ? m_group->getVkDescSet(m_id) : nullptr;
 }
 
-auto DescriptorSet::bindImage(uint32_t binding, const Image& img, const ImageSampler& sampler)
-    -> void {
+auto DescriptorSet::bindImage(uint32_t binding, const Image& img, const Sampler& sampler) -> void {
   m_group->bindImage(this, binding, img, sampler);
 }
 
@@ -213,7 +212,7 @@ auto DescriptorGroup::allocate() noexcept -> std::optional<DescriptorSet> {
 }
 
 auto DescriptorGroup::bindImage(
-    DescriptorSet* set, uint32_t binding, const Image& img, const ImageSampler& sampler) -> void {
+    DescriptorSet* set, uint32_t binding, const Image& img, const Sampler& sampler) -> void {
   assert(set);
   assert(set->m_group == this);
   assert(set->m_id >= 0);

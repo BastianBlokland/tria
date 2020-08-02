@@ -29,7 +29,7 @@ TEST_CASE("[asset] - Graphic", "[asset]") {
     });
   }
 
-  SECTION("Textures are optionally loaded as part of the graphic") {
+  SECTION("Texture samplers are optionally loaded as part of the graphic") {
     withTempDir([](const fs::path& dir) {
       writeFile(dir / "test.vert.spv", "");
       writeFile(dir / "test.frag.spv", "");
@@ -41,7 +41,7 @@ TEST_CASE("[asset] - Graphic", "[asset]") {
           "\"vertShader\": \"test.vert.spv\","
           "\"fragShader\": \"test.frag.spv\","
           "\"mesh\": \"test.obj\","
-          "\"textures\": [\"test.ppm\"]"
+          "\"samplers\": [{ \"texture\": \"test.ppm\", \"filter\": \"nearest\"}]"
           "}");
 
       auto db   = Database{nullptr, dir};
@@ -49,8 +49,9 @@ TEST_CASE("[asset] - Graphic", "[asset]") {
       CHECK(gfx->getVertShader()->getShaderKind() == ShaderKind::SpvVertex);
       CHECK(gfx->getFragShader()->getShaderKind() == ShaderKind::SpvFragment);
       CHECK(gfx->getMesh()->getKind() == AssetKind::Mesh);
-      CHECK(gfx->getTextureCount() == 1);
-      CHECK(*(*gfx->getTextureBegin())->getPixelBegin() == Pixel{1, 42, 137, 255});
+      REQUIRE(gfx->getSamplerCount() == 1);
+      CHECK(*gfx->getSamplerBegin()->getTexture()->getPixelBegin() == Pixel{1, 42, 137, 255});
+      CHECK(gfx->getSamplerBegin()->getFilterMode() == TextureSampler::FilterMode::Nearest);
     });
   }
 

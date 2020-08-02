@@ -1,14 +1,24 @@
-#include "image_sampler.hpp"
+#include "sampler.hpp"
 
 namespace tria::gfx::internal {
 
 namespace {
 
-[[nodiscard]] auto createVkSampler(const Device* device) -> VkSampler {
-  VkSamplerCreateInfo samplerInfo     = {};
-  samplerInfo.sType                   = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
-  samplerInfo.magFilter               = VK_FILTER_LINEAR;
-  samplerInfo.minFilter               = VK_FILTER_LINEAR;
+[[nodiscard]] auto createVkSampler(const Device* device, SamplerFilterMode filterMode)
+    -> VkSampler {
+  VkSamplerCreateInfo samplerInfo = {};
+  samplerInfo.sType               = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
+  switch (filterMode) {
+  case SamplerFilterMode::Nearest:
+    samplerInfo.magFilter = VK_FILTER_NEAREST;
+    samplerInfo.minFilter = VK_FILTER_NEAREST;
+    break;
+  case SamplerFilterMode::Linear:
+  default:
+    samplerInfo.magFilter = VK_FILTER_LINEAR;
+    samplerInfo.minFilter = VK_FILTER_LINEAR;
+    break;
+  }
   samplerInfo.addressModeU            = VK_SAMPLER_ADDRESS_MODE_REPEAT;
   samplerInfo.addressModeV            = VK_SAMPLER_ADDRESS_MODE_REPEAT;
   samplerInfo.addressModeW            = VK_SAMPLER_ADDRESS_MODE_REPEAT;
@@ -30,11 +40,11 @@ namespace {
 
 } // namespace
 
-ImageSampler::ImageSampler(const Device* device) : m_device{device} {
-  m_vkSampler = createVkSampler(device);
+Sampler::Sampler(const Device* device, SamplerFilterMode filterMode) : m_device{device} {
+  m_vkSampler = createVkSampler(device, filterMode);
 }
 
-ImageSampler::~ImageSampler() {
+Sampler::~Sampler() {
   if (m_vkSampler) {
     vkDestroySampler(m_device->getVkDevice(), m_vkSampler, nullptr);
   }

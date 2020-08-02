@@ -2,9 +2,26 @@
 #include "loader.hpp"
 #include "tria/asset/err/asset_load_err.hpp"
 #include "tria/asset/graphic.hpp"
+#include <optional>
 #include <string_view>
+#include <unordered_map>
 
 namespace tria::asset::internal {
+
+namespace {
+
+using TexFilterMode = TextureSampler::FilterMode;
+
+[[nodiscard]] auto getTextureFilterMode(std::string_view str) -> std::optional<TexFilterMode> {
+  static const std::unordered_map<std::string_view, TexFilterMode> table = {
+      {"nearest", TexFilterMode::Nearest},
+      {"linear", TexFilterMode::Linear},
+  };
+  const auto search = table.find(str);
+  return search == table.end() ? std::nullopt : std::optional{search->second};
+}
+
+} // namespace
 
 auto loadGraphic(
     log::Logger* /*unused*/, DatabaseImpl* db, AssetId id, const fs::path& path, RawData raw)
@@ -43,21 +60,37 @@ auto loadGraphic(
   }
   auto* mesh = db->get(AssetId{meshId})->downcast<Mesh>();
 
-  // Textures (optional field).
-  auto textures = std::vector<const Texture*>{};
-  simdjson::dom::array textureArray;
-  if (!obj.at("textures").get(textureArray)) {
-    std::string_view textureId;
-    for (const auto& elem : textureArray) {
-      if (elem.get(textureId)) {
-        throw err::AssetLoadErr{path, "Texture array contains non-string element"};
+  // Samplers (optional field).
+  auto samplers = std::vector<TextureSampler>{};
+  simdjson::dom::array samplersArray;
+  if (!obj.at("samplers").get(samplersArray)) {
+
+    for (const auto& elem : samplersArray) {
+
+      // Texture.
+      std::string_view textureId;
+      if (elem.at("texture").get(textureId)) {
+        throw err::AssetLoadErr{path, "Object in sampler array is missing a 'texture' field"};
       }
-      textures.push_back(db->get(AssetId{textureId})->downcast<Texture>());
+      const auto* texture = db->get(AssetId{textureId})->downcast<Texture>();
+
+      // Filter mode.
+      auto filterMode = TexFilterMode::Linear;
+      std::string_view filterStr;
+      if (!elem.at("filter").get(filterStr)) {
+        auto filterModeOpt = getTextureFilterMode(filterStr);
+        if (!filterModeOpt) {
+          throw err::AssetLoadErr{path, "Unsupported filter mode"};
+        }
+        filterMode = *filterModeOpt;
+      }
+
+      samplers.push_back(TextureSampler{texture, filterMode});
     }
   }
 
   return std::make_unique<Graphic>(
-      std::move(id), vertShader, fragShader, mesh, std::move(textures));
+      std::move(id), vertShader, fragShader, mesh, std::move(samplers));
 }
 
 } // namespace tria::asset::internal
