@@ -95,7 +95,7 @@ auto Transferer::queueTransfer(const void* data, const Image& dst) -> void {
   const auto reqAlignment = std::max<size_t>(
       getVkFormatSize(dst.getVkFormat()), m_device->getLimits().optimalBufferCopyOffsetAlignment);
   const auto src = getTransferSpace(size, reqAlignment);
-  assert(src.second + size < src.first.getSize());
+  assert(src.second + size <= src.first.getSize());
   src.first.upload(data, size, src.second);
 
   // Add a work item to copy the data from the transfer buffer to the destination.
