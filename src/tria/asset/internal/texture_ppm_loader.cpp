@@ -28,6 +28,9 @@ class Reader final {
 public:
   Reader(const char* current, const char* end) : m_cur{current}, m_end{end} {}
 
+  [[nodiscard]] auto getCurrent() -> const char*& { return m_cur; }
+  [[nodiscard]] auto getEnd() -> const char* { return m_end; }
+
   auto consumeChar() -> char {
     if (m_cur != m_end) {
       return *m_cur++;
@@ -148,11 +151,15 @@ private:
   // space would work fine.
   reader.consumeChar();
 
+  // Check if enough data for the given pixels is left in the reader.
+  if (reader.getEnd() - reader.getCurrent() < count * 3) {
+    return {};
+  }
+
   auto result = math::PodVector<Pixel>(count);
   for (auto i = 0U; i != count; ++i) {
-    result[i].r() = reader.consumeChar();
-    result[i].g() = reader.consumeChar();
-    result[i].b() = reader.consumeChar();
+    std::memcpy(&result[i], reader.getCurrent(), 3);
+    reader.getCurrent() += 3;
     result[i].a() = 255; // Pixmap doesn't support alpha, use fully opaque.
   }
   return result;
