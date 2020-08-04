@@ -26,11 +26,13 @@ struct PixmapHeader final {
 
 class Reader final {
 public:
-  Reader(const char* current, const char* end) : m_cur{current}, m_end{end} {}
+  Reader(const uint8_t* current, const uint8_t* end) : m_cur{current}, m_end{end} {}
 
-  [[nodiscard]] auto getCurrent() -> const char*& { return m_cur; }
-  [[nodiscard]] auto getEnd() -> const char* { return m_end; }
+  [[nodiscard]] auto getCurrent() -> const uint8_t*& { return m_cur; }
+  [[nodiscard]] auto getEnd() -> const uint8_t* { return m_end; }
 
+  /* Read a single character.
+   */
   auto consumeChar() -> char {
     if (m_cur != m_end) {
       return *m_cur++;
@@ -38,7 +40,10 @@ public:
     return '\0';
   }
 
-  [[nodiscard]] auto consumeChar(char c) -> bool {
+  /* Read a character if it matches the expected character.
+   * Returns true if character was read, otherwise false.
+   */
+  [[nodiscard]] auto matchChar(char c) -> bool {
     if (m_cur != m_end && *m_cur == c) {
       ++m_cur; // Consume the character.
       return true;
@@ -46,6 +51,8 @@ public:
     return false;
   }
 
+  /* Keep reading characters until a non-whitespace character is found.
+   */
   auto consumeWhitespace() noexcept -> void {
     for (; m_cur != m_end; ++m_cur) {
       switch (*m_cur) {
@@ -62,6 +69,8 @@ public:
     }
   }
 
+  /* Keep reading characters until a new-line character is found.
+   */
   auto consumeLine() noexcept -> void {
     for (; m_cur != m_end; ++m_cur) {
       if (*m_cur == '\n') {
@@ -71,6 +80,8 @@ public:
     }
   }
 
+  /* Keep reading characters until a non-whitespace character is found, also skips comment lines.
+   */
   auto consumeWhitespaceOrComment() noexcept -> void {
     for (; m_cur != m_end;) {
       consumeWhitespace();
@@ -83,6 +94,8 @@ public:
     }
   }
 
+  /* Read a single unsigned int.
+   */
   auto consumeInt() noexcept -> unsigned int {
     auto result = 0U;
     for (; m_cur != m_end; ++m_cur) {
@@ -98,18 +111,18 @@ public:
   }
 
 private:
-  const char* m_cur;
-  const char* m_end;
+  const uint8_t* m_cur;
+  const uint8_t* m_end;
 };
 
 [[nodiscard]] auto readPixmapType(Reader& reader) noexcept -> PixmapType {
-  if (!reader.consumeChar('P')) {
+  if (!reader.matchChar('P')) {
     return PixmapType::Unknown;
   }
-  if (reader.consumeChar('3')) {
+  if (reader.matchChar('3')) {
     return PixmapType::Ascii;
   }
-  if (reader.consumeChar('6')) {
+  if (reader.matchChar('6')) {
     return PixmapType::Binary;
   }
   return PixmapType::Unknown;
@@ -128,6 +141,9 @@ private:
   return result;
 }
 
+/* Reads pixels in the ascii format of ppm.
+ * When the end of file is reached all further pixels are treated as black.
+ */
 [[nodiscard]] auto readPixelsAscii(Reader& reader, unsigned int count) noexcept
     -> math::PodVector<Pixel> {
   auto result = math::PodVector<Pixel>(count);
@@ -143,6 +159,9 @@ private:
   return result;
 }
 
+/* Read binary encoded pixels.
+ * Returns empty vector when not enough data is available for the requested amount of pixels.
+ */
 [[nodiscard]] auto readPixelsBinary(Reader& reader, unsigned int count) noexcept
     -> math::PodVector<Pixel> {
 
@@ -183,11 +202,8 @@ auto loadTexturePpm(
   if (header.width == 0U || header.height == 0U) {
     throw err::AssetLoadErr{path, "Malformed pixmap size, needs to be bigger then 0"};
   }
-  if (header.width == 0U || header.height == 0U) {
-    throw err::AssetLoadErr{path, "Malformed pixmap size, needs to be bigger then 0"};
-  }
   if (header.maxValue != 255) {
-    throw err::AssetLoadErr{path, "Only 8bit Pixmap files are supported"};
+    throw err::AssetLoadErr{path, "Only 8 bit Pixmap files are supported"};
   }
 
   auto size       = TextureSize{header.width, header.height};

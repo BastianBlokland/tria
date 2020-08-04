@@ -8,6 +8,7 @@ using RawData = math::RawData;
 auto loadGraphic(log::Logger*, DatabaseImpl*, AssetId, const fs::path&, RawData) -> AssetUnique;
 auto loadMeshObj(log::Logger*, DatabaseImpl*, AssetId, const fs::path&, RawData) -> AssetUnique;
 auto loadTexturePpm(log::Logger*, DatabaseImpl*, AssetId, const fs::path&, RawData) -> AssetUnique;
+auto loadTextureTga(log::Logger*, DatabaseImpl*, AssetId, const fs::path&, RawData) -> AssetUnique;
 auto loadShader(log::Logger*, DatabaseImpl*, AssetId, const fs::path&, RawData) -> AssetUnique;
 auto loadRawAsset(log::Logger*, DatabaseImpl*, AssetId, const fs::path&, RawData) -> AssetUnique;
 
@@ -20,6 +21,7 @@ auto getLoader(const fs::path& path) -> AssetLoader {
       {".gfx", loadGraphic},
       {".obj", loadMeshObj},
       {".ppm", loadTexturePpm},
+      {".tga", loadTextureTga},
       {".spv", loadShader},
   };
   auto itr = table.find(path.extension().string());

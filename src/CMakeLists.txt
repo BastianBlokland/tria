@@ -2,12 +2,13 @@
 message(STATUS "Configuring asset library")
 add_library(tria_asset STATIC
   tria/asset/internal/graphic_loader.cpp
-  tria/asset/internal/texture_ppm_loader.cpp
   tria/asset/internal/json.cpp
   tria/asset/internal/loader.cpp
   tria/asset/internal/mesh_obj_loader.cpp
   tria/asset/internal/raw_asset_loader.cpp
   tria/asset/internal/shader_loader.cpp
+  tria/asset/internal/texture_ppm_loader.cpp
+  tria/asset/internal/texture_tga_loader.cpp
   tria/asset/database.cpp
   tria/asset/database_impl.cpp)
 target_compile_features(tria_asset PRIVATE cxx_std_17)
@@ -75,6 +76,7 @@ target_link_libraries(tria_log PRIVATE tria_pal)
 # Math (math utlities library).
 message(STATUS "Configuring math library")
 add_library(tria_math STATIC
+  tria/math/base64.cpp
   tria/math/utils.cpp)
 target_compile_features(tria_math PRIVATE cxx_std_17)
 target_include_directories(tria_math PUBLIC ${PROJECT_SOURCE_DIR}/include)
