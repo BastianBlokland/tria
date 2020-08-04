@@ -44,7 +44,9 @@ TEST_CASE("[asset] - Shader", "[asset]") {
 
       auto db      = Database{nullptr, dir};
       auto* shader = db.get("test.vert.spv")->downcast<Shader>();
-      CHECK(std::string(shader->getBegin(), shader->getSize()) == "Hello Shader");
+      CHECK(
+          std::string(reinterpret_cast<const char*>(shader->getBegin()), shader->getSize()) ==
+          "Hello Shader");
     });
   }
 }

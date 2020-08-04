@@ -37,7 +37,7 @@ auto loadRaw(const fs::path& path) -> math::RawData {
   }
   auto buffer = math::RawData{static_cast<size_t>(fileSize) + g_fileBufferPadding};
   file.seekg(0);
-  file.read(buffer.begin(), fileSize);
+  file.read(reinterpret_cast<char*>(buffer.begin()), fileSize);
   file.close();
 
   // Zero initialize the padding area.

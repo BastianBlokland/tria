@@ -39,11 +39,11 @@ constexpr std::array<uint8_t, 'z' - '+' + 1> decodeTable = {
 
 } // namespace
 
-auto base64Decode(std::string_view input) noexcept -> PodVector<uint8_t> {
+auto base64Decode(std::string_view input) noexcept -> RawData {
   // Implemention based on awnser of 'nunojpg' in the so question:
   // https://stackoverflow.com/questions/180947/base64-decode-snippet-in-c
 
-  auto result = PodVector<uint8_t>{};
+  auto result = RawData{};
   result.reserve(getDecodedSize(input));
 
   auto val     = 0U;
