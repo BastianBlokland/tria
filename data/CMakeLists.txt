@@ -56,17 +56,18 @@ endfunction(configure_plainfiles)
 message(STATUS "Configuring shaders")
 configure_shaders(
   shaders/plain.vert
-  shaders/plain.frag)
+  shaders/plain.frag
+  shaders/discard.frag)
 
 # Plain files
 message(STATUS "Configuring plain files")
 configure_plainfiles(
   textures/checker.ppm
   textures/circle.tga
+  textures/circle_glow.tga
   models/triangle.obj
   models/quad.obj
-  triangle.gfx
-  quad.gfx)
+  circle.gfx)
 
 # Wrapper dependency that depends on all types of data.
 add_custom_target(tria_data)

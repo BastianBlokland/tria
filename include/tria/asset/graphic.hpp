@@ -36,17 +36,26 @@ private:
  */
 class Graphic final : public Asset {
 public:
+  enum class BlendMode : uint8_t {
+    None          = 0,
+    Alpha         = 1,
+    Additive      = 2,
+    AlphaAdditive = 3,
+  };
+
   Graphic(
       AssetId id,
       const Shader* vertShader,
       const Shader* fragShader,
       const Mesh* mesh,
-      std::vector<TextureSampler> samplers) :
+      std::vector<TextureSampler> samplers,
+      BlendMode blendMode) :
       Asset{std::move(id), getKind()},
       m_vertShader{vertShader},
       m_fragShader{fragShader},
       m_mesh{mesh},
-      m_samplers{std::move(samplers)} {
+      m_samplers{std::move(samplers)},
+      m_blendMode{blendMode} {
     assert(m_vertShader);
     assert(m_fragShader);
     assert(m_mesh);
@@ -72,11 +81,14 @@ public:
     return m_samplers.data() + m_samplers.size();
   }
 
+  [[nodiscard]] auto getBlendMode() const noexcept { return m_blendMode; }
+
 private:
   const Shader* m_vertShader;
   const Shader* m_fragShader;
   const Mesh* m_mesh;
   std::vector<TextureSampler> m_samplers;
+  BlendMode m_blendMode;
 };
 
 } // namespace tria::asset

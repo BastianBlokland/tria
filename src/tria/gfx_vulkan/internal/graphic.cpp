@@ -32,7 +32,8 @@ template <uint32_t DescriptorSetCount>
     VkPipelineLayout layout,
     const Shader* vertShader,
     const Shader* fragShader,
-    const Mesh* mesh) {
+    const Mesh* mesh,
+    asset::Graphic::BlendMode blendMode) {
 
   assert(vertShader);
   assert(fragShader);
@@ -95,7 +96,39 @@ template <uint32_t DescriptorSetCount>
   VkPipelineColorBlendAttachmentState colorBlendAttachment = {};
   colorBlendAttachment.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT |
       VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
-  colorBlendAttachment.blendEnable = false;
+  switch (blendMode) {
+  case asset::Graphic::BlendMode::Alpha:
+    colorBlendAttachment.blendEnable         = true;
+    colorBlendAttachment.srcColorBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA;
+    colorBlendAttachment.dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
+    colorBlendAttachment.colorBlendOp        = VK_BLEND_OP_ADD;
+    colorBlendAttachment.srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE;
+    colorBlendAttachment.dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO;
+    colorBlendAttachment.alphaBlendOp        = VK_BLEND_OP_ADD;
+    break;
+  case asset::Graphic::BlendMode::Additive:
+    colorBlendAttachment.blendEnable         = true;
+    colorBlendAttachment.srcColorBlendFactor = VK_BLEND_FACTOR_ONE;
+    colorBlendAttachment.dstColorBlendFactor = VK_BLEND_FACTOR_ONE;
+    colorBlendAttachment.colorBlendOp        = VK_BLEND_OP_ADD;
+    colorBlendAttachment.srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE;
+    colorBlendAttachment.dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO;
+    colorBlendAttachment.alphaBlendOp        = VK_BLEND_OP_ADD;
+    break;
+  case asset::Graphic::BlendMode::AlphaAdditive:
+    colorBlendAttachment.blendEnable         = true;
+    colorBlendAttachment.srcColorBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA;
+    colorBlendAttachment.dstColorBlendFactor = VK_BLEND_FACTOR_ONE;
+    colorBlendAttachment.colorBlendOp        = VK_BLEND_OP_ADD;
+    colorBlendAttachment.srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE;
+    colorBlendAttachment.dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO;
+    colorBlendAttachment.alphaBlendOp        = VK_BLEND_OP_ADD;
+    break;
+  case asset::Graphic::BlendMode::None:
+  default:
+    colorBlendAttachment.blendEnable = false;
+    break;
+  }
 
   VkPipelineColorBlendStateCreateInfo colorBlending = {};
   colorBlending.sType           = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
@@ -201,7 +234,8 @@ auto Graphic::prepareResources(
         m_vkPipelineLayout,
         m_vertShader,
         m_fragShader,
-        m_mesh);
+        m_mesh,
+        m_asset->getBlendMode());
 
     DBG_PIPELINELAYOUT_NAME(m_device, m_vkPipelineLayout, m_asset->getId());
     DBG_PIPELINE_NAME(m_device, m_vkPipeline, m_asset->getId());
