@@ -11,11 +11,23 @@ namespace tria::asset::internal {
 namespace {
 
 using TexFilterMode = TextureSampler::FilterMode;
+using BlendMode     = Graphic::BlendMode;
 
 [[nodiscard]] auto getTextureFilterMode(std::string_view str) -> std::optional<TexFilterMode> {
   static const std::unordered_map<std::string_view, TexFilterMode> table = {
       {"nearest", TexFilterMode::Nearest},
       {"linear", TexFilterMode::Linear},
+  };
+  const auto search = table.find(str);
+  return search == table.end() ? std::nullopt : std::optional{search->second};
+}
+
+[[nodiscard]] auto getBlendMode(std::string_view str) -> std::optional<BlendMode> {
+  static const std::unordered_map<std::string_view, BlendMode> table = {
+      {"none", BlendMode::None},
+      {"alpha", BlendMode::Alpha},
+      {"additive", BlendMode::Additive},
+      {"alphaAdditive", BlendMode::AlphaAdditive},
   };
   const auto search = table.find(str);
   return search == table.end() ? std::nullopt : std::optional{search->second};
@@ -74,7 +86,7 @@ auto loadGraphic(
       }
       const auto* texture = db->get(AssetId{textureId})->downcast<Texture>();
 
-      // Filter mode.
+      // Filter mode (optional field).
       auto filterMode = TexFilterMode::Linear;
       std::string_view filterStr;
       if (!elem.at("filter").get(filterStr)) {
@@ -89,8 +101,19 @@ auto loadGraphic(
     }
   }
 
+  // Blend mode (optional field).
+  auto blendMode = BlendMode::None;
+  std::string_view blendStr;
+  if (!obj.at("blend").get(blendStr)) {
+    auto blendModeOpt = getBlendMode(blendStr);
+    if (!blendModeOpt) {
+      throw err::AssetLoadErr{path, "Unsupported blend mode"};
+    }
+    blendMode = *blendModeOpt;
+  }
+
   return std::make_unique<Graphic>(
-      std::move(id), vertShader, fragShader, mesh, std::move(samplers));
+      std::move(id), vertShader, fragShader, mesh, std::move(samplers), blendMode);
 }
 
 } // namespace tria::asset::internal

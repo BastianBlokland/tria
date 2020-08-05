@@ -17,10 +17,8 @@ auto runApp(pal::Platform& platform, asset::Database& db, gfx::Context& gfx) {
   auto win    = platform.createWindow({512, 512});
   auto canvas = gfx.createCanvas(&win, gfx::VSyncMode::Disable);
 
-  const auto* triangle = db.get("triangle.gfx")->downcast<asset::Graphic>();
-  const auto* quad     = db.get("quad.gfx")->downcast<asset::Graphic>();
+  const auto* circle = db.get("circle.gfx")->downcast<asset::Graphic>();
 
-  auto pos = math::Vec2f{0, 0};
   while (!win.getIsCloseRequested() && !pal::isInterruptRequested() &&
          !win.isKeyPressed(pal::Key::Escape)) {
 
@@ -35,15 +33,12 @@ auto runApp(pal::Platform& platform, asset::Database& db, gfx::Context& gfx) {
       }
     }
 
-    pos += math::Vec2f(win.getScrollDelta()) * 0.01f;
-
     if (canvas.drawBegin(math::color::gray())) {
 
-      canvas.draw(quad, pos);
+      canvas.draw(circle, math::Vec3f{0, 0, 0});
 
-      const auto isMouseDown = win.isKeyDown(pal::Key::MouseLeft);
       const auto ndcMousePos = win.getMousePosNrm() * 2 - math::Vec2f{1, 1};
-      canvas.draw(isMouseDown ? triangle : quad, math::Vec3f{ndcMousePos.x(), ndcMousePos.y(), 0});
+      canvas.draw(circle, math::Vec3f{ndcMousePos.x(), ndcMousePos.y(), 0});
 
       canvas.drawEnd();
     } else {

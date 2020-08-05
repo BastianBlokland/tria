@@ -18,7 +18,8 @@ TEST_CASE("[asset] - Graphic", "[asset]") {
           "{"
           "\"vertShader\": \"test.vert.spv\","
           "\"fragShader\": \"test.frag.spv\","
-          "\"mesh\": \"test.obj\""
+          "\"mesh\": \"test.obj\","
+          "\"blend\": \"alpha\""
           "}");
 
       auto db   = Database{nullptr, dir};
@@ -26,6 +27,7 @@ TEST_CASE("[asset] - Graphic", "[asset]") {
       CHECK(gfx->getVertShader()->getShaderKind() == ShaderKind::SpvVertex);
       CHECK(gfx->getFragShader()->getShaderKind() == ShaderKind::SpvFragment);
       CHECK(gfx->getMesh()->getKind() == AssetKind::Mesh);
+      CHECK(gfx->getBlendMode() == Graphic::BlendMode::Alpha);
     });
   }
 

@@ -116,6 +116,6 @@ private:
   T* m_data;
 };
 
-using RawData = PodVector<char>;
+using RawData = PodVector<uint8_t>;
 
 } // namespace tria::math

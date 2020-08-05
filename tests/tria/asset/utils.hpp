@@ -7,6 +7,7 @@
 namespace tria::asset::tests {
 
 auto writeFile(const fs::path& path, std::string data) -> void;
+auto writeFile(const fs::path& path, math::RawData data) -> void;
 auto deleteDir(const fs::path& path) -> void;
 
 template <typename TestFunc>
@@ -27,7 +28,8 @@ auto withTempDir(TestFunc func) {
     auto* assetPtr = asset;                                                                        \
     REQUIRE(assetPtr->getKind() == AssetKind::Raw);                                                \
     auto contentStr = std::string(                                                                 \
-        assetPtr->downcast<RawAsset>()->getBegin(), assetPtr->downcast<RawAsset>()->getSize());    \
+        reinterpret_cast<const char*>(assetPtr->downcast<RawAsset>()->getBegin()),                 \
+        assetPtr->downcast<RawAsset>()->getSize());                                                \
     auto expectedStr = std::string{expected};                                                      \
     CHECK(contentStr == expectedStr);                                                              \
   } while (false)

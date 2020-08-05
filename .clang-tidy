@@ -1,6 +1,6 @@
 Checks: '-*,
   modernize-* -modernize-raw-string-literal,
-  bugprone-*, -bugprone-exception-escape,
+  bugprone-* -bugprone-exception-escape -bugprone-suspicious-semicolon,
   readability-* -readability-implicit-bool-conversion -readability-magic-numbers,
   performance-*, -performance-unnecessary-value-param'
 WarningsAsErrors: '*'

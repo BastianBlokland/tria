@@ -4,8 +4,9 @@
   "mesh": "models/quad.obj",
   "samplers": [
     {
-      "texture": "textures/checker.ppm",
-      "filter": "nearest"
+      "texture": "textures/circle.tga",
+      "filter": "linear"
     }
-  ]
+  ],
+  "blend": "alpha"
 }

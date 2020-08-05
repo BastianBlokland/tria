@@ -4,6 +4,7 @@ add_executable(tria_tests
   tria/asset/database_test.cpp
   tria/asset/graphic_test.cpp
   tria/asset/texture_ppm_test.cpp
+  tria/asset/texture_tga_test.cpp
   tria/asset/mesh_obj_test.cpp
   tria/asset/shader_test.cpp
   tria/asset/utils.cpp
@@ -12,6 +13,7 @@ add_executable(tria_tests
   tria/log/logger_test.cpp
   tria/log/param_test.cpp
 
+  tria/math/base64_test.cpp
   tria/math/pod_vector_test.cpp
   tria/math/utils_test.cpp
   tria/math/vec_test.cpp

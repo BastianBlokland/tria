@@ -13,14 +13,19 @@ namespace {
 
 class MemBuff : public std::streambuf {
 public:
-  MemBuff(char* data, size_t size) { this->setg(data, data, data + size); }
+  MemBuff(uint8_t* data, size_t size) {
+    this->setg(
+        reinterpret_cast<char*>(data),
+        reinterpret_cast<char*>(data),
+        reinterpret_cast<char*>(data) + size);
+  }
 };
 
 /* Adapter to feed a raw buffer to a function taking an std::istream.
  */
 class IMemStream final : MemBuff, public std::istream {
 public:
-  IMemStream(char* data, size_t size) :
+  IMemStream(uint8_t* data, size_t size) :
       MemBuff(data, size), std::istream(static_cast<std::streambuf*>(this)) {}
 };
 
@@ -57,18 +62,21 @@ auto loadMeshObj(
 
   for (const auto& shape : shapes) {
     for (const auto& index : shape.mesh.indices) {
-      auto pos = math::Vec3f{attrib.vertices[index.vertex_index * 3 + 0],
-                             attrib.vertices[index.vertex_index * 3 + 1],
-                             attrib.vertices[index.vertex_index * 3 + 2]};
-      auto col = math::Color{attrib.colors[index.vertex_index * 3 + 0],
-                             attrib.colors[index.vertex_index * 3 + 1],
-                             attrib.colors[index.vertex_index * 3 + 2],
-                             1.0f};
+      auto pos = math::Vec3f{
+          attrib.vertices[index.vertex_index * 3 + 0],
+          attrib.vertices[index.vertex_index * 3 + 1],
+          attrib.vertices[index.vertex_index * 3 + 2]};
+      auto col = math::Color{
+          attrib.colors[index.vertex_index * 3 + 0],
+          attrib.colors[index.vertex_index * 3 + 1],
+          attrib.colors[index.vertex_index * 3 + 2],
+          1.0f};
 
       auto texcoord = index.texcoord_index < 0
           ? math::Vec2f{}
-          : math::Vec2f{attrib.texcoords[index.texcoord_index * 2 + 0],
-                        1.0f - attrib.texcoords[index.texcoord_index * 2 + 1]};
+          : math::Vec2f{
+                attrib.texcoords[index.texcoord_index * 2 + 0],
+                1.0f - attrib.texcoords[index.texcoord_index * 2 + 1]};
       meshBuilder.pushVertex(Vertex{pos, col, texcoord});
     }
   }
