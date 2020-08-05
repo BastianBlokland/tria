@@ -293,6 +293,17 @@ template <typename T, size_t Size>
   return res;
 }
 
+/* Project a vector onto another vector.
+ */
+template <typename T, size_t Size>
+[[nodiscard]] constexpr auto project(Vec<T, Size> vec, Vec<T, Size> nrm) noexcept -> Vec<T, Size> {
+  const auto nrmSqrMag = nrm.getSqrMag();
+  if (nrmSqrMag < std::numeric_limits<T>::epsilon()) {
+    return {};
+  }
+  return nrm * dot(vec, nrm) / nrmSqrMag;
+}
+
 /* Return the linearly interpolated vector from x to y at time t.
  * Note: Does not clamp t (so can extrapolate too).
  */
@@ -304,6 +315,33 @@ template <typename T, size_t Size>
     res[i] = lerp(x[i], y[i], t);
   }
   return res;
+}
+
+/* Check if all components of two vectors are approximately equal.
+ * Note: Should not be used to compare to zero, use 'approxZero' instead.
+ */
+template <typename T, size_t Size>
+[[nodiscard]] constexpr auto
+approx(Vec<T, Size> x, Vec<T, Size> y, T maxDelta = std::numeric_limits<T>::epsilon()) noexcept {
+  for (auto i = 0U; i != Size; ++i) {
+    if (!approx(x[i], y[i], maxDelta)) {
+      return false;
+    }
+  }
+  return true;
+}
+
+/* Check if all components of the given vector are approximately zero.
+ */
+template <typename T, size_t Size>
+[[nodiscard]] constexpr auto
+approxZero(Vec<T, Size> x, T maxDelta = std::numeric_limits<T>::epsilon()) noexcept {
+  for (auto i = 0U; i != Size; ++i) {
+    if (!approxZero(x[i], maxDelta)) {
+      return false;
+    }
+  }
+  return true;
 }
 
 using Vec2f = Vec<float, 2>;

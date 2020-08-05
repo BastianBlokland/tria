@@ -27,6 +27,13 @@ TEST_CASE("[math] - Utils", "[math]") {
     CHECK(approxZero(0.0000001f));
   }
 
+  SECTION("Approx on integers uses whole numbers") {
+    CHECK(approx(1, 1));
+    CHECK(!approx(1, 2));
+    CHECK(approxZero(0));
+    CHECK(!approxZero(1));
+  }
+
   SECTION("Lerp at t = 0 returns x") {
     CHECK(lerp(42, 1337, 0.0f) == 42);
     CHECK(lerp(-42, 1337, 0.0f) == -42);
