@@ -10,36 +10,114 @@
 
 using namespace std::literals;
 using namespace tria;
-using Clock = std::chrono::high_resolution_clock;
+using namespace tria::math;
+using namespace std::chrono;
+
+struct ParticleData final {
+  Vec2f pos;
+  Vec2f velocity;
+  Vec2f size;
+  Vec2f screenSize;
+  Color color;
+  float lifetime;
+
+  ParticleData(Vec2f pos, Vec2f velocity, Vec2f size, Color color) :
+      pos{pos}, velocity{velocity}, size{size}, color{color}, lifetime{} {}
+};
 
 auto runApp(pal::Platform& platform, asset::Database& db, gfx::Context& gfx) {
 
-  auto win    = platform.createWindow({512, 512});
+  auto win    = platform.createWindow({1024, 1024});
   auto canvas = gfx.createCanvas(&win, gfx::VSyncMode::Disable);
 
-  const auto* circle = db.get("circle.gfx")->downcast<asset::Graphic>();
+  const auto* particle = db.get("particle.gfx")->downcast<asset::Graphic>();
 
-  while (!win.getIsCloseRequested() && !pal::isInterruptRequested() &&
-         !win.isKeyPressed(pal::Key::Escape)) {
+  constexpr auto gravity             = 600.0f;
+  constexpr auto drag                = 0.002f;
+  constexpr auto radius              = 7.0f;
+  constexpr auto maxLifetime         = 20.0;
+  constexpr auto collisionElasticity = .75f;
 
+  auto particles = PodVector<ParticleData>{};
+
+  auto frameNum       = 0U;
+  auto frameStartTime = high_resolution_clock::now();
+  while (!win.getIsCloseRequested() && !pal::isInterruptRequested()) {
     platform.handleEvents();
 
-    // Toggle fullscreen when pressing '1'.
-    if (win.isKeyPressed(pal::Key::Alpha1)) {
-      if (win.getFullscreenMode() == pal::FullscreenMode::Disable) {
-        win.setSize({0, 0}, pal::FullscreenMode::Enable);
-      } else {
-        win.setSize({512, 512}, pal::FullscreenMode::Disable);
-      }
+    const auto newTime   = high_resolution_clock::now();
+    const auto deltaTime = duration<float>(newTime - frameStartTime);
+    frameStartTime       = newTime;
+
+    // Update window title every 100 frames.
+    if (++frameNum % 100 == 0) {
+      win.setTitle(
+          std::to_string(particles.size()) + " " + std::to_string(deltaTime.count() * 1'000));
     }
 
-    if (canvas.drawBegin(math::color::gray())) {
+    // Spawn a particle at the mouse position.
+    if (win.isKeyDown(pal::Key::MouseLeft)) {
+      particles.push_back(ParticleData(
+          win.getMousePos(), {10.0f, 10.0f}, {radius * 2.0f, radius * 2.0f}, color::get(frameNum)));
+    }
 
-      canvas.draw(circle, math::Vec3f{0, 0, 0});
+    // Update all particles.
+    auto windowSize = win.getSize();
+    for (auto i = particles.size(); i--;) {
+      auto& p = particles[i];
 
-      const auto ndcMousePos = win.getMousePosNrm() * 2 - math::Vec2f{1, 1};
-      canvas.draw(circle, math::Vec3f{ndcMousePos.x(), ndcMousePos.y(), 0});
+      // Delete when too old.
+      p.lifetime += deltaTime.count();
+      if (p.lifetime > maxLifetime) {
+        particles.eraseIdx(i);
+        continue;
+      }
 
+      // Separate from others.
+      for (auto j = i + 1; j != particles.size(); ++j) {
+        auto& other               = particles[j];
+        const auto toOther        = other.pos - p.pos;
+        const auto sqrDistToOther = toOther.getSqrMag();
+        if (sqrDistToOther < (radius * 2.0f) * (radius * 2.0f)) {
+          const auto distToOther = std::sqrt(sqrDistToOther);
+          const auto sepDir      = sqrDistToOther == .0f ? Vec2f{0, 1} : toOther / distToOther;
+          const auto overlap     = (radius * 2.0f) - distToOther;
+
+          p.velocity = reflect(p.velocity, -sepDir) * collisionElasticity;
+          p.pos -= sepDir * (overlap + .001f);
+
+          other.velocity = reflect(other.velocity, sepDir) * collisionElasticity;
+          other.pos += sepDir * (overlap + .001f);
+        }
+      }
+
+      // Check the bounds of the screen.
+      if (p.pos.x() < radius) {
+        p.pos.x()      = radius;
+        p.velocity.x() = std::abs(p.velocity.x()) * collisionElasticity;
+      } else if (p.pos.y() < radius) {
+        p.pos.y()      = radius;
+        p.velocity.y() = std::abs(p.velocity.y()) * collisionElasticity;
+      } else if (p.pos.x() > windowSize.x() - radius) {
+        p.pos.x()      = windowSize.x() - radius;
+        p.velocity.x() = -std::abs(p.velocity.x()) * collisionElasticity;
+      } else if (p.pos.y() > windowSize.y() - radius) {
+        p.pos.y()      = windowSize.y() - radius;
+        p.velocity.y() = -std::abs(p.velocity.y()) * collisionElasticity;
+      }
+
+      p.velocity *= (1.0 - drag);
+      p.velocity.y() += gravity * deltaTime.count();
+
+      p.pos += p.velocity * deltaTime.count();
+      p.screenSize = windowSize;
+    }
+
+    // Draw particles.
+    if (canvas.drawBegin(Color{0.3, 0.3, 0.3, 1.0})) {
+      for (const auto& p : particles) {
+        canvas.draw(particle, p);
+      }
       canvas.drawEnd();
     } else {
       // Unable to draw, possibly due to a minimized window.
