@@ -304,6 +304,13 @@ template <typename T, size_t Size>
   return nrm * dot(vec, nrm) / nrmSqrMag;
 }
 
+/* Reflect a vector off a normal.
+ */
+template <typename T, size_t Size>
+[[nodiscard]] constexpr auto reflect(Vec<T, Size> vec, Vec<T, Size> nrm) noexcept -> Vec<T, Size> {
+  return vec - nrm * dot(vec, nrm) * 2;
+}
+
 /* Return the linearly interpolated vector from x to y at time t.
  * Note: Does not clamp t (so can extrapolate too).
  */

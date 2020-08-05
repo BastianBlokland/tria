@@ -242,6 +242,19 @@ TEST_CASE("[math] - Vec", "[math]") {
     CHECK(approx(project(vec1, vec2), Vec2f{0.0f, 3.0f}));
   }
 
+  SECTION("Reflecting a zero vector returns a zero vector") {
+    CHECK(approxZero(reflect(Vec2f{0.0f, 0.0f}, Vec2f{0.0f, 1.0f})));
+  }
+
+  SECTION("Reflecting a vector onto a zero vector returns itself") {
+    const auto vec = Vec2f{5.0f, 1.0f};
+    CHECK(approx(reflect(vec, Vec2f{}), vec));
+  }
+
+  SECTION("Reflecting a vector onto an opposite normal reverses the direction") {
+    CHECK(approx(reflect(Vec2f{5.0f, 1.0f}, Vec2f{-1.0f, 0.0f}), Vec2f{-5.0f, 1.0f}));
+  }
+
   SECTION("Approx checks if vectors are approximately equal") {
     CHECK(approx(Vec2f{1.0f, 2.0f}, Vec2f{1.0f, 2.0f}));
     CHECK(approx(Vec2f{1.0f, 2.0f}, Vec2f{1.0f, 2.0000001f}));
