@@ -282,6 +282,17 @@ private:
   std::array<Type, Size> m_comps;
 };
 
+/* Dot product of two vectors.
+ */
+template <typename T, size_t Size>
+[[nodiscard]] constexpr auto dot(Vec<T, Size> x, Vec<T, Size> y) noexcept -> T {
+  T res = {};
+  for (auto i = 0U; i != Size; ++i) {
+    res += x[i] * y[i];
+  }
+  return res;
+}
+
 /* Return the linearly interpolated vector from x to y at time t.
  * Note: Does not clamp t (so can extrapolate too).
  */

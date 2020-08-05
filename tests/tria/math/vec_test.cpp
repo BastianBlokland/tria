@@ -187,6 +187,40 @@ TEST_CASE("[math] - Vec", "[math]") {
     CHECK(approx(vec2.getNorm().getMag(), 1.0f));
   }
 
+  SECTION("Dot product of the same vector is equal to the magnitude squared") {
+    const auto vec1 = Vec2i{0, 4};
+    CHECK(dot(vec1, vec1) == 16);
+
+    const auto vec2 = Vec2i{-2, 0};
+    CHECK(dot(vec2, vec2) == 4);
+
+    const auto vec3 = Vec2i{-2, 3};
+    CHECK(dot(vec3, vec3) == 13);
+  }
+
+  SECTION("Dot product of perpendicular unit vectors is 0") {
+    const auto vec1 = Vec2f{0.0f, 1.0f};
+    const auto vec2 = Vec2f{1.0f, 0.0f};
+    CHECK(approxZero(dot(vec1, vec2)));
+  }
+
+  SECTION("Dot product of the same unit vector is 1") {
+    const auto vec1 = Vec2f{0.0f, 1.0f};
+    CHECK(approx(dot(vec1, vec1), 1.0f));
+  }
+
+  SECTION("Dot product of unit vectors is the cosine of the angle between them") {
+    const auto vec1 = Vec2f{0.0f, 1.0f};
+    const auto vec2 = Vec2f{1.0f, 1.0f}.getNorm();
+    CHECK(approx(std::acos(dot(vec1, vec2)) * radToDeg<float>, 45.0f));
+  }
+
+  SECTION("Dot product of opposite unit vectors is -1") {
+    const auto vec1 = Vec2f{0.0f, 1.0f};
+    const auto vec2 = Vec2f{0.0f, -1.0f};
+    CHECK(approx(dot(vec1, vec2), -1.0f));
+  }
+
   SECTION("lerp at value 0.5 returns the vector in the middle of x and y") {
     CHECK(lerp(Vec3i{10, 20, 10}, Vec3i{20, 40, 20}, 0.5) == Vec3i{15, 30, 15});
   }

@@ -5,6 +5,16 @@ namespace tria::math::tests {
 
 TEST_CASE("[math] - Utils", "[math]") {
 
+  SECTION("45 degrees is quater pi in radians") {
+    CHECK(approx(45.0f * degToRad<float>, pi<float> / 4.0f));
+  }
+
+  SECTION("pi in radians is 180 degrees") { CHECK(approx(pi<float> * radToDeg<float>, 180.0f)); }
+
+  SECTION("radToDeg and degToRad roundtrip") {
+    CHECK(approx(45.0f * degToRad<float> * radToDeg<float>, 45.0f));
+  }
+
   SECTION("Approx checks if values are approximately equal") {
     CHECK(approx(1.0f, 1.0f));
     CHECK(!approx(1.0f, 1.001f));
