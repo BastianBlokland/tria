@@ -12,9 +12,11 @@ namespace tria::asset {
  */
 class TextureSampler final {
 public:
+  /* Mode that is used when oversampling the texture.
+   */
   enum class FilterMode : uint8_t {
-    Nearest = 0,
-    Linear  = 1,
+    Nearest = 0, // Linearly blend between neighboring pixels.
+    Linear  = 1, // Choose one of the pixels (sometimes known as 'point' filtering).
   };
 
   TextureSampler() = delete;
@@ -36,11 +38,13 @@ private:
  */
 class Graphic final : public Asset {
 public:
+  /* Mode with which the fragment shader output color is blended with the framebuffer color.
+   */
   enum class BlendMode : uint8_t {
-    None          = 0,
-    Alpha         = 1,
-    Additive      = 2,
-    AlphaAdditive = 3,
+    None          = 0, // No blending, just replace the framebuffer's rgb values.
+    Alpha         = 1, // Blend between the rgb values and the framebuffer based on the alpha.
+    Additive      = 2, // Add the rgb values to the framebuffer (ignores alpha).
+    AlphaAdditive = 3, // Multiply the rgb values by the alpha and add them to the framebuffer.
   };
 
   Graphic(
