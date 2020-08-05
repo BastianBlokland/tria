@@ -190,6 +190,13 @@ public:
     return res;
   }
 
+  constexpr auto operator*=(const Type& rhs) noexcept -> Vec<Type, Size>& {
+    for (auto i = 0U; i != Size; ++i) {
+      m_comps[i] *= rhs;
+    }
+    return *this;
+  }
+
   [[nodiscard]] constexpr auto operator*(const Vec<Type, Size>& rhs) const noexcept
       -> Vec<Type, Size> {
     auto res = *this;
@@ -197,6 +204,13 @@ public:
       res[i] *= rhs[i];
     }
     return res;
+  }
+
+  constexpr auto operator*=(const Vec<Type, Size>& rhs) noexcept -> Vec<Type, Size>& {
+    for (auto i = 0U; i != Size; ++i) {
+      m_comps[i] *= rhs[i];
+    }
+    return *this;
   }
 
   [[nodiscard]] constexpr auto operator/(const Type& rhs) const noexcept -> Vec<Type, Size> {
@@ -207,6 +221,13 @@ public:
     return res;
   }
 
+  constexpr auto operator/=(const Type& rhs) noexcept -> Vec<Type, Size>& {
+    for (auto i = 0U; i != Size; ++i) {
+      m_comps[i] /= rhs;
+    }
+    return *this;
+  }
+
   [[nodiscard]] constexpr auto operator/(const Vec<Type, Size>& rhs) const noexcept
       -> Vec<Type, Size> {
     auto res = *this;
@@ -214,6 +235,13 @@ public:
       res[i] /= rhs[i];
     }
     return res;
+  }
+
+  constexpr auto operator/=(const Vec<Type, Size>& rhs) noexcept -> Vec<Type, Size>& {
+    for (auto i = 0U; i != Size; ++i) {
+      m_comps[i] /= rhs[i];
+    }
+    return *this;
   }
 
   /* Calculate the magnitude of the vector squared.
@@ -254,6 +282,35 @@ private:
   std::array<Type, Size> m_comps;
 };
 
+/* Dot product of two vectors.
+ */
+template <typename T, size_t Size>
+[[nodiscard]] constexpr auto dot(Vec<T, Size> x, Vec<T, Size> y) noexcept -> T {
+  T res = {};
+  for (auto i = 0U; i != Size; ++i) {
+    res += x[i] * y[i];
+  }
+  return res;
+}
+
+/* Project a vector onto another vector.
+ */
+template <typename T, size_t Size>
+[[nodiscard]] constexpr auto project(Vec<T, Size> vec, Vec<T, Size> nrm) noexcept -> Vec<T, Size> {
+  const auto nrmSqrMag = nrm.getSqrMag();
+  if (nrmSqrMag < std::numeric_limits<T>::epsilon()) {
+    return {};
+  }
+  return nrm * dot(vec, nrm) / nrmSqrMag;
+}
+
+/* Reflect a vector off a normal.
+ */
+template <typename T, size_t Size>
+[[nodiscard]] constexpr auto reflect(Vec<T, Size> vec, Vec<T, Size> nrm) noexcept -> Vec<T, Size> {
+  return vec - nrm * dot(vec, nrm) * 2;
+}
+
 /* Return the linearly interpolated vector from x to y at time t.
  * Note: Does not clamp t (so can extrapolate too).
  */
@@ -265,6 +322,33 @@ template <typename T, size_t Size>
     res[i] = lerp(x[i], y[i], t);
   }
   return res;
+}
+
+/* Check if all components of two vectors are approximately equal.
+ * Note: Should not be used to compare to zero, use 'approxZero' instead.
+ */
+template <typename T, size_t Size>
+[[nodiscard]] constexpr auto
+approx(Vec<T, Size> x, Vec<T, Size> y, T maxDelta = std::numeric_limits<T>::epsilon()) noexcept {
+  for (auto i = 0U; i != Size; ++i) {
+    if (!approx(x[i], y[i], maxDelta)) {
+      return false;
+    }
+  }
+  return true;
+}
+
+/* Check if all components of the given vector are approximately zero.
+ */
+template <typename T, size_t Size>
+[[nodiscard]] constexpr auto
+approxZero(Vec<T, Size> x, T maxDelta = std::numeric_limits<T>::epsilon()) noexcept {
+  for (auto i = 0U; i != Size; ++i) {
+    if (!approxZero(x[i], maxDelta)) {
+      return false;
+    }
+  }
+  return true;
 }
 
 using Vec2f = Vec<float, 2>;

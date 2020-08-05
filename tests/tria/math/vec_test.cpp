@@ -187,6 +187,93 @@ TEST_CASE("[math] - Vec", "[math]") {
     CHECK(approx(vec2.getNorm().getMag(), 1.0f));
   }
 
+  SECTION("Dot product of the same vector is equal to the magnitude squared") {
+    const auto vec1 = Vec2i{0, 4};
+    CHECK(dot(vec1, vec1) == 16);
+
+    const auto vec2 = Vec2i{-2, 0};
+    CHECK(dot(vec2, vec2) == 4);
+
+    const auto vec3 = Vec2i{-2, 3};
+    CHECK(dot(vec3, vec3) == 13);
+  }
+
+  SECTION("Dot product of perpendicular unit vectors is 0") {
+    const auto vec1 = Vec2f{0.0f, 1.0f};
+    const auto vec2 = Vec2f{1.0f, 0.0f};
+    CHECK(approxZero(dot(vec1, vec2)));
+  }
+
+  SECTION("Dot product of the same unit vector is 1") {
+    const auto vec1 = Vec2f{0.0f, 1.0f};
+    CHECK(approx(dot(vec1, vec1), 1.0f));
+  }
+
+  SECTION("Dot product of unit vectors is the cosine of the angle between them") {
+    const auto vec1 = Vec2f{0.0f, 1.0f};
+    const auto vec2 = Vec2f{1.0f, 1.0f}.getNorm();
+    CHECK(approx(std::acos(dot(vec1, vec2)) * radToDeg<float>, 45.0f));
+  }
+
+  SECTION("Dot product of opposite unit vectors is -1") {
+    const auto vec1 = Vec2f{0.0f, 1.0f};
+    const auto vec2 = Vec2f{0.0f, -1.0f};
+    CHECK(approx(dot(vec1, vec2), -1.0f));
+  }
+
+  SECTION("Projecting a vector onto itself results in the same vector") {
+    const auto vec = Vec2f{0.0f, 1.0f};
+    CHECK(approx(project(vec, vec), vec));
+  }
+
+  SECTION("Projecting onto a vector of zero length returns a zero vector") {
+    const auto vec = Vec2f{0.0f, 1.0f};
+    CHECK(approxZero(project(vec, Vec2f{0.0f, 0.0f})));
+  }
+
+  SECTION("Projecting a zero vector returns a zero vector") {
+    const auto vec = Vec2f{0.0f, 0.0f};
+    CHECK(approxZero(project(vec, Vec2f{0.0f, 1.0f})));
+  }
+
+  SECTION("Projecting a vector onto another returns the 'overlap'") {
+    const auto vec1 = Vec2f{3.0f, 3.0f};
+    const auto vec2 = Vec2f{0.0f, 10.0f};
+    CHECK(approx(project(vec1, vec2), Vec2f{0.0f, 3.0f}));
+  }
+
+  SECTION("Reflecting a zero vector returns a zero vector") {
+    CHECK(approxZero(reflect(Vec2f{0.0f, 0.0f}, Vec2f{0.0f, 1.0f})));
+  }
+
+  SECTION("Reflecting a vector onto a zero vector returns itself") {
+    const auto vec = Vec2f{5.0f, 1.0f};
+    CHECK(approx(reflect(vec, Vec2f{}), vec));
+  }
+
+  SECTION("Reflecting a vector onto an opposite normal reverses the direction") {
+    CHECK(approx(reflect(Vec2f{5.0f, 1.0f}, Vec2f{-1.0f, 0.0f}), Vec2f{-5.0f, 1.0f}));
+  }
+
+  SECTION("Approx checks if vectors are approximately equal") {
+    CHECK(approx(Vec2f{1.0f, 2.0f}, Vec2f{1.0f, 2.0f}));
+    CHECK(approx(Vec2f{1.0f, 2.0f}, Vec2f{1.0f, 2.0000001f}));
+    CHECK(!approx(Vec2f{1.0f, 2.0f}, Vec2f{1.0f, 2.001f}));
+  }
+
+  SECTION("ApproxZero check if a value is approximately zero") {
+    CHECK(approxZero(Vec2f{0.0f, 0.0f}));
+    CHECK(!approxZero(Vec2f{0.001f, 0.0f}));
+    CHECK(approxZero(Vec2f{0.0000001f, 0.0f}));
+  }
+
+  SECTION("Approxing integers uses whole numbers") {
+    CHECK(approx(Vec2i{1, 2}, Vec2i{1, 2}));
+    CHECK(!approx(Vec2i{1, 2}, Vec2i{1, 3}));
+    CHECK(approxZero(Vec2i{0, 0}));
+    CHECK(!approxZero(Vec2i{0, 1}));
+  }
+
   SECTION("lerp at value 0.5 returns the vector in the middle of x and y") {
     CHECK(lerp(Vec3i{10, 20, 10}, Vec3i{20, 40, 20}, 0.5) == Vec3i{15, 30, 15});
   }

@@ -71,6 +71,124 @@ TEST_CASE("[math] - PodVector", "[math]") {
     }
   }
 
+  SECTION("Erasing single element by iterator from beginning") {
+    auto vec = PodVector<int>{};
+    vec.push_back(1);
+    vec.push_back(2);
+    vec.push_back(3);
+    vec.erase(vec.begin());
+
+    CHECK(vec.size() == 2U);
+    CHECK(vec[0] == 2);
+    CHECK(vec[1] == 3);
+  }
+
+  SECTION("Erasing single element by index from beginning") {
+    auto vec = PodVector<int>{};
+    vec.push_back(1);
+    vec.push_back(2);
+    vec.push_back(3);
+    vec.eraseIdx(0);
+
+    CHECK(vec.size() == 2U);
+    CHECK(vec[0] == 2);
+    CHECK(vec[1] == 3);
+  }
+
+  SECTION("Erasing single element by interator from middle") {
+    auto vec = PodVector<int>{};
+    vec.push_back(1);
+    vec.push_back(2);
+    vec.push_back(3);
+    vec.erase(&vec[1]);
+
+    CHECK(vec.size() == 2U);
+    CHECK(vec[0] == 1);
+    CHECK(vec[1] == 3);
+  }
+
+  SECTION("Erasing single element by index from middle") {
+    auto vec = PodVector<int>{};
+    vec.push_back(1);
+    vec.push_back(2);
+    vec.push_back(3);
+    vec.eraseIdx(1);
+
+    CHECK(vec.size() == 2U);
+    CHECK(vec[0] == 1);
+    CHECK(vec[1] == 3);
+  }
+
+  SECTION("Erasing single element by interator from end") {
+    auto vec = PodVector<int>{};
+    vec.push_back(1);
+    vec.push_back(2);
+    vec.push_back(3);
+    vec.erase(vec.end() - 1U);
+
+    CHECK(vec.size() == 2U);
+    CHECK(vec[0] == 1);
+    CHECK(vec[1] == 2);
+  }
+
+  SECTION("Erasing single element by index from end") {
+    auto vec = PodVector<int>{};
+    vec.push_back(1);
+    vec.push_back(2);
+    vec.push_back(3);
+    vec.eraseIdx(2);
+
+    CHECK(vec.size() == 2U);
+    CHECK(vec[0] == 1);
+    CHECK(vec[1] == 2);
+  }
+
+  SECTION("Erasing two elements by interator from middle") {
+    auto vec = PodVector<int>{};
+    vec.push_back(1);
+    vec.push_back(2);
+    vec.push_back(3);
+    vec.push_back(4);
+    vec.erase(&vec[1], &vec[3]);
+
+    CHECK(vec.size() == 2U);
+    CHECK(vec[0] == 1);
+    CHECK(vec[1] == 4);
+  }
+
+  SECTION("Erasing two elements by index from middle") {
+    auto vec = PodVector<int>{};
+    vec.push_back(1);
+    vec.push_back(2);
+    vec.push_back(3);
+    vec.push_back(4);
+    vec.eraseIdx(1, 3);
+
+    CHECK(vec.size() == 2U);
+    CHECK(vec[0] == 1);
+    CHECK(vec[1] == 4);
+  }
+
+  SECTION("Erasing all elements by iterator") {
+    auto vec = PodVector<int>{};
+    vec.push_back(1);
+    vec.push_back(2);
+    vec.push_back(3);
+    vec.erase(vec.begin(), vec.end());
+
+    CHECK(vec.size() == 0U);
+  }
+
+  SECTION("Erasing all elements by index") {
+    auto vec = PodVector<int>{};
+    vec.push_back(1);
+    vec.push_back(2);
+    vec.push_back(3);
+    vec.eraseIdx(0U, 3U);
+
+    CHECK(vec.size() == 0U);
+  }
+
   SECTION("Clear resets size but not capacity") {
     auto vec = PodVector<int>{};
     vec.resize(512U);

@@ -5,6 +5,21 @@
 
 namespace tria::math {
 
+/* Constant for π.
+ */
+template <typename T>
+constexpr auto pi = T{3.141592653589793238463};
+
+/* Constant to convert from radians to degrees.
+ */
+template <typename T>
+constexpr auto radToDeg = T{180.0} / pi<T>;
+
+/* Constant to convert from degrees to radians.
+ */
+template <typename T>
+constexpr auto degToRad = pi<T> / T{180.0};
+
 /* Check if two floating point numbers are approximately equal.
  * Note: Should not be used to compare to zero, use 'approxZero' instead.
  */

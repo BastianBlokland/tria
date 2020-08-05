@@ -108,6 +108,39 @@ public:
     m_data[m_size++] = T(std::forward<Args>(args)...);
   }
 
+  auto erase(T* pos) {
+    assert(pos >= begin() && pos <= end());
+    eraseIdx(pos - m_data);
+  }
+
+  auto erase(const T* pos) {
+    assert(pos >= begin() && pos <= end());
+    eraseIdx(pos - m_data);
+  }
+
+  auto erase(T* first, T* last) {
+    assert(first >= begin() && last <= end());
+    assert(last >= first);
+    eraseIdx(first - m_data, last - m_data);
+  }
+
+  auto erase(const T* first, const T* last) {
+    assert(first >= begin() && last <= end());
+    assert(last >= first);
+    eraseIdx(first - m_data, last - m_data);
+  }
+
+  auto eraseIdx(size_t first) { eraseIdx(first, first + 1U); }
+
+  auto eraseIdx(size_t first, size_t last) {
+    const auto items = last - first;
+    assert(first + items <= m_size);
+    m_size -= items;
+    if (first < m_size) {
+      std::memmove(m_data + first, m_data + first + items, (m_size - first) * sizeof(T));
+    }
+  }
+
   auto clear() { m_size = 0U; }
 
 private:
