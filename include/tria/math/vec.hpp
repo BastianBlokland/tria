@@ -353,7 +353,32 @@ approxZero(Vec<T, Size> x, T maxDelta = std::numeric_limits<T>::epsilon()) noexc
   return true;
 }
 
-/* Generate a random point on a unit sphere (aka a unit direction vector).
+/* Generate a random point inside a unit cube (all sides are 1 unit).
+ */
+template <typename Rng, typename VecT, size_t VecSize>
+[[nodiscard]] auto rndInsideUnitCube(Rng& rng) {
+  auto res = Vec<VecT, VecSize>{};
+  for (auto i = 0U; i < VecSize; ++i) {
+    res[i] = rndSample(rng, -.5f, +.5f);
+  }
+  return res;
+}
+
+/* Generate a random point inside a 2d unit cube (all sides are 1 unit).
+ */
+template <typename Rng>
+[[nodiscard]] auto rndInsideUnitCube2f(Rng& rng) {
+  return rndInsideUnitCube<Rng, float, 2>(rng);
+}
+
+/* Generate a random point inside a 3d unit cube (all sides are 1 unit).
+ */
+template <typename Rng>
+[[nodiscard]] auto rndInsideUnitCube3f(Rng& rng) {
+  return rndInsideUnitCube<Rng, float, 3>(rng);
+}
+
+/* Generate a random point on a unit sphere (radius of 1, aka a unit direction vector).
  */
 template <typename Rng, typename VecT, size_t VecSize>
 [[nodiscard]] auto rndOnUnitSphere(Rng& rng) {
@@ -379,14 +404,14 @@ template <typename Rng, typename VecT, size_t VecSize>
   }
 }
 
-/* Generate a random point on a 2d unit sphere (aka a unit direction vector).
+/* Generate a random point on a 2d unit sphere (radius of 1, aka a unit direction vector).
  */
 template <typename Rng>
 [[nodiscard]] auto rndOnUnitSphere2f(Rng& rng) {
   return rndOnUnitSphere<Rng, float, 2>(rng);
 }
 
-/* Generate a random point on a 3d unit sphere (aka a unit direction vector).
+/* Generate a random point on a 3d unit sphere (radius of 1, aka a unit direction vector).
  */
 template <typename Rng>
 [[nodiscard]] auto rndOnUnitSphere3f(Rng& rng) {
