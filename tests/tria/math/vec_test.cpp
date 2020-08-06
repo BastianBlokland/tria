@@ -278,11 +278,11 @@ TEST_CASE("[math] - Vec", "[math]") {
     CHECK(lerp(Vec3i{10, 20, 10}, Vec3i{20, 40, 20}, 0.5) == Vec3i{15, 30, 15});
   }
 
-  SECTION("rngOnUnitSphere returns unit vectors") {
+  SECTION("rndOnUnitSphere returns unit vectors") {
     auto maxDev = std::numeric_limits<float>::epsilon() * 2;
     auto rng    = RngXorWow{42};
     for (auto i = 0U; i != 1'000; ++i) {
-      REQUIRE(approx(rngOnUnitSphere3f(rng).getSqrMag(), 1.0f, maxDev));
+      REQUIRE(approx(rndOnUnitSphere3f(rng).getSqrMag(), 1.0f, maxDev));
     }
   }
 

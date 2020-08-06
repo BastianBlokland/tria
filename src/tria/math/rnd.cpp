@@ -1,4 +1,4 @@
-#include "tria/math/rng.hpp"
+#include "tria/math/rnd.hpp"
 #include <cassert>
 #include <ctime>
 #include <limits>

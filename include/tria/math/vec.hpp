@@ -1,6 +1,6 @@
 #pragma once
 #include "tria/log/param.hpp"
-#include "tria/math/rng.hpp"
+#include "tria/math/rnd.hpp"
 #include "tria/math/utils.hpp"
 #include <array>
 #include <cassert>
@@ -356,12 +356,12 @@ approxZero(Vec<T, Size> x, T maxDelta = std::numeric_limits<T>::epsilon()) noexc
 /* Generate a random point on a unit sphere (aka a unit direction vector).
  */
 template <typename Rng, typename VecT, size_t VecSize>
-[[nodiscard]] auto rngOnUnitSphere(Rng& rng) {
+[[nodiscard]] auto rndOnUnitSphere(Rng& rng) {
   auto res = Vec<VecT, VecSize>{};
   while (true) {
     // Fill the vector with random numbers with a gaussian distribution.
     for (auto i = 0U; i < VecSize; i += 2) {
-      const auto [g1, g2] = rngSampleGauss(rng);
+      const auto [g1, g2] = rndSampleGauss(rng);
       res[i]              = g1;
       // Note: because we generate 2 gaussian numbers at a time try to fill the next component with
       // the second value.
@@ -382,15 +382,15 @@ template <typename Rng, typename VecT, size_t VecSize>
 /* Generate a random point on a 2d unit sphere (aka a unit direction vector).
  */
 template <typename Rng>
-[[nodiscard]] auto rngOnUnitSphere2f(Rng& rng) {
-  return rngOnUnitSphere<Rng, float, 2>(rng);
+[[nodiscard]] auto rndOnUnitSphere2f(Rng& rng) {
+  return rndOnUnitSphere<Rng, float, 2>(rng);
 }
 
 /* Generate a random point on a 3d unit sphere (aka a unit direction vector).
  */
 template <typename Rng>
-[[nodiscard]] auto rngOnUnitSphere3f(Rng& rng) {
-  return rngOnUnitSphere<Rng, float, 3>(rng);
+[[nodiscard]] auto rndOnUnitSphere3f(Rng& rng) {
+  return rndOnUnitSphere<Rng, float, 3>(rng);
 }
 
 using Vec2f = Vec<float, 2>;

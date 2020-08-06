@@ -36,27 +36,27 @@ private:
  */
 thread_local extern RngXorWow g_rng;
 
-/* Get the next value in the rng sequence.
+/* Get the next value in the random sequence.
  * Returns a float between 0.0 (inclusive) and 1.0 (exclusive) with a uniform distribution.
  */
 template <typename Rng>
-[[nodiscard]] auto rngSample(Rng& rng) -> float {
+[[nodiscard]] auto rndSample(Rng& rng) -> float {
   return rng.next();
 }
 
-/* Get the next value in the rng sequence.
+/* Get the next value in the random sequence.
  * Returns a value between min (inclusive) and max (exclusive) with a uniform distribution.
  */
 template <typename Rng, typename T>
-[[nodiscard]] auto rngSample(Rng& rng, T min, T max) -> T {
+[[nodiscard]] auto rndSample(Rng& rng, T min, T max) -> T {
   const auto range = max - min;
-  return min + static_cast<T>(range * rngSample(rng));
+  return min + static_cast<T>(range * rndSample(rng));
 }
 
 /* Get the next two values with a gaussian (normal) distribution.
  */
 template <typename Rng>
-[[nodiscard]] auto rngSampleGauss(Rng& rng) -> std::pair<float, float> {
+[[nodiscard]] auto rndSampleGauss(Rng& rng) -> std::pair<float, float> {
   float a, b;
   do {
     a = rng.next();

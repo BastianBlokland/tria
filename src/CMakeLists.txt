@@ -77,7 +77,7 @@ target_link_libraries(tria_log PRIVATE tria_pal)
 message(STATUS "Configuring math library")
 add_library(tria_math STATIC
   tria/math/base64.cpp
-  tria/math/rng.cpp
+  tria/math/rnd.cpp
   tria/math/utils.cpp)
 target_compile_features(tria_math PRIVATE cxx_std_17)
 target_include_directories(tria_math PUBLIC ${PROJECT_SOURCE_DIR}/include)
