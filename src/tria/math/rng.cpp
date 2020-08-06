@@ -5,6 +5,10 @@
 
 namespace tria::math {
 
+/* Global default rng implementation.
+ */
+thread_local RngXorWow g_rng = RngXorWow{};
+
 namespace {
 
 /* Implementation of the 'splitmix' algorithm.
@@ -67,13 +71,8 @@ RngXorWow::RngXorWow(uint64_t seed) {
 
 auto RngXorWow::next() noexcept -> float {
   // Note: +1 as we never want to return 1.0.
-  constexpr auto max = static_cast<float>(std::numeric_limits<uint32_t>::max()) + 1.0f;
-  return xorwow(m_state) / max;
-}
-
-auto rngNext() -> float {
-  thread_local static auto rng = RngXorWow{};
-  return rng.next();
+  constexpr auto toF = 1.0f / (static_cast<float>(std::numeric_limits<uint32_t>::max()) + 1.0f);
+  return xorwow(m_state) * toF;
 }
 
 } // namespace tria::math

@@ -1,7 +1,9 @@
 #pragma once
+#include "tria/math/utils.hpp"
 #include <array>
 #include <cstdint>
 #include <limits>
+#include <utility>
 
 namespace tria::math {
 
@@ -29,39 +31,43 @@ private:
   std::array<uint32_t, 5> m_state;
 };
 
-/* Get the next value in the rng sequence.
- * Returns a float between 0.0 (inclusive) and 1.0 (exclusive).
+/* Global default random number generator.
  * Uses a random sequence per thread intialized with a seed based on the system-clock.
- * Return values are non-deterministic.
  */
-[[nodiscard]] auto rngNext() -> float;
+thread_local extern RngXorWow g_rng;
 
 /* Get the next value in the rng sequence.
- * Returns a float between 0.0 (inclusive) and 1.0 (exclusive).
+ * Returns a float between 0.0 (inclusive) and 1.0 (exclusive) with a uniform distribution.
  */
 template <typename Rng>
-[[nodiscard]] auto rngNext(Rng& rng) -> float {
+[[nodiscard]] auto rngSample(Rng& rng) -> float {
   return rng.next();
 }
 
 /* Get the next value in the rng sequence.
- * Returns a value between min (inclusive) and max (exclusive).
- * Uses a random sequence per thread intialized with a seed based on the system-clock.
- * Return values are non-deterministic.
- */
-template <typename T>
-[[nodiscard]] auto rngNext(T min, T max) -> T {
-  const auto range = max - min;
-  return min + static_cast<T>(range * rngNext());
-}
-
-/* Get the next value in the rng sequence.
- * Returns a value between min (inclusive) and max (exclusive).
+ * Returns a value between min (inclusive) and max (exclusive) with a uniform distribution.
  */
 template <typename Rng, typename T>
-[[nodiscard]] auto rngNext(Rng& rng, T min, T max) -> T {
+[[nodiscard]] auto rngSample(Rng& rng, T min, T max) -> T {
   const auto range = max - min;
-  return min + static_cast<T>(range * rngNext(rng));
+  return min + static_cast<T>(range * rngSample(rng));
+}
+
+/* Get the next two values with a gaussian (normal) distribution.
+ */
+template <typename Rng>
+[[nodiscard]] auto rngSampleGauss(Rng& rng) -> std::pair<float, float> {
+  float a, b;
+  do {
+    a = rng.next();
+    b = rng.next();
+    // Guard against a value very close to zero as we will feed it into std::log.
+  } while (a <= std::numeric_limits<float>::epsilon());
+  // BoxMuller transform.
+  // Source: https://en.wikipedia.org/wiki/Box%E2%80%93Muller_transform
+  return {
+      std::sqrt(-2.0f * std::log(a)) * std::cos(pi<float> * 2.0f * b),
+      std::sqrt(-2.0f * std::log(a)) * std::sin(pi<float> * 2.0f * b)};
 }
 
 } // namespace tria::math

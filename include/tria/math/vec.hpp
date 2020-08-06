@@ -1,9 +1,11 @@
 #pragma once
 #include "tria/log/param.hpp"
+#include "tria/math/rng.hpp"
 #include "tria/math/utils.hpp"
 #include <array>
 #include <cassert>
 #include <cstring>
+#include <limits>
 #include <type_traits>
 
 namespace tria::math {
@@ -298,7 +300,7 @@ template <typename T, size_t Size>
 template <typename T, size_t Size>
 [[nodiscard]] constexpr auto project(Vec<T, Size> vec, Vec<T, Size> nrm) noexcept -> Vec<T, Size> {
   const auto nrmSqrMag = nrm.getSqrMag();
-  if (nrmSqrMag < std::numeric_limits<T>::epsilon()) {
+  if (nrmSqrMag <= std::numeric_limits<T>::epsilon()) {
     return {};
   }
   return nrm * dot(vec, nrm) / nrmSqrMag;
@@ -351,6 +353,46 @@ approxZero(Vec<T, Size> x, T maxDelta = std::numeric_limits<T>::epsilon()) noexc
   return true;
 }
 
+/* Generate a random point on a unit sphere (aka a unit direction vector).
+ */
+template <typename Rng, typename VecT, size_t VecSize>
+[[nodiscard]] auto rngOnUnitSphere(Rng& rng) {
+  auto res = Vec<VecT, VecSize>{};
+  while (true) {
+    // Fill the vector with random numbers with a gaussian distribution.
+    for (auto i = 0U; i < VecSize; i += 2) {
+      const auto [g1, g2] = rngSampleGauss(rng);
+      res[i]              = g1;
+      // Note: because we generate 2 gaussian numbers at a time try to fill the next component with
+      // the second value.
+      if (i + 1 != VecSize) {
+        res[i + 1] = g2;
+      }
+    }
+    const auto sqrMag = res.getSqrMag();
+    // Reject zero vectors (should be super rare).
+    if (sqrMag <= std::numeric_limits<VecT>::epsilon()) {
+      continue;
+    }
+    // Normalize to a unit vector.
+    return res / std::sqrt(sqrMag);
+  }
+}
+
+/* Generate a random point on a 2d unit sphere (aka a unit direction vector).
+ */
+template <typename Rng>
+[[nodiscard]] auto rngOnUnitSphere2f(Rng& rng) {
+  return rngOnUnitSphere<Rng, float, 2>(rng);
+}
+
+/* Generate a random point on a 3d unit sphere (aka a unit direction vector).
+ */
+template <typename Rng>
+[[nodiscard]] auto rngOnUnitSphere3f(Rng& rng) {
+  return rngOnUnitSphere<Rng, float, 3>(rng);
+}
+
 using Vec2f = Vec<float, 2>;
 using Vec3f = Vec<float, 3>;
 using Vec4f = Vec<float, 4>;
@@ -360,24 +402,6 @@ using Vec3i = Vec<int, 3>;
 using Vec4i = Vec<int, 4>;
 
 using Color = Vec<float, 4>;
-
-namespace position {
-
-[[nodiscard]] constexpr auto zero() noexcept { return Vec3f{0.0, 0.0, 0.0}; }
-[[nodiscard]] constexpr auto one() noexcept { return Vec3f{1.0, 1.0, 1.0}; }
-
-} // namespace position
-
-namespace direction {
-
-[[nodiscard]] constexpr auto up() noexcept { return Vec3f{0.0, 1.0, 0.0}; }
-[[nodiscard]] constexpr auto down() noexcept { return Vec3f{0.0, -1.0, 0.0}; }
-[[nodiscard]] constexpr auto right() noexcept { return Vec3f{1.0, 0.0, 0.0}; }
-[[nodiscard]] constexpr auto left() noexcept { return Vec3f{-1.0, 0.0, 0.0}; }
-[[nodiscard]] constexpr auto forward() noexcept { return Vec3f{0.0, 0.0, 1.0}; }
-[[nodiscard]] constexpr auto backward() noexcept { return Vec3f{0.0, 0.0, -1.0}; }
-
-} // namespace direction
 
 namespace color {
 
