@@ -106,7 +106,7 @@ auto runApp(pal::Platform& platform, asset::Database& db, gfx::Context& gfx) {
         p.velocity.y() = -std::abs(p.velocity.y()) * collisionElasticity;
       }
 
-      p.velocity *= (1.0 - drag);
+      p.velocity *= (1.0 - drag * deltaTime.count());
       p.velocity.y() += gravity * deltaTime.count();
 
       p.pos += p.velocity * deltaTime.count();

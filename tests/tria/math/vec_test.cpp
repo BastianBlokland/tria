@@ -278,13 +278,13 @@ TEST_CASE("[math] - Vec", "[math]") {
     CHECK(lerp(Vec3i{10, 20, 10}, Vec3i{20, 40, 20}, 0.5) == Vec3i{15, 30, 15});
   }
 
-  SECTION("rndInsideUnitCube2f returns vectors where all components are <= 0.5 in magnitude") {
+  SECTION("rndInsideUnitCube returns vectors where all components are <= 0.5 in magnitude") {
     auto rng = RngXorWow{42};
     for (auto i = 0U; i != 1'000; ++i) {
       auto p = rndInsideUnitCube3f(rng);
-      REQUIRE(abs(p.x()) <= .5f);
-      REQUIRE(abs(p.y()) <= .5f);
-      REQUIRE(abs(p.z()) <= .5f);
+      REQUIRE(std::abs(p.x()) <= .5f);
+      REQUIRE(std::abs(p.y()) <= .5f);
+      REQUIRE(std::abs(p.z()) <= .5f);
     }
   }
 
@@ -293,6 +293,13 @@ TEST_CASE("[math] - Vec", "[math]") {
     auto rng    = RngXorWow{42};
     for (auto i = 0U; i != 1'000; ++i) {
       REQUIRE(approx(rndOnUnitSphere3f(rng).getSqrMag(), 1.0f, maxDev));
+    }
+  }
+
+  SECTION("rndInsideUnitSphere returns vectors of length 1 or less") {
+    auto rng = RngXorWow{42};
+    for (auto i = 0U; i != 1'000; ++i) {
+      REQUIRE(rndInsideUnitSphere3f(rng).getSqrMag() <= 1.0f);
     }
   }
 

@@ -16,11 +16,11 @@ public:
   /* Initialize xorwow with a seed based on the system clock.
    * Note: using this constructor makes the rng non-deterministic.
    */
-  RngXorWow();
+  RngXorWow() noexcept;
 
   /* Initialize xorwow from an explicit seed.
    */
-  explicit RngXorWow(uint64_t seed);
+  explicit RngXorWow(uint64_t seed) noexcept;
 
   /* Get the next value in the sequence.
    * Returns a float between 0.0 (inclusive) and 1.0 (exclusive).
@@ -40,7 +40,7 @@ thread_local extern RngXorWow g_rng;
  * Returns a float between 0.0 (inclusive) and 1.0 (exclusive) with a uniform distribution.
  */
 template <typename Rng>
-[[nodiscard]] auto rndSample(Rng& rng) -> float {
+[[nodiscard]] auto rndSample(Rng& rng) noexcept -> float {
   return rng.next();
 }
 
@@ -48,7 +48,7 @@ template <typename Rng>
  * Returns a value between min (inclusive) and max (exclusive) with a uniform distribution.
  */
 template <typename Rng, typename T>
-[[nodiscard]] auto rndSample(Rng& rng, T min, T max) -> T {
+[[nodiscard]] auto rndSample(Rng& rng, T min, T max) noexcept -> T {
   const auto range = max - min;
   return min + static_cast<T>(range * rndSample(rng));
 }
@@ -56,7 +56,7 @@ template <typename Rng, typename T>
 /* Get the next two values with a gaussian (normal) distribution.
  */
 template <typename Rng>
-[[nodiscard]] auto rndSampleGauss(Rng& rng) -> std::pair<float, float> {
+[[nodiscard]] auto rndSampleGauss(Rng& rng) noexcept -> std::pair<float, float> {
   float a, b;
   do {
     a = rng.next();
@@ -65,9 +65,8 @@ template <typename Rng>
   } while (a <= std::numeric_limits<float>::epsilon());
   // BoxMuller transform.
   // Source: https://en.wikipedia.org/wiki/Box%E2%80%93Muller_transform
-  return {
-      std::sqrt(-2.0f * std::log(a)) * std::cos(pi<float> * 2.0f * b),
-      std::sqrt(-2.0f * std::log(a)) * std::sin(pi<float> * 2.0f * b)};
+  return {std::sqrt(-2.0f * std::log(a)) * std::cos(pi<float> * 2.0f * b),
+          std::sqrt(-2.0f * std::log(a)) * std::sin(pi<float> * 2.0f * b)};
 }
 
 } // namespace tria::math

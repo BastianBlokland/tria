@@ -356,7 +356,7 @@ approxZero(Vec<T, Size> x, T maxDelta = std::numeric_limits<T>::epsilon()) noexc
 /* Generate a random point inside a unit cube (all sides are 1 unit).
  */
 template <typename Rng, typename VecT, size_t VecSize>
-[[nodiscard]] auto rndInsideUnitCube(Rng& rng) {
+[[nodiscard]] auto rndInsideUnitCube(Rng& rng) noexcept {
   auto res = Vec<VecT, VecSize>{};
   for (auto i = 0U; i < VecSize; ++i) {
     res[i] = rndSample(rng, -.5f, +.5f);
@@ -367,21 +367,22 @@ template <typename Rng, typename VecT, size_t VecSize>
 /* Generate a random point inside a 2d unit cube (all sides are 1 unit).
  */
 template <typename Rng>
-[[nodiscard]] auto rndInsideUnitCube2f(Rng& rng) {
+[[nodiscard]] auto rndInsideUnitCube2f(Rng& rng) noexcept {
   return rndInsideUnitCube<Rng, float, 2>(rng);
 }
 
 /* Generate a random point inside a 3d unit cube (all sides are 1 unit).
  */
 template <typename Rng>
-[[nodiscard]] auto rndInsideUnitCube3f(Rng& rng) {
+[[nodiscard]] auto rndInsideUnitCube3f(Rng& rng) noexcept {
   return rndInsideUnitCube<Rng, float, 3>(rng);
 }
 
-/* Generate a random point on a unit sphere (radius of 1, aka a unit direction vector).
+/* Generate a random point on a unit sphere (radius of 1 unit, aka a direction vector).
  */
 template <typename Rng, typename VecT, size_t VecSize>
-[[nodiscard]] auto rndOnUnitSphere(Rng& rng) {
+[[nodiscard]] auto rndOnUnitSphere(Rng& rng) noexcept {
+  // TODO(bastian): Should we just use a simple rejection method? Probably considerably faster.
   auto res = Vec<VecT, VecSize>{};
   while (true) {
     // Fill the vector with random numbers with a gaussian distribution.
@@ -404,18 +405,41 @@ template <typename Rng, typename VecT, size_t VecSize>
   }
 }
 
-/* Generate a random point on a 2d unit sphere (radius of 1, aka a unit direction vector).
+/* Generate a random point on a 2d unit sphere (radius of 1 unit, aka a direction vector).
  */
 template <typename Rng>
-[[nodiscard]] auto rndOnUnitSphere2f(Rng& rng) {
+[[nodiscard]] auto rndOnUnitSphere2f(Rng& rng) noexcept {
   return rndOnUnitSphere<Rng, float, 2>(rng);
 }
 
-/* Generate a random point on a 3d unit sphere (radius of 1, aka a unit direction vector).
+/* Generate a random point on a 3d unit sphere (radius of 1 unit, aka a direction vector).
  */
 template <typename Rng>
-[[nodiscard]] auto rndOnUnitSphere3f(Rng& rng) {
+[[nodiscard]] auto rndOnUnitSphere3f(Rng& rng) noexcept {
   return rndOnUnitSphere<Rng, float, 3>(rng);
+}
+
+/* Generate a random point inside a unit sphere (radius of 1 unit).
+ */
+template <typename Rng, typename VecT, size_t VecSize>
+[[nodiscard]] auto rndInsideUnitSphere(Rng& rng) noexcept {
+  // TODO(bastian): Should we just use a simple rejection method? Probably considerably faster.
+  // Cube-root as the area increases cubicly as you get further from the center.
+  return rndOnUnitSphere<Rng, VecT, VecSize>(rng) * std::cbrt(rndSample(rng));
+}
+
+/* Generate a random point inside a 2d unit sphere (radius of 1 unit).
+ */
+template <typename Rng>
+[[nodiscard]] auto rndInsideUnitSphere2f(Rng& rng) noexcept {
+  return rndInsideUnitSphere<Rng, float, 2>(rng);
+}
+
+/* Generate a random point inside a 3d unit sphere (radius of 1 unit).
+ */
+template <typename Rng>
+[[nodiscard]] auto rndInsideUnitSphere3f(Rng& rng) noexcept {
+  return rndInsideUnitSphere<Rng, float, 3>(rng);
 }
 
 using Vec2f = Vec<float, 2>;

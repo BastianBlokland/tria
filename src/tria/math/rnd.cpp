@@ -14,7 +14,7 @@ namespace {
 /* Implementation of the 'splitmix' algorithm.
  * Source: https://en.wikipedia.org/wiki/Xorshift#xorwow
  */
-[[nodiscard]] auto splitmix64(uint64_t& state) -> uint64_t {
+[[nodiscard]] auto splitmix64(uint64_t& state) noexcept -> uint64_t {
   auto result = state;
   state       = result + 0x9E3779B97f4A7C15;
   result      = (result ^ (result >> 30U)) * 0xBF58476D1CE4E5B9;
@@ -26,7 +26,7 @@ namespace {
  * Note: First four elements of the state array should be initialized to non-zero.
  * Source: https://en.wikipedia.org/wiki/Xorshift#xorwow
  */
-[[nodiscard]] auto xorwow(std::array<uint32_t, 5>& state) -> uint32_t {
+[[nodiscard]] auto xorwow(std::array<uint32_t, 5>& state) noexcept -> uint32_t {
   assert(state[0] != 0U);
   assert(state[1] != 0U);
   assert(state[2] != 0U);
@@ -50,11 +50,11 @@ namespace {
 
 } // namespace
 
-RngXorWow::RngXorWow() : RngXorWow{static_cast<uint64_t>(std::clock())} {}
+RngXorWow::RngXorWow() noexcept : RngXorWow{static_cast<uint64_t>(std::clock())} {}
 
-RngXorWow::RngXorWow(uint64_t seed) {
+RngXorWow::RngXorWow(uint64_t seed) noexcept {
   // 0 is a seed we cannot recover from.
-  // TODO(bastian): Should just document the precondition that you are not allowed to use seed 0?
+  // TODO(bastian): Should we just document the precondition that you are not allowed to use seed 0?
   if (seed == 0U) {
     seed = 1U;
   }
