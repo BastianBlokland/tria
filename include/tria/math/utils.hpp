@@ -59,11 +59,11 @@ template <typename T>
 
 /* Returns how many bits are set in a mask.
  */
-[[nodiscard]] auto popCount(uint32_t mask) -> unsigned int;
+[[nodiscard]] auto popCount(uint32_t mask) noexcept -> unsigned int;
 
 /* Returns the amount of trailing zeroes in a mask.
  * Note: returns 32 for a mask with 0 set bits.
  */
-[[nodiscard]] auto countTrailingZeroes(uint32_t mask) -> unsigned int;
+[[nodiscard]] auto countTrailingZeroes(uint32_t mask) noexcept -> unsigned int;
 
 } // namespace tria::math

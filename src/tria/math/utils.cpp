@@ -11,14 +11,14 @@
 
 namespace tria::math {
 
-auto popCount(uint32_t mask) -> unsigned int {
+auto popCount(uint32_t mask) noexcept -> unsigned int {
 #if defined(TRIA_WIN32)
   return __popcnt(mask);
 #endif
   return __builtin_popcount(mask);
 }
 
-auto countTrailingZeroes(uint32_t mask) -> unsigned int {
+auto countTrailingZeroes(uint32_t mask) noexcept -> unsigned int {
   if (mask == 0U) {
     return 32U;
   }
