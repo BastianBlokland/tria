@@ -32,16 +32,6 @@ namespace {
     bindings.push_back(imgBinding);
   }
 
-  // Uniform buffers.
-  for (auto i = 0U; i != info.getUniformBufferCount(); ++i, ++binding) {
-    VkDescriptorSetLayoutBinding buffBinding = {};
-    buffBinding.binding                      = binding;
-    buffBinding.descriptorType               = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-    buffBinding.descriptorCount              = 1U;
-    buffBinding.stageFlags                   = VK_SHADER_STAGE_VERTEX_BIT;
-    bindings.push_back(buffBinding);
-  }
-
   // Dynamic uniform buffers.
   for (auto i = 0U; i != info.getUniformBufferDynamicCount(); ++i, ++binding) {
     VkDescriptorSetLayoutBinding buffBindingDyn = {};
@@ -73,12 +63,6 @@ namespace {
   if (info.getImageCount() > 0) {
     sizes[sizesCount].type              = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
     sizes[sizesCount++].descriptorCount = info.getImageCount() * g_descriptorSetsPerGroup;
-  }
-
-  // Uniform buffers.
-  if (info.getUniformBufferCount() > 0) {
-    sizes[sizesCount].type              = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-    sizes[sizesCount++].descriptorCount = info.getUniformBufferCount() * g_descriptorSetsPerGroup;
   }
 
   // Dynamic uniform buffers.
@@ -140,17 +124,14 @@ auto DescriptorSet::getVkDescSet() const noexcept -> VkDescriptorSet {
   return m_group ? m_group->getVkDescSet(m_id) : nullptr;
 }
 
-auto DescriptorSet::bindImage(uint32_t binding, const Image& img, const Sampler& sampler) -> void {
-  m_group->bindImage(this, binding, img, sampler);
+auto DescriptorSet::attachImage(uint32_t binding, const Image& img, const Sampler& sampler)
+    -> void {
+  m_group->attachImage(this, binding, img, sampler);
 }
 
-auto DescriptorSet::bindUniformBuffer(uint32_t binding, const Buffer& buffer) -> void {
-  m_group->bindUniformBuffer(this, binding, buffer);
-}
-
-auto DescriptorSet::bindUniformBufferDynamic(
+auto DescriptorSet::attachUniformBufferDynamic(
     uint32_t binding, const Buffer& buffer, uint32_t maxSize) -> void {
-  m_group->bindUniformBufferDynamic(this, binding, buffer, maxSize);
+  m_group->attachUniformBufferDynamic(this, binding, buffer, maxSize);
 }
 
 DescriptorGroup::DescriptorGroup(
@@ -184,8 +165,7 @@ DescriptorGroup::DescriptorGroup(
       {"id", m_groupId},
       {"setCount", g_descriptorSetsPerGroup},
       {"setImgCount", info.getImageCount()},
-      {"setUniformBuffCount", info.getUniformBufferCount()},
-      {"setUniformBuffDynamicCount", info.getUniformBufferDynamicCount()});
+      {"setUniformDynamicCount", info.getUniformBufferDynamicCount()});
 }
 
 DescriptorGroup::~DescriptorGroup() {
@@ -211,7 +191,7 @@ auto DescriptorGroup::allocate() noexcept -> std::optional<DescriptorSet> {
   return DescriptorSet{this, static_cast<int32_t>(tz)};
 }
 
-auto DescriptorGroup::bindImage(
+auto DescriptorGroup::attachImage(
     DescriptorSet* set, uint32_t binding, const Image& img, const Sampler& sampler) -> void {
   assert(set);
   assert(set->m_group == this);
@@ -235,31 +215,7 @@ auto DescriptorGroup::bindImage(
   vkUpdateDescriptorSets(m_device->getVkDevice(), 1U, &descriptorWrite, 0U, nullptr);
 }
 
-auto DescriptorGroup::bindUniformBuffer(DescriptorSet* set, uint32_t binding, const Buffer& buffer)
-    -> void {
-  assert(set);
-  assert(set->m_group == this);
-  assert(set->m_id >= 0);
-  assert(m_info.getUniformBufferCount() > 0);
-
-  VkDescriptorBufferInfo bufferInfo = {};
-  bufferInfo.buffer                 = buffer.getVkBuffer();
-  bufferInfo.offset                 = 0U;
-  bufferInfo.range                  = VK_WHOLE_SIZE;
-
-  VkWriteDescriptorSet descriptorWrite = {};
-  descriptorWrite.sType                = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-  descriptorWrite.dstSet               = m_sets[set->m_id];
-  descriptorWrite.dstBinding           = binding;
-  descriptorWrite.dstArrayElement      = 0U;
-  descriptorWrite.descriptorType       = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-  descriptorWrite.descriptorCount      = 1U;
-  descriptorWrite.pBufferInfo          = &bufferInfo;
-
-  vkUpdateDescriptorSets(m_device->getVkDevice(), 1U, &descriptorWrite, 0U, nullptr);
-}
-
-auto DescriptorGroup::bindUniformBufferDynamic(
+auto DescriptorGroup::attachUniformBufferDynamic(
     DescriptorSet* set, uint32_t binding, const Buffer& buffer, uint32_t maxSize) -> void {
   assert(set);
   assert(set->m_group == this);

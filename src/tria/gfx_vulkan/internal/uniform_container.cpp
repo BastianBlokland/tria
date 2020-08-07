@@ -21,7 +21,7 @@ UniformContainer::UniformContainer(log::Logger* logger, Device* device) :
     m_logger{logger}, m_device{device} {
   assert(m_device);
 
-  m_descInfo     = DescriptorInfo{0U, 0U, 1U};
+  m_descInfo     = DescriptorInfo{0U, 1U};
   m_minAlignment = m_device->getLimits().minUniformBufferOffsetAlignment;
 }
 
@@ -64,7 +64,7 @@ auto UniformContainer::upload(const void* data, size_t size)
 
   DBG_BUFFER_NAME(m_device, buffer.getVkBuffer(), "uniform_container");
 
-  descSet.bindUniformBufferDynamic(0U, buffer, g_maxUniformDataSize);
+  descSet.attachUniformBufferDynamic(0U, buffer, g_maxUniformDataSize);
   m_sets.emplace_back(std::move(descSet), std::move(buffer), paddedSize);
 
   LOG_D(

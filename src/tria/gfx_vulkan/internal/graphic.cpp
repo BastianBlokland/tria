@@ -186,7 +186,7 @@ Graphic::Graphic(
 
   // Create a descriptor for the per graphic resources.
   m_descSet = device->getDescManager().allocate(
-      DescriptorInfo{static_cast<uint32_t>(asset->getSamplerCount()), 0U, 0U});
+      DescriptorInfo{static_cast<uint32_t>(asset->getSamplerCount()), 0U});
 
   // Create the texture resources and bind them to our descriptor.
   m_textures.reserve(m_asset->getSamplerCount());
@@ -199,7 +199,7 @@ Graphic::Graphic(
     auto sampler          = Sampler{device, filterMode, tex->getImage().getMipLevels()};
     DBG_SAMPLER_NAME(m_device, sampler.getVkSampler(), m_asset->getId());
 
-    m_descSet.bindImage(dstBinding++, tex->getImage(), sampler);
+    m_descSet.attachImage(dstBinding++, tex->getImage(), sampler);
     m_textures.emplace_back(tex, std::move(sampler));
   }
 }
