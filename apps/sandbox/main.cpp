@@ -13,7 +13,7 @@ using namespace tria;
 using namespace tria::math;
 using namespace std::chrono;
 
-struct ParticleData final {
+struct alignas(16) ParticleData final {
   Vec2f pos;
   Vec2f velocity;
   Vec2f size;
@@ -30,7 +30,7 @@ auto runApp(pal::Platform& platform, asset::Database& db, gfx::Context& gfx) {
   auto win    = platform.createWindow({1024, 1024});
   auto canvas = gfx.createCanvas(&win, gfx::VSyncMode::Disable);
 
-  const auto* particle = db.get("particle.gfx")->downcast<asset::Graphic>();
+  const auto* particleGfx = db.get("particle.gfx")->downcast<asset::Graphic>();
 
   constexpr auto gravity             = 600.0f;
   constexpr auto drag                = 0.002f;
@@ -115,9 +115,7 @@ auto runApp(pal::Platform& platform, asset::Database& db, gfx::Context& gfx) {
 
     // Draw particles.
     if (canvas.drawBegin(Color{0.3, 0.3, 0.3, 1.0})) {
-      for (const auto& p : particles) {
-        canvas.draw(particle, p);
-      }
+      canvas.draw(particleGfx, particles.begin(), particles.end());
       canvas.drawEnd();
     } else {
       // Unable to draw, possibly due to a minimized window.

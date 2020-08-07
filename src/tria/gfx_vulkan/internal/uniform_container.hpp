@@ -29,6 +29,10 @@ public:
     return m_device->getDescManager().getVkLayout(m_descInfo);
   }
 
+  /* Maximum amount of data that can be uploaded to a single entry.
+   */
+  [[nodiscard]] auto getMaxDataSize() -> uint32_t { return m_maxDataSize; }
+
   /* Discard any previously uploaded data.
    * Note: Care must be taken to avoid resetting while any descriptor-set from this container is
    * still in use.
@@ -54,6 +58,7 @@ private:
   Device* m_device;
   DescriptorInfo m_descInfo;
   uint32_t m_minAlignment;
+  uint32_t m_maxDataSize;
 
   std::vector<DescData> m_sets;
 };
