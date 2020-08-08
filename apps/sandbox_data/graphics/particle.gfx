@@ -1,6 +1,6 @@
 {
   "vertShader": "shaders/particle.vert.spv",
-  "fragShader": "shaders/plain.frag.spv",
+  "fragShader": "shaders/particle.frag.spv",
   "mesh": "models/quad.obj",
   "samplers": [
     {

@@ -48,10 +48,14 @@ public:
       VkExtent2D extent,
       math::Color clearCol) -> void;
 
-  /* Record a single draw of the given graphic.
+  /* Record a draw of the given graphic.
    */
-  auto draw(VkRenderPass vkRenderPass, const Graphic* graphic, const void* uniData, size_t uniSize)
-      -> void;
+  auto draw(
+      VkRenderPass vkRenderPass,
+      const Graphic* graphic,
+      const void* uniData,
+      size_t uniSize,
+      uint32_t count) -> void;
 
   /* Finish recordering draw commands and submit the work to the gpu.
    */
@@ -74,6 +78,8 @@ private:
   std::array<VkCommandBuffer, 2> m_gfxVkCommandBuffers;
   const VkCommandBuffer& m_transferVkCommandBuffer = m_gfxVkCommandBuffers[0];
   const VkCommandBuffer& m_drawVkCommandBuffer     = m_gfxVkCommandBuffers[1];
+
+  auto bindGraphicDescriptors(const Graphic* graphic, const void* uniData, size_t uniSize) -> void;
 
   auto waitForDone() -> void;
   auto markNotDone() -> void;

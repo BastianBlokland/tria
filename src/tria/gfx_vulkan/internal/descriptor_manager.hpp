@@ -19,24 +19,17 @@ class DescriptorGroup;
 /* Information about the types of descriptors in a DescriptorSet.
  * Note: The order of bindings in a descriptor set is fixed:
  * 1: ImageSampler
- * 2: UniformBuffer
- * 3: UniformBufferDynamic
+ * 2: UniformBufferDynamic
  * Binding numbers are sequential starting from 0.
  */
 class DescriptorInfo final {
 public:
-  DescriptorInfo() noexcept :
-      m_imageCount{0}, m_uniformBufferCount{0}, m_uniformBufferDynamicCount{0} {}
-  DescriptorInfo(
-      unsigned int imageCount,
-      unsigned int uniformBufferCount,
-      unsigned int uniformBufferDynamicCount) noexcept :
-      m_imageCount{imageCount},
-      m_uniformBufferCount{uniformBufferCount},
-      m_uniformBufferDynamicCount{uniformBufferDynamicCount} {}
+  DescriptorInfo() noexcept : m_imageCount{0}, m_uniformBufferDynamicCount{0} {}
+  DescriptorInfo(unsigned int imageCount, unsigned int uniformBufferDynamicCount) noexcept :
+      m_imageCount{imageCount}, m_uniformBufferDynamicCount{uniformBufferDynamicCount} {}
 
   [[nodiscard]] constexpr auto operator==(const DescriptorInfo& rhs) const noexcept -> bool {
-    return m_imageCount == rhs.m_imageCount && m_uniformBufferCount == rhs.m_uniformBufferCount &&
+    return m_imageCount == rhs.m_imageCount &&
         m_uniformBufferDynamicCount == rhs.m_uniformBufferDynamicCount;
   }
 
@@ -46,10 +39,6 @@ public:
 
   [[nodiscard]] constexpr auto getImageCount() const noexcept { return m_imageCount; }
 
-  [[nodiscard]] constexpr auto getUniformBufferCount() const noexcept {
-    return m_uniformBufferCount;
-  }
-
   [[nodiscard]] constexpr auto getUniformBufferDynamicCount() const noexcept {
     return m_uniformBufferDynamicCount;
   }
@@ -57,12 +46,11 @@ public:
   /* Total amount of bindings.
    */
   [[nodiscard]] constexpr auto getBindingCount() const noexcept {
-    return m_imageCount + m_uniformBufferCount + m_uniformBufferDynamicCount;
+    return m_imageCount + m_uniformBufferDynamicCount;
   }
 
 private:
   unsigned int m_imageCount;
-  unsigned int m_uniformBufferCount;
   unsigned int m_uniformBufferDynamicCount;
 };
 
@@ -97,9 +85,14 @@ public:
   [[nodiscard]] auto getVkLayout() const noexcept -> VkDescriptorSetLayout;
   [[nodiscard]] auto getVkDescSet() const noexcept -> VkDescriptorSet;
 
-  auto bindImage(uint32_t binding, const Image& img, const Sampler& sampler) -> void;
-  auto bindUniformBuffer(uint32_t binding, const Buffer& buffer) -> void;
-  auto bindUniformBufferDynamic(uint32_t binding, const Buffer& buffer, uint32_t maxSize) -> void;
+  /* Attach an image and sampler to a combined-image-sampler binding slot.
+   */
+  auto attachImage(uint32_t binding, const Image& img, const Sampler& sampler) -> void;
+
+  /* Attach a uniform buffer to a uniform binding slot.
+   * Size of the data is static but the offset into the buffer is given dynamically at bind-time.
+   */
+  auto attachUniformBufferDynamic(uint32_t binding, const Buffer& buffer, uint32_t size) -> void;
 
 private:
   DescriptorGroup* m_group;
@@ -136,18 +129,14 @@ public:
    */
   [[nodiscard]] auto allocate() noexcept -> std::optional<DescriptorSet>;
 
-  /* Bind an image to an allocated DescriptorSet.
+  /* Attach an image and sampler to an allocated DescriptorSet.
    */
-  auto bindImage(DescriptorSet* set, uint32_t binding, const Image& img, const Sampler& sampler)
+  auto attachImage(DescriptorSet* set, uint32_t binding, const Image& img, const Sampler& sampler)
       -> void;
 
-  /* Bind a uniform-buffer to an allocated DescriptorSet.
+  /* Attach a dynamic uniform-buffer to an allocated DescriptorSet.
    */
-  auto bindUniformBuffer(DescriptorSet* set, uint32_t binding, const Buffer& buffer) -> void;
-
-  /* Bind a dynamic uniform-buffer to an allocated DescriptorSet.
-   */
-  auto bindUniformBufferDynamic(
+  auto attachUniformBufferDynamic(
       DescriptorSet* set, uint32_t binding, const Buffer& buffer, uint32_t maxSize) -> void;
 
   /* Return a DescriptorSet to the group.
