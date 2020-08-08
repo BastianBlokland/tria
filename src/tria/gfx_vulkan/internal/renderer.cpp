@@ -225,7 +225,7 @@ auto Renderer::draw(
     uint32_t count) -> void {
 
   // TODO(bastian): Is it worth it throwing an exception here?
-  assert(uniSize <= m_uni.getMaxDataSize());
+  assert(uniSize <= m_uni->getMaxDataSize());
 
   // Prepare and bind per graphic resources (pipeline and mesh).
   graphic->prepareResources(m_transferer.get(), m_uni.get(), vkRenderPass);

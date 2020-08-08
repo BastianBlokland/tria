@@ -147,7 +147,6 @@ endif()
 # Add child cmake files.
 add_subdirectory(src)
 add_subdirectory(apps)
-add_subdirectory(data)
 if(BUILD_TESTING)
   add_subdirectory(tests)
 endif()

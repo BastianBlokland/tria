@@ -58,8 +58,6 @@ public:
         std::alignment_of_v<UniformDataType> == 16,
         "Uniform data type has to be aligned to 16 bytes");
 
-    assert(uniDataBegin);
-    assert(uniDataEnd);
     assert(uniDataBegin <= uniDataEnd);
 
     const auto count = static_cast<uint32_t>(uniDataEnd - uniDataBegin);

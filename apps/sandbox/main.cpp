@@ -30,7 +30,7 @@ auto runApp(pal::Platform& platform, asset::Database& db, gfx::Context& gfx) {
   auto win    = platform.createWindow({1024, 1024});
   auto canvas = gfx.createCanvas(&win, gfx::VSyncMode::Disable);
 
-  const auto* particleGfx = db.get("particle.gfx")->downcast<asset::Graphic>();
+  const auto* particleGfx = db.get("graphics/particle.gfx")->downcast<asset::Graphic>();
 
   constexpr auto gravity             = 600.0f;
   constexpr auto drag                = 0.002f;
@@ -136,8 +136,8 @@ auto main(int /*unused*/, char* * /*unused*/) -> int {
   int ret;
   try {
     auto platform = pal::Platform{&logger};
-    auto db       = asset::Database{&logger, pal::getCurExecutablePath().parent_path() / "data"};
-    auto gfx      = gfx::Context{&logger};
+    auto db  = asset::Database{&logger, pal::getCurExecutablePath().parent_path() / "sandbox_data"};
+    auto gfx = gfx::Context{&logger};
 
     LOG_I(&logger, "Sandbox startup");
 
