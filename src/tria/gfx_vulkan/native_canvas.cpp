@@ -144,13 +144,14 @@ auto NativeCanvas::drawBegin(math::Color clearCol) -> bool {
 }
 
 auto NativeCanvas::draw(
-    const asset::Graphic* asset, const void* uniData, size_t uniSize, uint32_t count) -> void {
+    const asset::Graphic* asset, const void* instData, size_t instDataSize, uint32_t count)
+    -> void {
   if (!m_curSwapchainImgIdx) {
     throw err::SyncErr{"Unable record a draw: no draw active"};
   }
 
   const auto* graphic = m_graphics->get(asset, m_shaders.get(), m_meshes.get(), m_textures.get());
-  getCurRenderer().draw(m_vkRenderPass, graphic, uniData, uniSize, count);
+  getCurRenderer().draw(m_vkRenderPass, graphic, instData, instDataSize, count);
 }
 
 auto NativeCanvas::drawEnd() -> void {

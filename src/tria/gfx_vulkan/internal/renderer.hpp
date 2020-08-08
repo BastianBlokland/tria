@@ -79,7 +79,8 @@ private:
   const VkCommandBuffer& m_transferVkCommandBuffer = m_gfxVkCommandBuffers[0];
   const VkCommandBuffer& m_drawVkCommandBuffer     = m_gfxVkCommandBuffers[1];
 
-  auto bindGraphicDescriptors(const Graphic* graphic, const void* uniData, size_t uniSize) -> void;
+  auto bindGraphicDescriptors(const Graphic* graphic, const void* instData, size_t instDataSize)
+      -> void;
 
   auto waitForDone() -> void;
   auto markNotDone() -> void;

@@ -32,42 +32,46 @@ public:
    */
   [[nodiscard]] auto drawBegin(math::Color clearCol) -> bool;
 
-  /* Draw a single instance of the given graphic.
+  /* Draw a single instance of a graphic without instance data.
    */
-  template <typename UniformDataType>
-  auto draw(const asset::Graphic* asset, const UniformDataType& uniData) -> void {
-    static_assert(
-        std::is_trivially_copyable_v<UniformDataType>,
-        "Uniform data type has to be trivially copyable");
-    static_assert(
-        std::alignment_of_v<UniformDataType> == 16,
-        "Uniform data type has to be aligned to 16 bytes");
+  auto draw(const asset::Graphic* asset) -> void { draw(asset, nullptr, 0U, 1U); }
 
-    draw(asset, &uniData, sizeof(UniformDataType), 1U);
+  /* Draw a single instance of a graphic with instance data.
+   */
+  template <typename InstDataType>
+  auto draw(const asset::Graphic* asset, const InstDataType& instData) -> void {
+    static_assert(
+        std::is_trivially_copyable_v<InstDataType>,
+        "Instance data type has to be trivially copyable");
+    static_assert(
+        std::alignment_of_v<InstDataType> == 16,
+        "Instance data type has to be aligned to 16 bytes");
+
+    draw(asset, &instData, sizeof(InstDataType), 1U);
   }
 
-  /* Draw multple instances of the given graphic.
+  /* Draw multple instances of a graphic with instance data.
    */
-  template <typename UniformDataType>
-  auto draw(const asset::Graphic* asset, UniformDataType* uniDataBegin, UniformDataType* uniDataEnd)
+  template <typename InstDataType>
+  auto draw(const asset::Graphic* asset, InstDataType* instDataBegin, InstDataType* instDataEnd)
       -> void {
     static_assert(
-        std::is_trivially_copyable_v<UniformDataType>,
-        "Uniform data type has to be trivially copyable");
+        std::is_trivially_copyable_v<InstDataType>,
+        "Instance data type has to be trivially copyable");
     static_assert(
-        std::alignment_of_v<UniformDataType> == 16,
-        "Uniform data type has to be aligned to 16 bytes");
+        std::alignment_of_v<InstDataType> == 16,
+        "Instance data type has to be aligned to 16 bytes");
 
-    assert(uniDataBegin <= uniDataEnd);
+    assert(instDataBegin <= instDataEnd);
 
-    const auto count = static_cast<uint32_t>(uniDataEnd - uniDataBegin);
-    draw(asset, uniDataBegin, sizeof(UniformDataType), count);
+    const auto count = static_cast<uint32_t>(instDataEnd - instDataBegin);
+    draw(asset, instDataBegin, sizeof(InstDataType), count);
   }
 
   /* Draw 'count' instances of the given graphic.
-   * Note: Make sure that 'count' * 'uniSize' of data is available at the 'uniData' pointer.
+   * Note: Make sure that 'count' * 'instDataSize' of data is available at the 'instData' pointer.
    */
-  auto draw(const asset::Graphic* asset, const void* uniData, size_t uniSize, uint32_t count)
+  auto draw(const asset::Graphic* asset, const void* instData, size_t instDataSize, uint32_t count)
       -> void;
 
   /* End drawing and present the result to the window.
