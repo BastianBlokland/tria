@@ -1,5 +1,7 @@
 #version 450
 #extension GL_ARB_separate_shader_objects : enable
+#extension GL_GOOGLE_include_directive : enable
+#include "include/instance.glsl"
 
 layout(location = 0, set = 0) in vec3 inVertPos;
 layout(location = 1, set = 0) in vec4 inVertColor;
@@ -13,8 +15,7 @@ struct InstanceData {
   vec4 color;
   float lifetime;
 };
-
-layout(std140, binding = 0, set = 1) uniform UniformData { InstanceData[2048] instances; };
+INSTANCE_INPUT_BINDING(set = 1, InstanceData);
 
 layout(location = 0) out vec4 outColor;
 layout(location = 1) out vec2 outTexcoord;
@@ -25,8 +26,7 @@ vec4 toNdc(vec2 vertPos, vec2 pos, vec2 size, vec2 screenSize) {
 }
 
 void main() {
-  InstanceData data = instances[gl_InstanceIndex];
-  gl_Position       = toNdc(inVertPos.xy, data.pos, data.size, data.screenSize);
-  outColor          = data.color;
-  outTexcoord       = inVertTexcoord;
+  gl_Position = toNdc(inVertPos.xy, GET_INST().pos, GET_INST().size, GET_INST().screenSize);
+  outColor    = GET_INST().color;
+  outTexcoord = inVertTexcoord;
 }
