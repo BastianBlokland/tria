@@ -53,7 +53,13 @@ namespace {
       }
     }
   }
-  // Fifo (vsync) is guaranteed to be available.
+  // Prefer fifo_relaxed to reduce stuttering in case of late frames.
+  for (const auto& mode : modes) {
+    if (mode == VK_PRESENT_MODE_FIFO_RELAXED_KHR) {
+      return mode;
+    }
+  }
+  // Fifo is guaranteed to be available.
   return VK_PRESENT_MODE_FIFO_KHR;
 }
 
