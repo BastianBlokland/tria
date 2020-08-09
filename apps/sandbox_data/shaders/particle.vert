@@ -20,13 +20,13 @@ INSTANCE_INPUT_BINDING(set = 1, InstanceData);
 layout(location = 0) out vec4 outColor;
 layout(location = 1) out vec2 outTexcoord;
 
-vec4 toNdc(vec2 vertPos, vec2 pos, vec2 size, vec2 screenSize) {
+vec4 toClipspace(vec2 vertPos, vec2 pos, vec2 size, vec2 screenSize) {
   const vec2 screenPos = vertPos * size + pos;
   return vec4(screenPos / screenSize * 2.0 - 1.0, 0.0, 1.0);
 }
 
 void main() {
-  gl_Position = toNdc(inVertPos.xy, GET_INST().pos, GET_INST().size, GET_INST().screenSize);
+  gl_Position = toClipspace(inVertPos.xy, GET_INST().pos, GET_INST().size, GET_INST().screenSize);
   outColor    = GET_INST().color;
   outTexcoord = inVertTexcoord;
 }

@@ -8,12 +8,10 @@ TEST_CASE("[math] - Vec", "[math]") {
 
   SECTION("Vectors are fixed size") {
     auto vf = Vec3f{};
-    CHECK(vf.getSize() == 3);
-    CHECK(vf.getByteSize() == sizeof(float) * 3);
+    CHECK(sizeof(vf) == sizeof(float) * 3);
 
     auto vc = Vec<char, 16>{};
-    CHECK(vc.getSize() == 16);
-    CHECK(vc.getByteSize() == sizeof(char) * 16);
+    CHECK(sizeof(vc) == sizeof(char) * 16);
   }
 
   SECTION("Vector can be reassigned") {
@@ -221,6 +219,37 @@ TEST_CASE("[math] - Vec", "[math]") {
     CHECK(approx(dot(vec1, vec2), -1.0f));
   }
 
+  SECTION("Angle between parallel vectors is 0 radians") {
+    const auto vec1 = Vec2f{0.0f, 1.0f};
+    const auto vec2 = Vec2f{0.0f, 1.0f};
+    CHECK(approxZero(angle(vec1, vec2)));
+  }
+
+  SECTION("Angle between opposite vectors is pi radians") {
+    const auto vec1 = Vec2f{0.0f, 1.0f};
+    const auto vec2 = Vec2f{0.0f, -1.0f};
+    CHECK(approx(angle(vec1, vec2), pi<float>));
+  }
+
+  SECTION("Angle between perpendicular vectors is half pi radians") {
+    CHECK(approx(angle(Vec2f{0.f, 1.f}, Vec2f{1.f, 0.f}), pi<float> * .5f));
+    CHECK(approx(angle(Vec2f{0.f, 1.f}, Vec2f{-1.f, 0.f}), pi<float> * .5f));
+    CHECK(approx(angle(Vec2f{0.f, -1.f}, Vec2f{1.f, 0.f}), pi<float> * .5f));
+    CHECK(approx(angle(Vec2f{0.f, -1.f}, Vec2f{-1.f, 0.f}), pi<float> * .5f));
+  }
+
+  SECTION("Angle between scaled vectors is the same an non-scaled vectors") {
+    const auto vec1 = Vec2f{1.23f, -2.2f};
+    const auto vec2 = Vec2f{-.23f, 4.42f};
+    const auto a    = angle(vec1, vec2);
+    CHECK(approx(angle(vec1.getNorm(), vec2.getNorm()), a));
+  }
+
+  SECTION("Angle between a vector and a zero-vector is zero") {
+    const auto vec1 = Vec2f{1.23f, -2.2f};
+    CHECK(approxZero(angle(vec1, Vec2f{})));
+  }
+
   SECTION("Projecting a vector onto itself results in the same vector") {
     const auto vec = Vec2f{0.0f, 1.0f};
     CHECK(approx(project(vec, vec), vec));
@@ -276,6 +305,10 @@ TEST_CASE("[math] - Vec", "[math]") {
 
   SECTION("lerp at value 0.5 returns the vector in the middle of x and y") {
     CHECK(lerp(Vec3i{10, 20, 10}, Vec3i{20, 40, 20}, 0.5) == Vec3i{15, 30, 15});
+  }
+
+  SECTION("persDivide divides each component by w") {
+    CHECK(approx(persDivide(Vec4f{1.f, 2.f, 4.f, 4.f}), Vec3f{.25f, .5f, 1.f}));
   }
 
   SECTION("rndInsideUnitCube returns vectors where all components are <= 0.5 in magnitude") {
