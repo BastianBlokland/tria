@@ -166,7 +166,13 @@ auto NativeCanvas::drawEnd() -> void {
   }
 
   auto& curRenderer = getCurRenderer();
+
+  // Wait until the previous renderer is finished, reason is that we only want a single frame in
+  // flight on the gpu at the same time.
+  getPrevRenderer().waitUntilReady();
+
   curRenderer.drawEnd();
+
   m_swapchain->presentImage(curRenderer.getImageFinished(), *m_curSwapchainImgIdx);
 
   m_curSwapchainImgIdx = std::nullopt;
