@@ -35,6 +35,10 @@ public:
   auto operator=(const NativeCanvas& rhs) -> NativeCanvas& = delete;
   auto operator=(NativeCanvas&& rhs) noexcept -> NativeCanvas& = delete;
 
+  /* Get statistics for the last draw.
+   */
+  [[nodiscard]] auto getDrawStats() const noexcept -> DrawStats;
+
   /* Begin recording draw commands.
    * Returns: false if we failed to begin recordering (for example because the window is minimized).
    */
@@ -72,6 +76,10 @@ private:
 
   [[nodiscard]] auto getCurRenderer() const noexcept -> internal::Renderer& {
     return *m_renderers[static_cast<unsigned int>(m_frontRenderer)];
+  }
+
+  [[nodiscard]] auto getPrevRenderer() const noexcept -> internal::Renderer& {
+    return *m_renderers[static_cast<unsigned int>(!m_frontRenderer)];
   }
 
   [[nodiscard]] auto cycleRenderer() noexcept { m_frontRenderer = !m_frontRenderer; }

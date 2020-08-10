@@ -1,6 +1,8 @@
 #pragma once
 #include "graphic.hpp"
+#include "stopwatch.hpp"
 #include "transferer.hpp"
+#include "tria/gfx/canvas.hpp"
 #include "tria/log/api.hpp"
 #include "tria/math/vec.hpp"
 #include "uniform_container.hpp"
@@ -27,6 +29,10 @@ public:
   auto operator=(const Renderer& rhs) -> Renderer& = delete;
   auto operator=(Renderer&& rhs) noexcept -> Renderer& = delete;
 
+  /* Get statistics for the last draw.
+   */
+  [[nodiscard]] auto getDrawStats() const noexcept -> DrawStats;
+
   /* The renderer will wait (on the gpu) for this semaphore before starting to render.
    */
   [[nodiscard]] auto getImageAvailable() const noexcept { return m_imgAvailable; }
@@ -37,7 +43,7 @@ public:
 
   /* Wait until this rendering is ready to record a new frame.
    */
-  auto waitUntilReady() -> void;
+  auto waitUntilReady() const -> void;
 
   /* Begin recording new draw commands to this renderer.
    * Note: Will block if the renderer is currently still rendering.
@@ -69,6 +75,11 @@ private:
   VkFence m_renderDone;
   TransfererUnique m_transferer;
   UniformContainerUnique m_uni;
+  StopwatchUnique m_stopwatch;
+  bool m_hasSubmittedDrawOnce; // Indicates if the renderer has ever submitted a draw.
+
+  TimestampRecord m_drawStart;
+  TimestampRecord m_drawEnd;
 
   /* We record two separate commandbuffers, one for the drawing commands and one for the transfer
    * commands. But at the moment both buffers are submitted to the Graphics queue, in the future we
@@ -82,7 +93,7 @@ private:
   auto bindGraphicDescriptors(const Graphic* graphic, const void* instData, size_t instDataSize)
       -> void;
 
-  auto waitForDone() -> void;
+  auto waitForDone() const -> void;
   auto markNotDone() -> void;
 };
 
