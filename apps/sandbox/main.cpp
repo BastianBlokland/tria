@@ -28,7 +28,7 @@ struct alignas(16) ParticleData final {
 auto runApp(pal::Platform& platform, asset::Database& db, gfx::Context& gfx) {
 
   auto win    = platform.createWindow({1024, 1024});
-  auto canvas = gfx.createCanvas(&win, gfx::VSyncMode::Disable);
+  auto canvas = gfx.createCanvas(&win, gfx::VSyncMode::Enable);
 
   const auto* particleGfx = db.get("graphics/particle.gfx")->downcast<asset::Graphic>();
 
@@ -45,15 +45,10 @@ auto runApp(pal::Platform& platform, asset::Database& db, gfx::Context& gfx) {
   while (!win.getIsCloseRequested() && !pal::isInterruptRequested()) {
     platform.handleEvents();
 
+    ++frameNum;
     const auto newTime   = high_resolution_clock::now();
     const auto deltaTime = duration<float>(newTime - frameStartTime);
     frameStartTime       = newTime;
-
-    // Update window title every 100 frames.
-    if (++frameNum % 100 == 0) {
-      win.setTitle(
-          std::to_string(particles.size()) + " " + std::to_string(deltaTime.count() * 1'000));
-    }
 
     // Spawn a particle at the mouse position.
     if (win.isKeyDown(pal::Key::MouseLeft)) {
@@ -111,6 +106,24 @@ auto runApp(pal::Platform& platform, asset::Database& db, gfx::Context& gfx) {
 
       p.pos += p.velocity * deltaTime.count();
       p.screenSize = windowSize;
+    }
+
+    // Update window title every 30 frames.
+    if (frameNum % 30 == 0) {
+      auto drawStats = canvas.getDrawStats();
+      char titleBuffer[256];
+      std::snprintf(
+          titleBuffer,
+          sizeof(titleBuffer),
+          "particles: %u, cpu: %.2f ms, gpu: %.2f ms, tris: %llu, vertShaders: %llu, "
+          "fragShaders: %llu",
+          static_cast<uint32_t>(particles.size()),
+          deltaTime.count() * 1'000,
+          drawStats.gpuTime.count() * 1'000,
+          static_cast<unsigned long long>(drawStats.inputAssemblyPrimitives),
+          static_cast<unsigned long long>(drawStats.vertShaderInvocations),
+          static_cast<unsigned long long>(drawStats.fragShaderInvocations));
+      win.setTitle(titleBuffer);
     }
 
     // Draw particles.
