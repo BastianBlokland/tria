@@ -8,8 +8,14 @@
 
 namespace tria::gfx {
 
+/* Statistics for a frame that has been completed.
+ */
 struct DrawStats {
-  std::chrono::duration<double> totalGpuTime;
+  std::chrono::duration<double> gpuTime;
+  uint64_t inputAssemblyVerts;
+  uint64_t inputAssemblyPrimitives;
+  uint64_t vertShaderInvocations;
+  uint64_t fragShaderInvocations;
 };
 
 class Context;

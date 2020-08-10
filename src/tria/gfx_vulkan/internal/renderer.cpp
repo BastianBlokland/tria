@@ -164,6 +164,7 @@ Renderer::Renderer(log::Logger* logger, Device* device) :
   m_transferer          = std::make_unique<Transferer>(logger, device);
   m_uni                 = std::make_unique<UniformContainer>(logger, device);
   m_stopwatch           = std::make_unique<Stopwatch>(logger, device);
+  m_statRecorder        = std::make_unique<StatRecorder>(logger, device);
   m_gfxVkCommandBuffers = createGfxVkCommandBuffers<2>(device);
 
   DBG_COMMANDBUFFER_NAME(m_device, m_transferVkCommandBuffer, "transfer");
@@ -204,7 +205,11 @@ auto Renderer::getDrawStats() const noexcept -> DrawStats {
   const auto end   = m_stopwatch->getTimestamp(m_drawEnd);
 
   DrawStats result;
-  result.totalGpuTime = std::chrono::duration<double, std::nano>(end - start);
+  result.gpuTime                 = std::chrono::duration<double, std::nano>(end - start);
+  result.inputAssemblyVerts      = m_statRecorder->getStat(StatType::InputAssemblyVerts);
+  result.inputAssemblyPrimitives = m_statRecorder->getStat(StatType::InputAssemblyPrimitives);
+  result.vertShaderInvocations   = m_statRecorder->getStat(StatType::VertShaderInvocations);
+  result.fragShaderInvocations   = m_statRecorder->getStat(StatType::FragShaderInvocations);
   return result;
 }
 
@@ -226,6 +231,8 @@ auto Renderer::drawBegin(
 
   beginCommandBuffer(m_drawVkCommandBuffer);
   m_stopwatch->reset(m_drawVkCommandBuffer);
+  m_statRecorder->reset(m_drawVkCommandBuffer);
+
   m_drawStart = m_stopwatch->markTimestamp(m_drawVkCommandBuffer);
 
   // Wait with rendering until transferring has finished.
@@ -236,6 +243,8 @@ auto Renderer::drawBegin(
 
   setViewport(m_drawVkCommandBuffer, extent);
   setScissor(m_drawVkCommandBuffer, extent);
+
+  m_statRecorder->beginCapture(m_drawVkCommandBuffer);
 }
 
 auto Renderer::draw(
@@ -276,9 +285,11 @@ auto Renderer::draw(
 
 auto Renderer::drawEnd() -> void {
 
-  m_drawEnd = m_stopwatch->markTimestamp(m_drawVkCommandBuffer);
+  m_statRecorder->endCapture(m_drawVkCommandBuffer);
 
   vkCmdEndRenderPass(m_drawVkCommandBuffer);
+  m_drawEnd = m_stopwatch->markTimestamp(m_drawVkCommandBuffer);
+
   vkEndCommandBuffer(m_drawVkCommandBuffer);
 
   // Record all data transfer needed for this frame.

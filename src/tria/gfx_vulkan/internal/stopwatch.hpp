@@ -28,20 +28,20 @@ public:
   [[nodiscard]] auto isSupported() const noexcept -> bool { return m_vkQueryPool; }
 
   /* Get the result of a previously marked timestamp (in nanoseconds).
-   * Return 0 when timestamps are not supported.
+   * Returns 0 when timestamps are not supported.
    * Note: Make sure that the gpu has finished the work before calling this.
    */
   [[nodiscard]] auto getTimestamp(TimestampRecord id) -> double;
 
   /* Reset all timestamps, call this before marking new timestamps.
    */
-  auto reset(VkCommandBuffer cmdBuffer) noexcept -> void;
+  auto reset(VkCommandBuffer vkCmdBuffer) noexcept -> void;
 
   /* Mark a timestamp to be recorded.
    * Time will be taken after all previously recorded commands have finished executing.
    * Returns a token that can be used to retreive the timestamp when rendering has finished.
    */
-  [[nodiscard]] auto markTimestamp(VkCommandBuffer cmdBuffer) noexcept -> TimestampRecord;
+  [[nodiscard]] auto markTimestamp(VkCommandBuffer vkCmdBuffer) noexcept -> TimestampRecord;
 
 private:
   log::Logger* m_logger;

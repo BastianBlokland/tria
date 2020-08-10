@@ -64,20 +64,21 @@ auto Stopwatch::getTimestamp(uint32_t id) -> double {
   return static_cast<double>(m_results[id]) * m_device->getLimits().timestampPeriod;
 }
 
-auto Stopwatch::reset(VkCommandBuffer cmdBuffer) noexcept -> void {
+auto Stopwatch::reset(VkCommandBuffer vkCmdBuffer) noexcept -> void {
   if (m_vkQueryPool) {
-    vkCmdResetQueryPool(cmdBuffer, m_vkQueryPool, 0U, g_maxStopwatchTimestamps);
+    vkCmdResetQueryPool(vkCmdBuffer, m_vkQueryPool, 0U, g_maxStopwatchTimestamps);
   }
   m_counter    = 0U;
   m_hasResults = false;
 }
 
-auto Stopwatch::markTimestamp(VkCommandBuffer cmdBuffer) noexcept -> uint32_t {
+auto Stopwatch::markTimestamp(VkCommandBuffer vkCmdBuffer) noexcept -> uint32_t {
   assert(!m_hasResults); // Needs to be reset before marking new timestamps.
   if (m_vkQueryPool) {
     // Note: Record the timestamp after all commands have completely finished executing (bottom of
     // pipe).
-    vkCmdWriteTimestamp(cmdBuffer, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, m_vkQueryPool, m_counter);
+    vkCmdWriteTimestamp(
+        vkCmdBuffer, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, m_vkQueryPool, m_counter);
   }
   return m_counter++;
 }

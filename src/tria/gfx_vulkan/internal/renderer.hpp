@@ -1,5 +1,6 @@
 #pragma once
 #include "graphic.hpp"
+#include "stat_recorder.hpp"
 #include "stopwatch.hpp"
 #include "transferer.hpp"
 #include "tria/gfx/canvas.hpp"
@@ -76,6 +77,7 @@ private:
   TransfererUnique m_transferer;
   UniformContainerUnique m_uni;
   StopwatchUnique m_stopwatch;
+  StatRecorderUnique m_statRecorder;
   bool m_hasSubmittedDrawOnce; // Indicates if the renderer has ever submitted a draw.
 
   TimestampRecord m_drawStart;
