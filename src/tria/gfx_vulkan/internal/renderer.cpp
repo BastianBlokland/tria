@@ -146,7 +146,8 @@ auto bindIndexBuffer(VkCommandBuffer vkCommandBuffer, const Buffer& buffer, size
 
 } // namespace
 
-Renderer::Renderer(log::Logger* logger, Device* device) : m_logger{logger}, m_device{device} {
+Renderer::Renderer(log::Logger* logger, Device* device) :
+    m_logger{logger}, m_device{device}, m_hasSubmittedDrawOnce{false} {
   if (!m_device) {
     throw std::invalid_argument{"Device cannot be null"};
   }
@@ -162,6 +163,8 @@ Renderer::Renderer(log::Logger* logger, Device* device) : m_logger{logger}, m_de
 
   m_transferer          = std::make_unique<Transferer>(logger, device);
   m_uni                 = std::make_unique<UniformContainer>(logger, device);
+  m_stopwatch           = std::make_unique<Stopwatch>(logger, device);
+  m_statRecorder        = std::make_unique<StatRecorder>(logger, device);
   m_gfxVkCommandBuffers = createGfxVkCommandBuffers<2>(device);
 
   DBG_COMMANDBUFFER_NAME(m_device, m_transferVkCommandBuffer, "transfer");
@@ -189,7 +192,28 @@ Renderer::~Renderer() {
   }
 }
 
-auto Renderer::waitUntilReady() -> void {
+auto Renderer::getDrawStats() const noexcept -> DrawStats {
+  if (!m_hasSubmittedDrawOnce) {
+    // If we've never submitted a draw then there are no statistics we can collect.
+    return {};
+  }
+
+  // Wait for this renderer to be done executing on the gpu.
+  waitForDone();
+
+  const auto start = m_stopwatch->getTimestamp(m_drawStart);
+  const auto end   = m_stopwatch->getTimestamp(m_drawEnd);
+
+  DrawStats result;
+  result.gpuTime                 = std::chrono::duration<double, std::nano>(end - start);
+  result.inputAssemblyVerts      = m_statRecorder->getStat(StatType::InputAssemblyVerts);
+  result.inputAssemblyPrimitives = m_statRecorder->getStat(StatType::InputAssemblyPrimitives);
+  result.vertShaderInvocations   = m_statRecorder->getStat(StatType::VertShaderInvocations);
+  result.fragShaderInvocations   = m_statRecorder->getStat(StatType::FragShaderInvocations);
+  return result;
+}
+
+auto Renderer::waitUntilReady() const -> void {
   // Wait for this renderer to be done executing on the gpu.
   waitForDone();
 }
@@ -206,6 +230,10 @@ auto Renderer::drawBegin(
   m_uni->reset();
 
   beginCommandBuffer(m_drawVkCommandBuffer);
+  m_stopwatch->reset(m_drawVkCommandBuffer);
+  m_statRecorder->reset(m_drawVkCommandBuffer);
+
+  m_drawStart = m_stopwatch->markTimestamp(m_drawVkCommandBuffer);
 
   // Wait with rendering until transferring has finished.
   // Transfers are recorded to the separate 'm_transferVkCommandBuffer' and submitted first.
@@ -215,6 +243,8 @@ auto Renderer::drawBegin(
 
   setViewport(m_drawVkCommandBuffer, extent);
   setScissor(m_drawVkCommandBuffer, extent);
+
+  m_statRecorder->beginCapture(m_drawVkCommandBuffer);
 }
 
 auto Renderer::draw(
@@ -255,7 +285,11 @@ auto Renderer::draw(
 
 auto Renderer::drawEnd() -> void {
 
+  m_statRecorder->endCapture(m_drawVkCommandBuffer);
+
   vkCmdEndRenderPass(m_drawVkCommandBuffer);
+  m_drawEnd = m_stopwatch->markTimestamp(m_drawVkCommandBuffer);
+
   vkEndCommandBuffer(m_drawVkCommandBuffer);
 
   // Record all data transfer needed for this frame.
@@ -271,6 +305,7 @@ auto Renderer::drawEnd() -> void {
       VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
       m_imgFinished,
       m_renderDone);
+  m_hasSubmittedDrawOnce = true;
 }
 
 auto Renderer::bindGraphicDescriptors(const Graphic* graphic, const void* uniData, size_t uniSize)
@@ -306,7 +341,7 @@ auto Renderer::bindGraphicDescriptors(const Graphic* graphic, const void* uniDat
   }
 }
 
-auto Renderer::waitForDone() -> void {
+auto Renderer::waitForDone() const -> void {
   checkVkResult(vkWaitForFences(m_device->getVkDevice(), 1, &m_renderDone, true, UINT64_MAX));
 }
 

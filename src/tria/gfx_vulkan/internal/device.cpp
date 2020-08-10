@@ -86,8 +86,14 @@ constexpr std::array<const char*, 1> g_requiredDeviceExtensions = {
 [[nodiscard]] auto
 createVkDevice(VkPhysicalDevice vkPhysicalDevice, std::set<uint32_t> queueFamilies) -> VkDevice {
 
-  // Set of required device features, nothing enabled at the moment.
-  VkPhysicalDeviceFeatures deviceFeatures = {};
+  VkPhysicalDeviceFeatures supportedFeatures;
+  vkGetPhysicalDeviceFeatures(vkPhysicalDevice, &supportedFeatures);
+
+  VkPhysicalDeviceFeatures featuresToEnable = {};
+  if (supportedFeatures.pipelineStatisticsQuery) {
+    // Optionally enable 'pipelineStatisticsQuery' to gather draw statistics.
+    featuresToEnable.pipelineStatisticsQuery = true;
+  }
 
   // Queues to create on the device.
   auto queueCreateInfos = std::vector<VkDeviceQueueCreateInfo>{};
@@ -110,7 +116,7 @@ createVkDevice(VkPhysicalDevice vkPhysicalDevice, std::set<uint32_t> queueFamili
   createInfo.queueCreateInfoCount    = queueCreateInfos.size();
   createInfo.enabledExtensionCount   = g_requiredDeviceExtensions.size();
   createInfo.ppEnabledExtensionNames = g_requiredDeviceExtensions.data();
-  createInfo.pEnabledFeatures        = &deviceFeatures;
+  createInfo.pEnabledFeatures        = &featuresToEnable;
 
   VkDevice result;
   checkVkResult(vkCreateDevice(vkPhysicalDevice, &createInfo, nullptr, &result));

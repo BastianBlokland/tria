@@ -7,6 +7,8 @@ Canvas::Canvas(std::unique_ptr<NativeCanvas> native) : m_native{std::move(native
 
 Canvas::~Canvas() = default;
 
+auto Canvas::getDrawStats() const noexcept -> DrawStats { return m_native->getDrawStats(); }
+
 auto Canvas::drawBegin(math::Color clearCol) -> bool { return m_native->drawBegin(clearCol); }
 
 auto Canvas::draw(

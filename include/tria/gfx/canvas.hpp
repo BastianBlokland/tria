@@ -1,11 +1,22 @@
 #pragma once
 #include "tria/asset/graphic.hpp"
 #include "tria/math/vec.hpp"
+#include <chrono>
 #include <cstdint>
 #include <memory>
 #include <type_traits>
 
 namespace tria::gfx {
+
+/* Statistics for a frame that has been completed.
+ */
+struct DrawStats {
+  std::chrono::duration<double> gpuTime;
+  uint64_t inputAssemblyVerts;
+  uint64_t inputAssemblyPrimitives;
+  uint64_t vertShaderInvocations;
+  uint64_t fragShaderInvocations;
+};
 
 class Context;
 class NativeCanvas;
@@ -25,6 +36,11 @@ public:
 
   auto operator=(const Canvas& rhs) -> Canvas& = delete;
   auto operator=(Canvas&& rhs) noexcept -> Canvas& = default;
+
+  /* Get statistics for the last draw.
+   * Note: Blocks if the previous draw has not finished executing.
+   */
+  [[nodiscard]] auto getDrawStats() const noexcept -> DrawStats;
 
   /* Begin drawing.
    * Note: Has to be followed with a call to 'drawEnd' before calling 'drawBegin' again.

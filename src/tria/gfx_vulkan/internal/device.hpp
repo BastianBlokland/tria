@@ -43,6 +43,9 @@ public:
   [[nodiscard]] auto getLimits() const noexcept -> const VkPhysicalDeviceLimits& {
     return m_properties.limits;
   }
+  [[nodiscard]] auto getFeatures() const noexcept -> const VkPhysicalDeviceFeatures& {
+    return m_features;
+  }
   [[nodiscard]] auto getMemProperties() const noexcept -> const VkPhysicalDeviceMemoryProperties& {
     return m_memProperties;
   }

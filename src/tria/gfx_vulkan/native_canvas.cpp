@@ -106,6 +106,12 @@ NativeCanvas::~NativeCanvas() {
   m_device = nullptr;
 }
 
+auto NativeCanvas::getDrawStats() const noexcept -> DrawStats {
+  const auto isDrawActive = m_curSwapchainImgIdx.has_value();
+  const auto& renderer    = isDrawActive ? getPrevRenderer() : getCurRenderer();
+  return renderer.getDrawStats();
+}
+
 auto NativeCanvas::drawBegin(math::Color clearCol) -> bool {
   if (m_curSwapchainImgIdx) {
     throw err::SyncErr{"Unable to begin a draw: draw already active"};
@@ -160,7 +166,13 @@ auto NativeCanvas::drawEnd() -> void {
   }
 
   auto& curRenderer = getCurRenderer();
+
+  // Wait until the previous renderer is finished, reason is that we only want a single frame in
+  // flight on the gpu at the same time.
+  getPrevRenderer().waitUntilReady();
+
   curRenderer.drawEnd();
+
   m_swapchain->presentImage(curRenderer.getImageFinished(), *m_curSwapchainImgIdx);
 
   m_curSwapchainImgIdx = std::nullopt;

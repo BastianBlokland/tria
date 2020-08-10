@@ -186,3 +186,13 @@
   (DEVICE)->setDebugName(                                                                          \
       VK_OBJECT_TYPE_FENCE, reinterpret_cast<uint64_t>(OBJ), NAME + std::string("_fence"))
 #endif
+
+#if defined(NDEBUG)
+#define DBG_QUERYPOOL_NAME(DEVICE, OBJ, NAME)
+#else
+#define DBG_QUERYPOOL_NAME(DEVICE, OBJ, NAME)                                                      \
+  (DEVICE)->setDebugName(                                                                          \
+      VK_OBJECT_TYPE_QUERY_POOL,                                                                   \
+      reinterpret_cast<uint64_t>(OBJ),                                                             \
+      NAME + std::string("_querypool"))
+#endif

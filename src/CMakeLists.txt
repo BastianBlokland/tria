@@ -33,6 +33,8 @@ add_library(tria_gfx STATIC
   tria/gfx_vulkan/internal/renderer.cpp
   tria/gfx_vulkan/internal/sampler.cpp
   tria/gfx_vulkan/internal/shader.cpp
+  tria/gfx_vulkan/internal/stat_recorder.cpp
+  tria/gfx_vulkan/internal/stopwatch.cpp
   tria/gfx_vulkan/internal/swapchain.cpp
   tria/gfx_vulkan/internal/texture.cpp
   tria/gfx_vulkan/internal/transferer.cpp
