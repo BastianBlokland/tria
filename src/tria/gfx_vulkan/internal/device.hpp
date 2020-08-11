@@ -36,6 +36,7 @@ public:
   auto operator=(const Device& rhs) -> Device& = delete;
   auto operator=(Device&& rhs) noexcept -> Device& = delete;
 
+  [[nodiscard]] auto getContext() const noexcept { return m_context; }
   [[nodiscard]] auto getVkPhysicalDevice() const noexcept { return m_vkPhysicalDevice; }
   [[nodiscard]] auto getVkDevice() const noexcept { return m_vkDevice; }
   [[nodiscard]] auto getVkSurface() const noexcept { return m_vkSurface; }

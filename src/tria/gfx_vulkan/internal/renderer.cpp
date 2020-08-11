@@ -1,4 +1,5 @@
 #include "renderer.hpp"
+#include "../native_context.hpp"
 #include "debug_utils.hpp"
 #include "device.hpp"
 #include "mesh.hpp"
@@ -147,7 +148,7 @@ auto bindIndexBuffer(VkCommandBuffer vkCommandBuffer, const Buffer& buffer, size
 } // namespace
 
 Renderer::Renderer(log::Logger* logger, Device* device) :
-    m_logger{logger}, m_device{device}, m_hasSubmittedDrawOnce{false} {
+    m_logger{logger}, m_device{device}, m_hasSubmittedDrawOnce{false}, m_drawId{0U} {
   if (!m_device) {
     throw std::invalid_argument{"Device cannot be null"};
   }
@@ -228,6 +229,7 @@ auto Renderer::drawBegin(
   // Clear any resources from the last execution.
   m_transferer->reset();
   m_uni->reset();
+  m_drawId = 0U;
 
   beginCommandBuffer(m_drawVkCommandBuffer);
   m_stopwatch->reset(m_drawVkCommandBuffer);
@@ -257,6 +259,9 @@ auto Renderer::draw(
   // TODO(bastian): Is it worth it throwing an exception here?
   assert(instDataSize <= m_uni->getMaxDataSize());
 
+  DBG_CMD_BEGIN_LABEL(
+      m_device, m_drawVkCommandBuffer, "Draw " + graphic->getId(), math::color::get(m_drawId));
+
   // Prepare and bind per graphic resources (pipeline and mesh).
   graphic->prepareResources(m_transferer.get(), m_uni.get(), vkRenderPass);
   vkCmdBindPipeline(
@@ -281,6 +286,9 @@ auto Renderer::draw(
     count -= instanceCount;
     instData = static_cast<const uint8_t*>(instData) + instanceCount * instDataSize;
   }
+
+  DBG_CMD_END_LABEL(m_device, m_drawVkCommandBuffer);
+  ++m_drawId;
 }
 
 auto Renderer::drawEnd() -> void {

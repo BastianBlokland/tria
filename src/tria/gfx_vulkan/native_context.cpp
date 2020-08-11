@@ -20,11 +20,17 @@ constexpr std::array<const char*, 1> g_validationLayers = {
 };
 
 PFN_vkSetDebugUtilsObjectNameEXT g_funcSetDebugUtilsObjectName = nullptr;
+PFN_vkCmdBeginDebugUtilsLabelEXT g_funcCmdBeginDebugUtilsLabel = nullptr;
+PFN_vkCmdEndDebugUtilsLabelEXT g_funcCmdEndDebugUtilsLabel     = nullptr;
 
 [[maybe_unused]] auto initDebugUtilsExtention(VkInstance vkInstance) -> void {
   // Load debug extension function pointers.
   g_funcSetDebugUtilsObjectName = reinterpret_cast<PFN_vkSetDebugUtilsObjectNameEXT>(
       vkGetInstanceProcAddr(vkInstance, "vkSetDebugUtilsObjectNameEXT"));
+  g_funcCmdBeginDebugUtilsLabel = reinterpret_cast<PFN_vkCmdBeginDebugUtilsLabelEXT>(
+      vkGetInstanceProcAddr(vkInstance, "vkCmdBeginDebugUtilsLabelEXT"));
+  g_funcCmdEndDebugUtilsLabel = reinterpret_cast<PFN_vkCmdEndDebugUtilsLabelEXT>(
+      vkGetInstanceProcAddr(vkInstance, "vkCmdEndDebugUtilsLabelEXT"));
 }
 
 [[maybe_unused]] auto checkValidationLayersSupport(const std::vector<VkLayerProperties>& available)
@@ -142,6 +148,23 @@ auto NativeContext::setDebugName(
     nameInfo.objectHandle                  = vkHandle;
     nameInfo.pObjectName                   = name.data();
     g_funcSetDebugUtilsObjectName(vkDevice, &nameInfo);
+  }
+}
+
+auto NativeContext::beginDebugLabel(
+    VkCommandBuffer vkCmdBuffer, std::string_view msg, math::Color color) const noexcept -> void {
+  if (g_funcCmdBeginDebugUtilsLabel) {
+    VkDebugUtilsLabelEXT label = {};
+    label.sType                = VK_STRUCTURE_TYPE_DEBUG_UTILS_LABEL_EXT;
+    label.pLabelName           = msg.data();
+    color.memcpy(label.color);
+    g_funcCmdBeginDebugUtilsLabel(vkCmdBuffer, &label);
+  }
+}
+
+auto NativeContext::endDebugLabel(VkCommandBuffer vkCmdBuffer) const noexcept -> void {
+  if (g_funcCmdEndDebugUtilsLabel) {
+    g_funcCmdEndDebugUtilsLabel(vkCmdBuffer);
   }
 }
 

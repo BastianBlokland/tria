@@ -477,19 +477,19 @@ namespace color {
  */
 [[nodiscard]] constexpr auto get(unsigned int i) noexcept -> Color {
   constexpr auto colors = std::array<Color, 14>{
-      silver(),
-      gray(),
       red(),
-      maroon(),
       yellow(),
       olive(),
-      lime(),
-      green(),
+      silver(),
       aqua(),
-      teal(),
+      lime(),
+      maroon(),
       blue(),
+      teal(),
       navy(),
       fuchsia(),
+      green(),
+      gray(),
       purple(),
   };
   return colors[i % colors.size()];

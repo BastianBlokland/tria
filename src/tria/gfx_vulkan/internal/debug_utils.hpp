@@ -6,6 +6,19 @@
  */
 
 #if defined(NDEBUG)
+#define DBG_CMD_BEGIN_LABEL(DEVICE, CMDBUFFER, MSG, COLOR)
+#else
+#define DBG_CMD_BEGIN_LABEL(DEVICE, CMDBUFFER, MSG, COLOR)                                         \
+  (DEVICE)->getContext()->beginDebugLabel(CMDBUFFER, MSG, COLOR);
+#endif
+
+#if defined(NDEBUG)
+#define DBG_CMD_END_LABEL(DEVICE, CMDBUFFER)
+#else
+#define DBG_CMD_END_LABEL(DEVICE, CMDBUFFER) (DEVICE)->getContext()->endDebugLabel(CMDBUFFER);
+#endif
+
+#if defined(NDEBUG)
 #define DBG_PHYSDEVICE_NAME(DEVICE, OBJ, NAME)
 #else
 #define DBG_PHYSDEVICE_NAME(DEVICE, OBJ, NAME)                                                     \
