@@ -31,6 +31,10 @@ public:
       VkDevice vkDevice, VkObjectType vkType, uint64_t vkHandle, std::string_view name) const
       noexcept -> void;
 
+  auto beginDebugLabel(VkCommandBuffer vkCmdBuffer, std::string_view msg, math::Color color) const
+      noexcept -> void;
+  auto endDebugLabel(VkCommandBuffer vkCmdBuffer) const noexcept -> void;
+
 private:
   log::Logger* m_logger;
   std::string m_appName;

@@ -79,6 +79,7 @@ private:
   StopwatchUnique m_stopwatch;
   StatRecorderUnique m_statRecorder;
   bool m_hasSubmittedDrawOnce; // Indicates if the renderer has ever submitted a draw.
+  uint32_t m_drawId;
 
   TimestampRecord m_drawStart;
   TimestampRecord m_drawEnd;

@@ -35,6 +35,8 @@ public:
   auto operator=(const Graphic& rhs) -> Graphic& = delete;
   auto operator=(Graphic&& rhs) -> Graphic& = delete;
 
+  [[nodiscard]] auto getId() const noexcept { return m_asset->getId(); }
+
   /* Note: Call this before accessing any resources from this graphic.
    */
   auto
