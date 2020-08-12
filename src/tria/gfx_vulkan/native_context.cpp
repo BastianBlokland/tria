@@ -133,9 +133,9 @@ NativeContext::~NativeContext() {
   }
 }
 
-auto NativeContext::createCanvas(const pal::Window* window, VSyncMode vSync)
+auto NativeContext::createCanvas(const pal::Window* window, VSyncMode vSync, ClearMask clear)
     -> std::unique_ptr<NativeCanvas> {
-  return std::make_unique<NativeCanvas>(m_logger, this, window, vSync);
+  return std::make_unique<NativeCanvas>(m_logger, this, window, vSync, clear);
 }
 
 auto NativeContext::setDebugName(

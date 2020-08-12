@@ -1,6 +1,7 @@
 #pragma once
 #include "internal/asset_resource.hpp"
 #include "internal/device.hpp"
+#include "internal/forward_technique.hpp"
 #include "internal/graphic.hpp"
 #include "internal/mesh.hpp"
 #include "internal/renderer.hpp"
@@ -27,7 +28,8 @@ public:
       log::Logger* logger,
       const NativeContext* context,
       const pal::Window* window,
-      VSyncMode vSync);
+      VSyncMode vSync,
+      ClearMask clear);
   NativeCanvas(const NativeCanvas& rhs)     = delete;
   NativeCanvas(NativeCanvas&& rhs) noexcept = delete;
   ~NativeCanvas();
@@ -59,11 +61,13 @@ private:
   const NativeContext* m_context;
   const pal::Window* m_window;
   internal::DeviceUnique m_device;
+
   internal::AssetResourceUnique<internal::Shader> m_shaders;
   internal::AssetResourceUnique<internal::Mesh> m_meshes;
   internal::AssetResourceUnique<internal::Texture> m_textures;
   internal::AssetResourceUnique<internal::Graphic> m_graphics;
-  VkRenderPass m_vkRenderPass;
+
+  internal::ForwardTechniqueUnique m_fwdTechnique;
   internal::SwapchainUnique m_swapchain;
 
   // Two renderers to support recording one while is other is currently being rendered on the gpu.

@@ -28,7 +28,7 @@ struct alignas(16) ParticleData final {
 auto runApp(pal::Platform& platform, asset::Database& db, gfx::Context& gfx) {
 
   auto win    = platform.createWindow({1024, 1024});
-  auto canvas = gfx.createCanvas(&win, gfx::VSyncMode::Enable);
+  auto canvas = gfx.createCanvas(&win, gfx::VSyncMode::Enable, gfx::clearMask(gfx::Clear::Color));
 
   const auto* particleGfx = db.get("graphics/particle.gfx")->downcast<asset::Graphic>();
 
@@ -127,7 +127,7 @@ auto runApp(pal::Platform& platform, asset::Database& db, gfx::Context& gfx) {
     }
 
     // Draw particles.
-    if (canvas.drawBegin(Color{0.3, 0.3, 0.3, 1.0})) {
+    if (canvas.drawBegin()) {
       canvas.draw(particleGfx, particles.begin(), particles.end());
       canvas.drawEnd();
     } else {
