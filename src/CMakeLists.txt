@@ -26,6 +26,7 @@ add_library(tria_gfx STATIC
   tria/gfx_vulkan/internal/debug_messenger.cpp
   tria/gfx_vulkan/internal/descriptor_manager.cpp
   tria/gfx_vulkan/internal/device.cpp
+  tria/gfx_vulkan/internal/forward_technique.cpp
   tria/gfx_vulkan/internal/graphic.cpp
   tria/gfx_vulkan/internal/image.cpp
   tria/gfx_vulkan/internal/memory_pool.cpp

@@ -8,6 +8,12 @@ namespace tria::gfx::internal {
 
 using ImageSize = math::Vec<uint16_t, 2>;
 
+enum class ImageType {
+  ColorSource,
+  ColorAttachment,
+  Swapchain,
+};
+
 enum class ImageMipMode {
   None,
   Generate,
@@ -19,12 +25,14 @@ enum class ImageMipMode {
 class Image final {
 public:
   Image() : m_vkImage{nullptr}, m_vkImageView{nullptr} {}
-  Image(Device* device, ImageSize size, VkFormat vkFormat, ImageMipMode mipMode);
+  Image(Device* device, ImageSize size, VkFormat vkFormat, ImageType type, ImageMipMode mipMode);
+  Image(const Device* device, VkImage vkImage, ImageSize size, VkFormat vkFormat, ImageType type);
   Image(const Image& rhs) = delete;
   Image(Image&& rhs) noexcept {
     m_device          = rhs.m_device;
     m_size            = rhs.m_size;
     m_vkFormat        = rhs.m_vkFormat;
+    m_type            = rhs.m_type;
     m_mipMode         = rhs.m_mipMode;
     m_mipLevels       = rhs.m_mipLevels;
     m_vkImage         = rhs.m_vkImage;
@@ -41,6 +49,7 @@ public:
     m_device          = rhs.m_device;
     m_size            = rhs.m_size;
     m_vkFormat        = rhs.m_vkFormat;
+    m_type            = rhs.m_type;
     m_mipMode         = rhs.m_mipMode;
     m_mipLevels       = rhs.m_mipLevels;
     m_vkImage         = rhs.m_vkImage;
@@ -68,6 +77,8 @@ public:
   }
   [[nodiscard]] auto getMemSize() const noexcept { return m_memory.getSize(); }
 
+  [[nodiscard]] auto getType() const noexcept { return m_type; }
+
   [[nodiscard]] auto getMipMode() const noexcept { return m_mipMode; }
   [[nodiscard]] auto getMipLevels() const noexcept { return m_mipLevels; }
 
@@ -75,12 +86,25 @@ private:
   const Device* m_device;
   ImageSize m_size;
   VkFormat m_vkFormat;
+  ImageType m_type;
   ImageMipMode m_mipMode;
   uint32_t m_mipLevels;
   VkImage m_vkImage;
   VkImageView m_vkImageView;
   MemoryBlock m_memory;
 };
+
+[[nodiscard]] constexpr auto getName(ImageType type) noexcept -> std::string_view {
+  switch (type) {
+  case ImageType::ColorSource:
+    return "color-source";
+  case ImageType::ColorAttachment:
+    return "color-attachment";
+  case ImageType::Swapchain:
+    return "swapchain";
+  }
+  return "unknown";
+}
 
 [[nodiscard]] constexpr auto getName(ImageMipMode mode) noexcept -> std::string_view {
   switch (mode) {

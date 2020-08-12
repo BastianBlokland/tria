@@ -62,33 +62,6 @@ auto submitCommandBuffers(
   checkVkResult(vkQueueSubmit(device->getVkGraphicsQueue(), 1, &submitInfo, endFence));
 }
 
-auto beginRenderPass(
-    VkCommandBuffer vkCommandBuffer,
-    VkRenderPass vkRenderPass,
-    VkFramebuffer vkFramebuffer,
-    VkExtent2D extent,
-    math::Color clearCol) -> void {
-
-  static_assert(clearCol.getSize() == 4);
-  VkClearColorValue clearColorValue;
-  clearCol.memcpy(clearColorValue.float32);
-
-  std::array<VkClearValue, 1> clearValues = {
-      VkClearValue{clearColorValue},
-  };
-
-  VkRenderPassBeginInfo renderPassInfo = {};
-  renderPassInfo.sType                 = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-  renderPassInfo.renderPass            = vkRenderPass;
-  renderPassInfo.framebuffer           = vkFramebuffer;
-  renderPassInfo.renderArea.offset     = {0, 0};
-  renderPassInfo.renderArea.extent     = extent;
-  renderPassInfo.clearValueCount       = clearValues.size();
-  renderPassInfo.pClearValues          = clearValues.data();
-
-  vkCmdBeginRenderPass(vkCommandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
-}
-
 /* Memory barrier that waits for transferring to be done before starting any rendering.
  */
 auto insertWaitForTransferMemBarrier(VkCommandBuffer vkCommandBuffer) -> void {
@@ -110,22 +83,23 @@ auto insertWaitForTransferMemBarrier(VkCommandBuffer vkCommandBuffer) -> void {
       nullptr);
 }
 
-auto setViewport(VkCommandBuffer vkCommandBuffer, VkExtent2D extent) -> void {
+auto setViewport(VkCommandBuffer vkCommandBuffer, ImageSize size) -> void {
   VkViewport viewport = {};
   viewport.x          = 0.0f;
   viewport.y          = 0.0f;
-  viewport.width      = static_cast<float>(extent.width);
-  viewport.height     = static_cast<float>(extent.height);
+  viewport.width      = static_cast<float>(size.x());
+  viewport.height     = static_cast<float>(size.y());
   viewport.minDepth   = 0.0f;
   viewport.maxDepth   = 1.0f;
-  vkCmdSetViewport(vkCommandBuffer, 0, 1, &viewport);
+  vkCmdSetViewport(vkCommandBuffer, 0U, 1U, &viewport);
 }
 
-auto setScissor(VkCommandBuffer vkCommandBuffer, VkExtent2D extent) -> void {
-  VkRect2D scissor = {};
-  scissor.offset   = {0, 0};
-  scissor.extent   = extent;
-  vkCmdSetScissor(vkCommandBuffer, 0, 1, &scissor);
+auto setScissor(VkCommandBuffer vkCommandBuffer, ImageSize size) -> void {
+  VkRect2D scissor      = {};
+  scissor.offset        = {0, 0};
+  scissor.extent.width  = size.x();
+  scissor.extent.height = size.y();
+  vkCmdSetScissor(vkCommandBuffer, 0U, 1U, &scissor);
 }
 
 auto bindVertexBuffer(VkCommandBuffer vkCommandBuffer, const Buffer& buffer, size_t offset)
@@ -220,8 +194,7 @@ auto Renderer::waitUntilReady() const -> void {
 }
 
 auto Renderer::drawBegin(
-    VkRenderPass vkRenderPass, VkFramebuffer vkFrameBuffer, VkExtent2D extent, math::Color clearCol)
-    -> void {
+    const ForwardTechnique& technique, SwapchainIdx swapIdx, math::Color clearCol) -> void {
 
   // Wait for this renderer to be done executing on the gpu.
   waitForDone();
@@ -238,19 +211,19 @@ auto Renderer::drawBegin(
   m_drawStart = m_stopwatch->markTimestamp(m_drawVkCommandBuffer);
 
   // Wait with rendering until transferring has finished.
-  // Transfers are recorded to the separate 'm_transferVkCommandBuffer' and submitted first.
+  // Transfers are recorded to a separate 'm_transferVkCommandBuffer' buffer and submitted first.
   insertWaitForTransferMemBarrier(m_drawVkCommandBuffer);
 
-  beginRenderPass(m_drawVkCommandBuffer, vkRenderPass, vkFrameBuffer, extent, clearCol);
+  technique.beginRenderPass(m_drawVkCommandBuffer, swapIdx, clearCol);
 
-  setViewport(m_drawVkCommandBuffer, extent);
-  setScissor(m_drawVkCommandBuffer, extent);
+  setViewport(m_drawVkCommandBuffer, technique.getSize());
+  setScissor(m_drawVkCommandBuffer, technique.getSize());
 
   m_statRecorder->beginCapture(m_drawVkCommandBuffer);
 }
 
 auto Renderer::draw(
-    VkRenderPass vkRenderPass,
+    const ForwardTechnique& technique,
     const Graphic* graphic,
     const void* instData,
     const size_t instDataSize,
@@ -263,7 +236,7 @@ auto Renderer::draw(
       m_device, m_drawVkCommandBuffer, "Draw " + graphic->getId(), math::color::get(m_drawId));
 
   // Prepare and bind per graphic resources (pipeline and mesh).
-  graphic->prepareResources(m_transferer.get(), m_uni.get(), vkRenderPass);
+  graphic->prepareResources(m_transferer.get(), m_uni.get(), technique.getVkRenderPass());
   vkCmdBindPipeline(
       m_drawVkCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphic->getVkPipeline());
   const auto* mesh = graphic->getMesh();

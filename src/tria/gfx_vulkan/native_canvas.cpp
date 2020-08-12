@@ -3,66 +3,12 @@
 #include "native_context.hpp"
 #include "tria/gfx/err/gfx_err.hpp"
 #include "tria/gfx/err/sync_err.hpp"
-#include "tria/pal/native.hpp"
 #include "tria/pal/utils.hpp"
-#include <array>
 #include <cassert>
-#include <optional>
 
 namespace tria::gfx {
 
 using namespace internal;
-
-namespace {
-
-[[nodiscard]] auto createVkRenderPass(const Device* device) -> VkRenderPass {
-  assert(device);
-
-  VkAttachmentDescription colorAttachment = {};
-  colorAttachment.format                  = device->getVkSurfaceFormat().format;
-  colorAttachment.samples                 = VK_SAMPLE_COUNT_1_BIT;
-  colorAttachment.loadOp                  = VK_ATTACHMENT_LOAD_OP_CLEAR;
-  colorAttachment.storeOp                 = VK_ATTACHMENT_STORE_OP_STORE;
-  colorAttachment.stencilLoadOp           = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-  colorAttachment.stencilStoreOp          = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-  colorAttachment.initialLayout           = VK_IMAGE_LAYOUT_UNDEFINED;
-  colorAttachment.finalLayout             = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
-
-  VkAttachmentReference colorAttachmentRef = {};
-  colorAttachmentRef.attachment            = 0;
-  colorAttachmentRef.layout                = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-
-  VkSubpassDescription subpass = {};
-  subpass.pipelineBindPoint    = VK_PIPELINE_BIND_POINT_GRAPHICS;
-  subpass.colorAttachmentCount = 1;
-  subpass.pColorAttachments    = &colorAttachmentRef;
-
-  VkSubpassDependency dependency                  = {};
-  dependency.srcSubpass                           = VK_SUBPASS_EXTERNAL;
-  dependency.dstSubpass                           = 0;
-  dependency.srcStageMask                         = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-  dependency.srcAccessMask                        = 0;
-  dependency.dstStageMask                         = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-  dependency.dstAccessMask                        = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-  std::array<VkSubpassDependency, 1> dependencies = {
-      dependency,
-  };
-
-  VkRenderPassCreateInfo renderPassInfo = {};
-  renderPassInfo.sType                  = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
-  renderPassInfo.attachmentCount        = 1;
-  renderPassInfo.pAttachments           = &colorAttachment;
-  renderPassInfo.subpassCount           = 1;
-  renderPassInfo.pSubpasses             = &subpass;
-  renderPassInfo.dependencyCount        = dependencies.size();
-  renderPassInfo.pDependencies          = dependencies.data();
-
-  VkRenderPass result;
-  checkVkResult(vkCreateRenderPass(device->getVkDevice(), &renderPassInfo, nullptr, &result));
-  return result;
-}
-
-} // namespace
 
 NativeCanvas::NativeCanvas(
     log::Logger* logger, const NativeContext* context, const pal::Window* window, VSyncMode vSync) :
@@ -84,7 +30,7 @@ NativeCanvas::NativeCanvas(
   m_textures = std::make_unique<AssetResource<Texture>>(m_logger, m_device.get());
   m_graphics = std::make_unique<AssetResource<Graphic>>(m_logger, m_device.get());
 
-  m_vkRenderPass = createVkRenderPass(m_device.get());
+  m_fwdTechnique = std::make_unique<ForwardTechnique>(m_device.get());
 
   m_swapchain = std::make_unique<Swapchain>(logger, m_device.get(), vSync);
 
@@ -94,16 +40,17 @@ NativeCanvas::NativeCanvas(
 }
 
 NativeCanvas::~NativeCanvas() {
+  // Explicitly set to null to control the destruction order.
   for (auto i = 0U; i != m_renderers.size(); ++i) {
     m_renderers[i] = nullptr;
   }
-  m_graphics  = nullptr;
-  m_shaders   = nullptr;
-  m_meshes    = nullptr;
-  m_textures  = nullptr;
-  m_swapchain = nullptr;
-  vkDestroyRenderPass(m_device->getVkDevice(), m_vkRenderPass, nullptr);
-  m_device = nullptr;
+  m_graphics     = nullptr;
+  m_shaders      = nullptr;
+  m_meshes       = nullptr;
+  m_textures     = nullptr;
+  m_swapchain    = nullptr;
+  m_fwdTechnique = nullptr;
+  m_device       = nullptr;
 }
 
 auto NativeCanvas::getDrawStats() const noexcept -> DrawStats {
@@ -132,19 +79,15 @@ auto NativeCanvas::drawBegin(math::Color clearCol) -> bool {
   curRenderer.waitUntilReady();
 
   // Acquire an image to render into.
-  const auto swapImgIdx =
-      m_swapchain->acquireImage(m_vkRenderPass, curRenderer.getImageAvailable(), winHasResized);
+  const auto swapImgIdx = m_swapchain->acquireImage(curRenderer.getImageAvailable(), winHasResized);
   // Failing to acquire an image can be a valid scenario, for example due to a minimized window.
   if (!swapImgIdx) {
     return false;
   }
   m_curSwapchainImgIdx = *swapImgIdx;
 
-  curRenderer.drawBegin(
-      m_vkRenderPass,
-      m_swapchain->getVkFramebuffer(*m_curSwapchainImgIdx),
-      m_swapchain->getExtent(),
-      clearCol);
+  m_fwdTechnique->prepareResources(*m_swapchain);
+  curRenderer.drawBegin(*m_fwdTechnique, *swapImgIdx, clearCol);
 
   return true;
 }
@@ -157,7 +100,7 @@ auto NativeCanvas::draw(
   }
 
   const auto* graphic = m_graphics->get(asset, m_shaders.get(), m_meshes.get(), m_textures.get());
-  getCurRenderer().draw(m_vkRenderPass, graphic, instData, instDataSize, count);
+  getCurRenderer().draw(*m_fwdTechnique, graphic, instData, instDataSize, count);
 }
 
 auto NativeCanvas::drawEnd() -> void {

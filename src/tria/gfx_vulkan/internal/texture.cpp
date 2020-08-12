@@ -14,7 +14,8 @@ Texture::Texture(log::Logger* logger, Device* device, const asset::Texture* asse
   const auto vkFormat = VK_FORMAT_R8G8B8A8_SRGB;
   assert(getVkFormatSize(vkFormat) == sizeof(asset::Pixel));
   assert(getVkFormatChannelCount(vkFormat) == 4U);
-  m_image = Image{device, m_asset->getSize(), vkFormat, ImageMipMode::Generate};
+  m_image =
+      Image{device, m_asset->getSize(), vkFormat, ImageType::ColorSource, ImageMipMode::Generate};
 
   DBG_IMG_NAME(device, m_image.getVkImage(), asset->getId());
   DBG_IMGVIEW_NAME(device, m_image.getVkImageView(), asset->getId());

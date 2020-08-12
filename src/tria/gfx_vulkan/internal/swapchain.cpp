@@ -11,7 +11,7 @@ namespace tria::gfx::internal {
 
 namespace {
 
-[[nodiscard]] auto getImageCount(const VkSurfaceCapabilitiesKHR& capabilities) noexcept
+[[nodiscard]] auto getSwapchainImageCount(const VkSurfaceCapabilitiesKHR& capabilities) noexcept
     -> uint32_t {
   // One more then minimum to avoid having to block to acquire a new image.
   auto result = capabilities.minImageCount + 1;
@@ -22,16 +22,16 @@ namespace {
   return result;
 }
 
-[[nodiscard]] auto getSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities) noexcept
-    -> VkExtent2D {
+[[nodiscard]] auto getSwapchainImageSize(const VkSurfaceCapabilitiesKHR& capabilities) noexcept
+    -> SwapchainSize {
   if (capabilities.currentExtent.width != UINT32_MAX &&
       capabilities.currentExtent.height != UINT32_MAX) {
-    return capabilities.currentExtent;
+    return {capabilities.currentExtent.width, capabilities.currentExtent.height};
   } else {
     // Note: in this case the surface does not have a preference what size the swapchain should be.
     // Probably in this case we should use the size of the window, however i have not seen this
     // happen on real platforms.
-    return capabilities.minImageExtent;
+    return {capabilities.minImageExtent.width, capabilities.minImageExtent.height};
   }
 }
 
@@ -67,7 +67,7 @@ namespace {
     const Device* device,
     VkSwapchainKHR oldSwapchain,
     uint32_t imgCount,
-    VkExtent2D extent,
+    SwapchainSize size,
     VkSurfaceTransformFlagBitsKHR transformFlags,
     VkPresentModeKHR presentMode) -> VkSwapchainKHR {
   assert(device);
@@ -78,8 +78,9 @@ namespace {
   createInfo.minImageCount            = imgCount;
   createInfo.imageFormat              = device->getVkSurfaceFormat().format;
   createInfo.imageColorSpace          = device->getVkSurfaceFormat().colorSpace;
-  createInfo.imageExtent              = extent;
-  createInfo.imageArrayLayers         = 1;
+  createInfo.imageExtent.width        = size.x();
+  createInfo.imageExtent.height       = size.y();
+  createInfo.imageArrayLayers         = 1U;
   createInfo.imageUsage               = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
 
   std::array<uint32_t, 2> queueFamilyIndices = {
@@ -113,51 +114,10 @@ namespace {
   return result;
 }
 
-[[nodiscard]] auto createSurfaceImageView(const Device* device, VkImage surfaceImage)
-    -> VkImageView {
-  assert(device);
-
-  VkImageViewCreateInfo createInfo           = {};
-  createInfo.sType                           = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-  createInfo.image                           = surfaceImage;
-  createInfo.viewType                        = VK_IMAGE_VIEW_TYPE_2D;
-  createInfo.format                          = device->getVkSurfaceFormat().format;
-  createInfo.subresourceRange.aspectMask     = VK_IMAGE_ASPECT_COLOR_BIT;
-  createInfo.subresourceRange.baseMipLevel   = 0U;
-  createInfo.subresourceRange.levelCount     = 1U;
-  createInfo.subresourceRange.baseArrayLayer = 0U;
-  createInfo.subresourceRange.layerCount     = 1U;
-
-  VkImageView result;
-  checkVkResult(vkCreateImageView(device->getVkDevice(), &createInfo, nullptr, &result));
-  return result;
-}
-
-[[nodiscard]] auto createSurfaceFramebuffer(
-    const Device* device, VkRenderPass vkRenderPass, VkImageView imageView, VkExtent2D extent) {
-  assert(device);
-
-  std::array<VkImageView, 1> attachments = {
-      imageView,
-  };
-  VkFramebufferCreateInfo framebufferInfo = {};
-  framebufferInfo.sType                   = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-  framebufferInfo.renderPass              = vkRenderPass;
-  framebufferInfo.attachmentCount         = 1;
-  framebufferInfo.pAttachments            = attachments.data();
-  framebufferInfo.width                   = extent.width;
-  framebufferInfo.height                  = extent.height;
-  framebufferInfo.layers                  = 1;
-
-  VkFramebuffer result;
-  checkVkResult(vkCreateFramebuffer(device->getVkDevice(), &framebufferInfo, nullptr, &result));
-  return result;
-}
-
 } // namespace
 
 Swapchain::Swapchain(log::Logger* logger, const Device* device, VSyncMode vSync) :
-    m_logger{logger}, m_device{device}, m_vSync{vSync}, m_vkSwapchain{nullptr} {
+    m_logger{logger}, m_device{device}, m_vSync{vSync}, m_vkSwapchain{nullptr}, m_version{0U} {
   if (!m_device) {
     throw std::invalid_argument{"Device cannot be null"};
   }
@@ -168,12 +128,7 @@ Swapchain::~Swapchain() {
     // Wait for all rendering to be done.
     checkVkResult(vkDeviceWaitIdle(m_device->getVkDevice()));
 
-    for (const auto& vkImageView : m_vkImageViews) {
-      vkDestroyImageView(m_device->getVkDevice(), vkImageView, nullptr);
-    }
-    for (const auto& vkFramebuffer : m_vkFramebuffers) {
-      vkDestroyFramebuffer(m_device->getVkDevice(), vkFramebuffer, nullptr);
-    }
+    m_images.clear();
     if (m_vkSwapchain) {
       vkDestroySwapchainKHR(m_device->getVkDevice(), m_vkSwapchain, nullptr);
     }
@@ -184,15 +139,15 @@ Swapchain::~Swapchain() {
   }
 }
 
-auto Swapchain::getVkFramebuffer(uint32_t imageIndex) const -> const VkFramebuffer& {
-  if (imageIndex >= m_vkFramebuffers.size()) {
+auto Swapchain::getImage(SwapchainIdx idx) const -> const Image& {
+  if (idx >= m_images.size()) {
     throw std::invalid_argument{"Image-index is out of range"};
   }
-  return m_vkFramebuffers[imageIndex];
+  return m_images[idx];
 }
 
-auto Swapchain::acquireImage(VkRenderPass vkRenderPass, VkSemaphore imgAvailable, bool forceReinit)
-    -> std::optional<uint32_t> {
+auto Swapchain::acquireImage(VkSemaphore imgAvailable, bool forceReinit)
+    -> std::optional<SwapchainIdx> {
 
   if (!m_vkSwapchain || m_swapchainOutOfDate || forceReinit) {
     // Wait for all rendering to be done.
@@ -200,14 +155,14 @@ auto Swapchain::acquireImage(VkRenderPass vkRenderPass, VkSemaphore imgAvailable
     // both swapchains alive during swapchain recreation.
     vkDeviceWaitIdle(m_device->getVkDevice());
 
-    if (!initSwapchain(vkRenderPass)) {
+    if (!initSwapchain()) {
       // We failed to create a swapchain (for example because the window is mimized).
       return std::nullopt;
     }
   }
 
-  // Fail to acquire an image if the extent is 0 (can happen if the window is minized).
-  if (m_extent.width == 0 || m_extent.height == 0) {
+  // Fail to acquire an image if the size is 0 (can happen if the window is minized).
+  if (m_size.x() == 0 || m_size.y() == 0) {
     return std::nullopt;
   }
 
@@ -219,7 +174,7 @@ auto Swapchain::acquireImage(VkRenderPass vkRenderPass, VkSemaphore imgAvailable
   case VK_ERROR_OUT_OF_DATE_KHR:
     LOG_D(m_logger, "Out-of-date swapchain detected during acquire");
     // Attempt again to acquire an image (will recreate the swapchain).
-    return acquireImage(vkRenderPass, imgAvailable, true);
+    return acquireImage(imgAvailable, true);
   case VK_SUBOPTIMAL_KHR:
     // Set a flag to recreate the swapchain on the next frame.
     m_swapchainOutOfDate = true;
@@ -265,56 +220,38 @@ auto Swapchain::presentImage(VkSemaphore imgReady, uint32_t imageIndex) -> bool 
   }
 }
 
-auto Swapchain::initSwapchain(VkRenderPass vkRenderPass) -> bool {
+auto Swapchain::initSwapchain() -> bool {
 
   const auto capabilities = m_device->queryVkSurfaceCapabilities();
-  m_imgCount              = getImageCount(capabilities);
-  m_extent                = getSwapExtent(capabilities);
+  const auto imgCount     = getSwapchainImageCount(capabilities);
+  m_size                  = getSwapchainImageSize(capabilities);
   const auto transform    = capabilities.currentTransform;
   const auto presentMode  = getPresentMode(m_device, m_vSync);
 
   // Size 0 can happen when minimizing a window, in that case we cannot create a swapchain.
-  if (m_extent.height == 0U || m_extent.width == 0U) {
+  if (m_size.x() == 0U || m_size.y() == 0U) {
     return false;
   }
 
-  // Delete any imageViews that belonged to the previous swapchain.
-  for (const auto& vkImageView : m_vkImageViews) {
-    vkDestroyImageView(m_device->getVkDevice(), vkImageView, nullptr);
-  }
-  m_vkImageViews.clear();
-
-  // Delete any frameBuffers that belonged to the previous swapchain.
-  for (const auto& vkFramebuffer : m_vkFramebuffers) {
-    vkDestroyFramebuffer(m_device->getVkDevice(), vkFramebuffer, nullptr);
-  }
-  m_vkFramebuffers.clear();
+  // Delete any images that belonged to the previous swapchain.
+  m_images.clear();
 
   // Create the swapchain and retrieve the swapchain images.
   m_vkSwapchain =
-      createVkSwapchain(m_device, m_vkSwapchain, m_imgCount, m_extent, transform, presentMode);
-  m_vkImages = getSwapchainVkImages(m_device->getVkDevice(), m_vkSwapchain);
+      createVkSwapchain(m_device, m_vkSwapchain, imgCount, m_size, transform, presentMode);
+  const auto vkImages = getSwapchainVkImages(m_device->getVkDevice(), m_vkSwapchain);
 
   DBG_SWAPCHAIN_NAME(m_device, m_vkSwapchain, "swapchain");
 
-  // Create an imageview for every swapchain image.
-  for (auto i = 0U; i != m_vkImages.size(); ++i) {
-    auto imgView = createSurfaceImageView(m_device, m_vkImages[i]);
+  // Create images.
+  for (auto i = 0U; i != vkImages.size(); ++i) {
+    auto img = Image{
+        m_device, vkImages[i], m_size, m_device->getVkSurfaceFormat().format, ImageType::Swapchain};
 
-    DBG_IMG_NAME(m_device, m_vkImages[i], "swapchain_" + std::to_string(i));
-    DBG_IMGVIEW_NAME(m_device, imgView, "swapchain_" + std::to_string(i));
+    DBG_IMG_NAME(m_device, img.getVkImage(), "swapchain_" + std::to_string(i));
+    DBG_IMGVIEW_NAME(m_device, img.getVkImageView(), "swapchain_" + std::to_string(i));
 
-    m_vkImageViews.push_back(imgView);
-  }
-
-  // Create a framebuffer for every swapchain image-view.
-  for (auto i = 0U; i != m_vkImages.size(); ++i) {
-    auto frameBuffer =
-        createSurfaceFramebuffer(m_device, vkRenderPass, m_vkImageViews[i], m_extent);
-
-    DBG_FRAMEBUFFER_NAME(m_device, frameBuffer, "swapchain_" + std::to_string(i));
-
-    m_vkFramebuffers.push_back(frameBuffer);
+    m_images.push_back(std::move(img));
   }
 
   LOG_D(
@@ -322,10 +259,11 @@ auto Swapchain::initSwapchain(VkRenderPass vkRenderPass) -> bool {
       "Vulkan swapchain created",
       {"vSync", getName(m_vSync)},
       {"presentMode", getVkPresentModeString(presentMode)},
-      {"imageCount", m_imgCount},
-      {"size", m_extent.width, m_extent.height});
+      {"imageCount", m_images.size()},
+      {"size", m_size});
 
   m_swapchainOutOfDate = false;
+  ++m_version;
   return true;
 }
 

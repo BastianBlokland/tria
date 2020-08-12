@@ -1,4 +1,5 @@
 #pragma once
+#include "forward_technique.hpp"
 #include "graphic.hpp"
 #include "stat_recorder.hpp"
 #include "stopwatch.hpp"
@@ -49,16 +50,13 @@ public:
   /* Begin recording new draw commands to this renderer.
    * Note: Will block if the renderer is currently still rendering.
    */
-  auto drawBegin(
-      VkRenderPass vkRenderPass,
-      VkFramebuffer vkFrameBuffer,
-      VkExtent2D extent,
-      math::Color clearCol) -> void;
+  auto drawBegin(const ForwardTechnique& technique, SwapchainIdx swapIdx, math::Color clearCol)
+      -> void;
 
   /* Record a draw of the given graphic.
    */
   auto draw(
-      VkRenderPass vkRenderPass,
+      const ForwardTechnique& technique,
       const Graphic* graphic,
       const void* uniData,
       size_t uniSize,
