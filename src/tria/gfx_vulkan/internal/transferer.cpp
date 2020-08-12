@@ -146,7 +146,7 @@ auto Transferer::queueTransfer(const void* data, const Buffer& dst, size_t dstOf
   // Upload the data to a transfer buffer.
   const auto reqAlignment = m_device->getLimits().optimalBufferCopyOffsetAlignment;
   const auto src          = getTransferSpace(size, reqAlignment);
-  assert(src.second + size < src.first.getSize());
+  assert(src.second + size <= src.first.getSize());
   src.first.upload(data, size, src.second);
 
   // Add a work item to copy the data from the transfer buffer to the destination.

@@ -41,6 +41,7 @@ public:
   [[nodiscard]] auto getVkDevice() const noexcept { return m_vkDevice; }
   [[nodiscard]] auto getVkSurface() const noexcept { return m_vkSurface; }
   [[nodiscard]] auto getVkSurfaceFormat() const noexcept { return m_surfaceFormat; }
+  [[nodiscard]] auto getDepthVkFormat() const noexcept { return m_depthVkFormat; }
   [[nodiscard]] auto getLimits() const noexcept -> const VkPhysicalDeviceLimits& {
     return m_properties.limits;
   }
@@ -77,6 +78,7 @@ private:
 
   VkSurfaceKHR m_vkSurface;
   VkSurfaceFormatKHR m_surfaceFormat;
+  VkFormat m_depthVkFormat;
 
   VkDevice m_vkDevice;
   VkQueue m_graphicsQueue;

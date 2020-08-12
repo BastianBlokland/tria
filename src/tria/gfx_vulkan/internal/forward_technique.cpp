@@ -4,7 +4,6 @@
 #include "device.hpp"
 #include "mesh.hpp"
 #include "utils.hpp"
-#include "vulkan/vulkan_core.h"
 #include <cassert>
 #include <stdexcept>
 
@@ -12,7 +11,8 @@ namespace tria::gfx::internal {
 
 namespace {
 
-[[nodiscard]] auto createVkRenderPass(const Device* device, ClearMask clear) -> VkRenderPass {
+[[nodiscard]] auto createVkRenderPass(const Device* device, DepthMode depth, ClearMask clear)
+    -> VkRenderPass {
   assert(device);
 
   VkAttachmentDescription colorAttachment = {};
@@ -26,18 +26,37 @@ namespace {
   colorAttachment.initialLayout  = VK_IMAGE_LAYOUT_UNDEFINED;
   colorAttachment.finalLayout    = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
 
-  std::array<VkAttachmentDescription, 1> attachments = {
+  VkAttachmentDescription depthAttachment = {};
+  depthAttachment.format                  = device->getDepthVkFormat();
+  depthAttachment.samples                 = VK_SAMPLE_COUNT_1_BIT;
+  depthAttachment.loadOp = (clear & clearMask(Clear::Depth)) ? VK_ATTACHMENT_LOAD_OP_CLEAR
+                                                             : VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+  depthAttachment.storeOp        = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+  depthAttachment.stencilLoadOp  = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+  depthAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+  depthAttachment.initialLayout  = VK_IMAGE_LAYOUT_UNDEFINED;
+  depthAttachment.finalLayout    = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+
+  std::array<VkAttachmentDescription, 2> attachments = {
       colorAttachment,
+      depthAttachment,
   };
 
   VkAttachmentReference colorAttachmentRef = {};
   colorAttachmentRef.attachment            = 0;
   colorAttachmentRef.layout                = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
+  VkAttachmentReference depthAttachmentRef = {};
+  depthAttachmentRef.attachment            = 1;
+  depthAttachmentRef.layout                = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+
   VkSubpassDescription subpass = {};
   subpass.pipelineBindPoint    = VK_PIPELINE_BIND_POINT_GRAPHICS;
   subpass.colorAttachmentCount = 1;
   subpass.pColorAttachments    = &colorAttachmentRef;
+  if (depth == DepthMode::Enable) {
+    subpass.pDepthStencilAttachment = &depthAttachmentRef;
+  }
 
   VkSubpassDependency dependency = {};
   dependency.srcSubpass          = VK_SUBPASS_EXTERNAL;
@@ -53,32 +72,39 @@ namespace {
 
   VkRenderPassCreateInfo renderPassInfo = {};
   renderPassInfo.sType                  = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
-  renderPassInfo.attachmentCount        = attachments.size();
-  renderPassInfo.pAttachments           = attachments.data();
-  renderPassInfo.subpassCount           = 1;
-  renderPassInfo.pSubpasses             = &subpass;
-  renderPassInfo.dependencyCount        = dependencies.size();
-  renderPassInfo.pDependencies          = dependencies.data();
+  renderPassInfo.attachmentCount =
+      depth == DepthMode::Enable ? attachments.size() : attachments.size() - 1;
+  renderPassInfo.pAttachments    = attachments.data();
+  renderPassInfo.subpassCount    = 1;
+  renderPassInfo.pSubpasses      = &subpass;
+  renderPassInfo.dependencyCount = dependencies.size();
+  renderPassInfo.pDependencies   = dependencies.data();
 
   VkRenderPass result;
   checkVkResult(vkCreateRenderPass(device->getVkDevice(), &renderPassInfo, nullptr, &result));
   return result;
 }
 
-[[nodiscard]] auto
-createVkFramebuffer(const Device* device, VkRenderPass vkRenderPass, const Image& colorAttachment) {
+template <size_t AttachmentCount>
+[[nodiscard]] auto createVkFramebuffer(
+    const Device* device,
+    VkRenderPass vkRenderPass,
+    const std::array<const Image*, AttachmentCount>& attachments) {
   assert(device);
+  static_assert(AttachmentCount > 0);
 
-  std::array<VkImageView, 1> attachments = {
-      colorAttachment.getVkImageView(),
-  };
+  std::array<VkImageView, AttachmentCount> imageViews;
+  for (auto i = 0U; i != AttachmentCount; ++i) {
+    imageViews[i] = attachments[i]->getVkImageView();
+  }
+
   VkFramebufferCreateInfo framebufferInfo = {};
   framebufferInfo.sType                   = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
   framebufferInfo.renderPass              = vkRenderPass;
-  framebufferInfo.attachmentCount         = attachments.size();
-  framebufferInfo.pAttachments            = attachments.data();
-  framebufferInfo.width                   = colorAttachment.getSize().x();
-  framebufferInfo.height                  = colorAttachment.getSize().y();
+  framebufferInfo.attachmentCount         = imageViews.size();
+  framebufferInfo.pAttachments            = imageViews.data();
+  framebufferInfo.width                   = attachments[0]->getSize().x();
+  framebufferInfo.height                  = attachments[0]->getSize().y();
   framebufferInfo.layers                  = 1;
 
   VkFramebuffer result;
@@ -94,12 +120,10 @@ auto beginVkRenderPass(
     math::Color clearCol) -> void {
 
   static_assert(clearCol.getSize() == 4);
-  VkClearColorValue clearColorValue;
-  clearCol.memcpy(clearColorValue.float32);
 
-  std::array<VkClearValue, 1> clearValues = {
-      VkClearValue{clearColorValue},
-  };
+  std::array<VkClearValue, 2> clearValues;
+  clearCol.memcpy(clearValues[0].color.float32);
+  clearValues[1].depthStencil = {1.0f, 0U}; // Set depth to the 'back' (stencil is not used atm).
 
   VkRenderPassBeginInfo renderPassInfo    = {};
   renderPassInfo.sType                    = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
@@ -116,9 +140,10 @@ auto beginVkRenderPass(
 
 } // namespace
 
-ForwardTechnique::ForwardTechnique(Device* device, ClearMask clear) : m_device{device} {
+ForwardTechnique::ForwardTechnique(Device* device, DepthMode depth, ClearMask clear) :
+    m_device{device}, m_depth{depth} {
   assert(device);
-  m_vkRenderPass = createVkRenderPass(m_device, clear);
+  m_vkRenderPass = createVkRenderPass(m_device, depth, clear);
 }
 
 ForwardTechnique::~ForwardTechnique() {
@@ -135,16 +160,43 @@ auto ForwardTechnique::prepareResources(const Swapchain& swapchain) -> void {
   if (m_swapVersion != swapchain.getVersion() || m_vkFramebuffers.empty()) {
     assert(swapchain.getImageCount() > 0);
 
+    // Destroy the previous depth-image.
+    m_depthImage.~Image();
+
     // Destroy the previous framebuffers.
     for (const VkFramebuffer& vkFramebuffer : m_vkFramebuffers) {
       vkDestroyFramebuffer(m_device->getVkDevice(), vkFramebuffer, nullptr);
     }
     m_vkFramebuffers.clear();
 
+    // Create a new depth-image.
+    if (m_depth == DepthMode::Enable) {
+      m_depthImage = Image{
+          m_device,
+          swapchain.getImageSize(),
+          m_device->getDepthVkFormat(),
+          ImageType::DepthAttachment,
+          ImageMipMode::None};
+      DBG_IMG_NAME(m_device, m_depthImage.getVkImage(), "depth");
+      DBG_IMGVIEW_NAME(m_device, m_depthImage.getVkImageView(), "depth");
+    }
+
     // Create new framebuffers.
     for (auto i = 0U; i != swapchain.getImageCount(); ++i) {
       const auto& swapImg = swapchain.getImage(i);
-      m_vkFramebuffers.push_back(createVkFramebuffer(m_device, m_vkRenderPass, swapImg));
+      if (m_depth == DepthMode::Enable) {
+        const auto attachments = std::array<const Image*, 2>{
+            &swapImg,
+            &m_depthImage,
+        };
+        m_vkFramebuffers.push_back(createVkFramebuffer(m_device, m_vkRenderPass, attachments));
+      } else {
+        const auto attachments = std::array<const Image*, 1>{
+            &swapImg,
+        };
+        m_vkFramebuffers.push_back(createVkFramebuffer(m_device, m_vkRenderPass, attachments));
+      }
+      DBG_FRAMEBUFFER_NAME(m_device, m_vkFramebuffers.back(), "forward" + std::to_string(i));
     }
 
     m_size        = swapchain.getImageSize();

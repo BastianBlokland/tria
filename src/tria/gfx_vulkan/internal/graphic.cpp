@@ -33,7 +33,8 @@ template <uint32_t DescriptorSetCount>
     const Shader* vertShader,
     const Shader* fragShader,
     const Mesh* mesh,
-    asset::Graphic::BlendMode blendMode) {
+    asset::BlendMode blendMode,
+    asset::DepthTestMode depthTestMode) {
 
   assert(vertShader);
   assert(fragShader);
@@ -93,11 +94,28 @@ template <uint32_t DescriptorSetCount>
   multisampling.sampleShadingEnable  = false;
   multisampling.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
 
+  VkPipelineDepthStencilStateCreateInfo depthStencil = {};
+  depthStencil.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
+  switch (depthTestMode) {
+  case asset::DepthTestMode::Less:
+    depthStencil.depthTestEnable = true;
+    depthStencil.depthCompareOp  = VK_COMPARE_OP_LESS;
+    break;
+  case asset::DepthTestMode::None:
+  default:
+    depthStencil.depthTestEnable = false;
+    break;
+  }
+  // TODO(bastian): Depth-write mode should probably be configurable separately.
+  depthStencil.depthWriteEnable      = depthTestMode != asset::DepthTestMode::None;
+  depthStencil.depthBoundsTestEnable = false;
+  depthStencil.stencilTestEnable     = false;
+
   VkPipelineColorBlendAttachmentState colorBlendAttachment = {};
   colorBlendAttachment.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT |
       VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
   switch (blendMode) {
-  case asset::Graphic::BlendMode::Alpha:
+  case asset::BlendMode::Alpha:
     colorBlendAttachment.blendEnable         = true;
     colorBlendAttachment.srcColorBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA;
     colorBlendAttachment.dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
@@ -106,7 +124,7 @@ template <uint32_t DescriptorSetCount>
     colorBlendAttachment.dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO;
     colorBlendAttachment.alphaBlendOp        = VK_BLEND_OP_ADD;
     break;
-  case asset::Graphic::BlendMode::Additive:
+  case asset::BlendMode::Additive:
     colorBlendAttachment.blendEnable         = true;
     colorBlendAttachment.srcColorBlendFactor = VK_BLEND_FACTOR_ONE;
     colorBlendAttachment.dstColorBlendFactor = VK_BLEND_FACTOR_ONE;
@@ -115,7 +133,7 @@ template <uint32_t DescriptorSetCount>
     colorBlendAttachment.dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO;
     colorBlendAttachment.alphaBlendOp        = VK_BLEND_OP_ADD;
     break;
-  case asset::Graphic::BlendMode::AlphaAdditive:
+  case asset::BlendMode::AlphaAdditive:
     colorBlendAttachment.blendEnable         = true;
     colorBlendAttachment.srcColorBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA;
     colorBlendAttachment.dstColorBlendFactor = VK_BLEND_FACTOR_ONE;
@@ -124,7 +142,7 @@ template <uint32_t DescriptorSetCount>
     colorBlendAttachment.dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO;
     colorBlendAttachment.alphaBlendOp        = VK_BLEND_OP_ADD;
     break;
-  case asset::Graphic::BlendMode::None:
+  case asset::BlendMode::None:
   default:
     colorBlendAttachment.blendEnable = false;
     break;
@@ -155,7 +173,7 @@ template <uint32_t DescriptorSetCount>
   pipelineInfo.pViewportState               = &viewportState;
   pipelineInfo.pRasterizationState          = &rasterizer;
   pipelineInfo.pMultisampleState            = &multisampling;
-  pipelineInfo.pDepthStencilState           = nullptr;
+  pipelineInfo.pDepthStencilState           = &depthStencil;
   pipelineInfo.pColorBlendState             = &colorBlending;
   pipelineInfo.pDynamicState                = &dynamicStateInfo;
   pipelineInfo.layout                       = layout;
@@ -235,7 +253,8 @@ auto Graphic::prepareResources(
         m_vertShader,
         m_fragShader,
         m_mesh,
-        m_asset->getBlendMode());
+        m_asset->getBlendMode(),
+        m_asset->getDepthTestMode());
 
     DBG_PIPELINELAYOUT_NAME(m_device, m_vkPipelineLayout, m_asset->getId());
     DBG_PIPELINE_NAME(m_device, m_vkPipeline, m_asset->getId());

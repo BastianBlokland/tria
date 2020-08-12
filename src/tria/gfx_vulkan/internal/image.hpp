@@ -11,6 +11,7 @@ using ImageSize = math::Vec<uint16_t, 2>;
 enum class ImageType {
   ColorSource,
   ColorAttachment,
+  DepthAttachment,
   Swapchain,
 };
 
@@ -100,6 +101,8 @@ private:
     return "color-source";
   case ImageType::ColorAttachment:
     return "color-attachment";
+  case ImageType::DepthAttachment:
+    return "depth-attachment";
   case ImageType::Swapchain:
     return "swapchain";
   }

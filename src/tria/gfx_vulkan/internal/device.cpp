@@ -83,6 +83,24 @@ constexpr std::array<const char*, 1> g_requiredDeviceExtensions = {
   return availableFormats.empty() ? std::nullopt : std::optional(*availableFormats.begin());
 }
 
+// Return the first format that supports the requested features.
+template <size_t DesiredFormatsSize>
+[[nodiscard]] auto pickVkFormat(
+    VkPhysicalDevice vkPhysicalDevice,
+    const std::array<VkFormat, DesiredFormatsSize> desiredFormats,
+    VkFormatFeatureFlags features) -> std::optional<VkFormat> {
+
+  for (const auto& desired : desiredFormats) {
+    VkFormatProperties properties;
+    vkGetPhysicalDeviceFormatProperties(vkPhysicalDevice, desired, &properties);
+
+    if ((properties.optimalTilingFeatures & features) == features) {
+      return desired;
+    }
+  }
+  return std::nullopt;
+}
+
 [[nodiscard]] auto
 createVkDevice(VkPhysicalDevice vkPhysicalDevice, std::set<uint32_t> queueFamilies) -> VkDevice {
 
@@ -181,6 +199,14 @@ Device::Device(
     throw err::GfxErr{"Selected vulkan device is missing a presentation queue"};
   }
 
+  const auto foundDepthFormat = pickVkFormat<3>(
+      vkPhysicalDevice, {VK_FORMAT_D32_SFLOAT}, VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT);
+  if (foundDepthFormat) {
+    m_depthVkFormat = *foundDepthFormat;
+  } else {
+    throw err::GfxErr{"Selected vulkan device does not support a suitable depth format"};
+  }
+
   // Create a logical device and retrieve the created queues.
   m_vkDevice = createVkDevice(m_vkPhysicalDevice, {*foundGfxQueueIdx, *foundPresentQueueIdx});
   vkGetDeviceQueue(m_vkDevice, *foundGfxQueueIdx, 0U, &m_graphicsQueue);
@@ -209,7 +235,8 @@ Device::Device(
       {"graphicsQueueIdx", m_graphicsQueueIdx},
       {"presentQueueIdx", m_presentQueueIdx},
       {"surfaceFormat", getVkFormatString(m_surfaceFormat.format)},
-      {"surfaceColorSpace", getVkColorSpaceString(m_surfaceFormat.colorSpace)});
+      {"surfaceColorSpace", getVkColorSpaceString(m_surfaceFormat.colorSpace)},
+      {"depthFormat", getVkFormatString(m_depthVkFormat)});
 }
 
 Device::~Device() {

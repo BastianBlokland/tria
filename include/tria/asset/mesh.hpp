@@ -5,7 +5,7 @@
 
 namespace tria::asset {
 
-using IndexType = uint16_t;
+using IndexType = uint32_t;
 
 /*
  * Per vertex data.

@@ -24,15 +24,16 @@ public:
 
   [[nodiscard]] auto getVkInstance() const noexcept { return m_vkInstance; }
 
-  [[nodiscard]] auto createCanvas(const pal::Window* window, VSyncMode vSync, ClearMask clear)
+  [[nodiscard]] auto
+  createCanvas(const pal::Window* window, VSyncMode vSync, DepthMode depth, ClearMask clear)
       -> std::unique_ptr<NativeCanvas>;
 
-  auto setDebugName(
-      VkDevice vkDevice, VkObjectType vkType, uint64_t vkHandle, std::string_view name) const
-      noexcept -> void;
+  auto
+  setDebugName(VkDevice vkDevice, VkObjectType vkType, uint64_t vkHandle, std::string_view name)
+      const noexcept -> void;
 
-  auto beginDebugLabel(VkCommandBuffer vkCmdBuffer, std::string_view msg, math::Color color) const
-      noexcept -> void;
+  auto beginDebugLabel(
+      VkCommandBuffer vkCmdBuffer, std::string_view msg, math::Color color) const noexcept -> void;
   auto endDebugLabel(VkCommandBuffer vkCmdBuffer) const noexcept -> void;
 
 private:

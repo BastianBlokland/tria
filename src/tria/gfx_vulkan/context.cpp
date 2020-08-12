@@ -8,11 +8,12 @@ Context::Context(log::Logger* logger) : m_native{std::make_unique<NativeContext>
 
 Context::~Context() = default;
 
-auto Context::createCanvas(const pal::Window* window, VSyncMode vSync, ClearMask clear) -> Canvas {
+auto Context::createCanvas(
+    const pal::Window* window, VSyncMode vSync, DepthMode depth, ClearMask clear) -> Canvas {
   if (!window) {
     throw std::invalid_argument{"Window cannot be null"};
   }
-  return Canvas{m_native->createCanvas(window, vSync, clear)};
+  return Canvas{m_native->createCanvas(window, vSync, depth, clear)};
 }
 
 } // namespace tria::gfx

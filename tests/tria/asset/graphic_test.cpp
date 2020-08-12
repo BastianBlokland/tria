@@ -19,7 +19,8 @@ TEST_CASE("[asset] - Graphic", "[asset]") {
           "\"vertShader\": \"test.vert.spv\","
           "\"fragShader\": \"test.frag.spv\","
           "\"mesh\": \"test.obj\","
-          "\"blend\": \"alpha\""
+          "\"blend\": \"alpha\","
+          "\"depth-test\": \"less\""
           "}");
 
       auto db   = Database{nullptr, dir};
@@ -27,7 +28,8 @@ TEST_CASE("[asset] - Graphic", "[asset]") {
       CHECK(gfx->getVertShader()->getShaderKind() == ShaderKind::SpvVertex);
       CHECK(gfx->getFragShader()->getShaderKind() == ShaderKind::SpvFragment);
       CHECK(gfx->getMesh()->getKind() == AssetKind::Mesh);
-      CHECK(gfx->getBlendMode() == Graphic::BlendMode::Alpha);
+      CHECK(gfx->getBlendMode() == BlendMode::Alpha);
+      CHECK(gfx->getDepthTestMode() == DepthTestMode::Less);
     });
   }
 
@@ -53,7 +55,7 @@ TEST_CASE("[asset] - Graphic", "[asset]") {
       CHECK(gfx->getMesh()->getKind() == AssetKind::Mesh);
       REQUIRE(gfx->getSamplerCount() == 1);
       CHECK(*gfx->getSamplerBegin()->getTexture()->getPixelBegin() == Pixel{1, 42, 137, 255});
-      CHECK(gfx->getSamplerBegin()->getFilterMode() == TextureSampler::FilterMode::Nearest);
+      CHECK(gfx->getSamplerBegin()->getFilterMode() == FilterMode::Nearest);
     });
   }
 
