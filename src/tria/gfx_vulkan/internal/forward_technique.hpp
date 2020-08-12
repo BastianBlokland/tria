@@ -12,7 +12,7 @@ class Device;
  */
 class ForwardTechnique final {
 public:
-  ForwardTechnique(Device* device);
+  ForwardTechnique(Device* device, ClearMask clear);
   ForwardTechnique(const ForwardTechnique& rhs)     = delete;
   ForwardTechnique(ForwardTechnique&& rhs) noexcept = delete;
   ~ForwardTechnique();

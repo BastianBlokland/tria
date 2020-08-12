@@ -46,7 +46,7 @@ public:
    * Note: Has to be followed with a call to 'drawEnd' before calling 'drawBegin' again.
    * Returns: false if we failed to begin drawing (for example because the window is minimized).
    */
-  [[nodiscard]] auto drawBegin(math::Color clearCol) -> bool;
+  [[nodiscard]] auto drawBegin(math::Color clearCol = math::color::soothingPurple()) -> bool;
 
   /* Draw a single instance of a graphic without instance data.
    */

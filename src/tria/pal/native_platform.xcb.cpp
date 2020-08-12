@@ -138,9 +138,10 @@ auto NativePlatform::createWindow(WindowSize desiredSize) -> Window {
   const auto winId          = xcb_generate_id(m_xcbCon);
   const auto valMask        = XCB_CW_BACK_PIXEL | XCB_CW_EVENT_MASK;
   const auto backPixelColor = m_xcbScreen->black_pixel;
-  const auto evtMask        = XCB_EVENT_MASK_STRUCTURE_NOTIFY | XCB_EVENT_MASK_BUTTON_PRESS |
-      XCB_EVENT_MASK_BUTTON_RELEASE | XCB_EVENT_MASK_POINTER_MOTION | XCB_EVENT_MASK_KEY_PRESS |
-      XCB_EVENT_MASK_KEY_RELEASE;
+  const auto evtMask =
+      (XCB_EVENT_MASK_STRUCTURE_NOTIFY | XCB_EVENT_MASK_BUTTON_PRESS |
+       XCB_EVENT_MASK_BUTTON_RELEASE | XCB_EVENT_MASK_POINTER_MOTION | XCB_EVENT_MASK_KEY_PRESS |
+       XCB_EVENT_MASK_KEY_RELEASE);
   const auto valList = std::array<uint32_t, 2>{
       backPixelColor,
       evtMask,

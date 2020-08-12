@@ -472,6 +472,7 @@ namespace color {
 [[nodiscard]] constexpr auto navy() noexcept { return Color{0.0, 0.0, 0.5, 1.0}; }
 [[nodiscard]] constexpr auto fuchsia() noexcept { return Color{1.0, 0.0, 1.0, 1.0}; }
 [[nodiscard]] constexpr auto purple() noexcept { return Color{0.5, 0.0, 0.5, 1.0}; }
+[[nodiscard]] constexpr auto soothingPurple() noexcept { return Color{.188, .039, .141, 1.0}; }
 
 /* Get a color based on a unsigned integer, usefull for getting a color in debug code.
  */

@@ -28,7 +28,8 @@ public:
       log::Logger* logger,
       const NativeContext* context,
       const pal::Window* window,
-      VSyncMode vSync);
+      VSyncMode vSync,
+      ClearMask clear);
   NativeCanvas(const NativeCanvas& rhs)     = delete;
   NativeCanvas(NativeCanvas&& rhs) noexcept = delete;
   ~NativeCanvas();

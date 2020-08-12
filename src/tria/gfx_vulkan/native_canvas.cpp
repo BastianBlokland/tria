@@ -11,7 +11,11 @@ namespace tria::gfx {
 using namespace internal;
 
 NativeCanvas::NativeCanvas(
-    log::Logger* logger, const NativeContext* context, const pal::Window* window, VSyncMode vSync) :
+    log::Logger* logger,
+    const NativeContext* context,
+    const pal::Window* window,
+    VSyncMode vSync,
+    ClearMask clear) :
     m_logger{logger},
     m_context{context},
     m_window{window},
@@ -30,7 +34,7 @@ NativeCanvas::NativeCanvas(
   m_textures = std::make_unique<AssetResource<Texture>>(m_logger, m_device.get());
   m_graphics = std::make_unique<AssetResource<Graphic>>(m_logger, m_device.get());
 
-  m_fwdTechnique = std::make_unique<ForwardTechnique>(m_device.get());
+  m_fwdTechnique = std::make_unique<ForwardTechnique>(m_device.get(), clear);
 
   m_swapchain = std::make_unique<Swapchain>(logger, m_device.get(), vSync);
 

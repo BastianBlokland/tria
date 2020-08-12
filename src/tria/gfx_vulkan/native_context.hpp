@@ -24,7 +24,7 @@ public:
 
   [[nodiscard]] auto getVkInstance() const noexcept { return m_vkInstance; }
 
-  [[nodiscard]] auto createCanvas(const pal::Window* window, VSyncMode vSync)
+  [[nodiscard]] auto createCanvas(const pal::Window* window, VSyncMode vSync, ClearMask clear)
       -> std::unique_ptr<NativeCanvas>;
 
   auto setDebugName(

@@ -12,6 +12,12 @@ enum class VSyncMode {
   Enable,
 };
 
+using ClearMask = uint8_t;
+
+enum class Clear : uint8_t {
+  Color = 1U << 0U,
+};
+
 /*
  * Abstraction over a graphics context.
  *
@@ -29,7 +35,8 @@ public:
 
   /* Create a canvas to render into that outputs to the given window.
    */
-  [[nodiscard]] auto createCanvas(const pal::Window* window, VSyncMode vSync) -> Canvas;
+  [[nodiscard]] auto createCanvas(const pal::Window* window, VSyncMode vSync, ClearMask clear)
+      -> Canvas;
 
 private:
   std::unique_ptr<NativeContext> m_native;
@@ -43,6 +50,20 @@ private:
     return "disable";
   }
   return "unknown";
+}
+
+[[nodiscard]] constexpr auto noneClearMask() noexcept -> ClearMask { return 0U; }
+
+[[nodiscard]] constexpr auto clearMask(Clear clear) noexcept -> ClearMask {
+  return static_cast<ClearMask>(clear);
+}
+
+[[nodiscard]] constexpr auto operator|(Clear lhs, Clear rhs) noexcept -> ClearMask {
+  return clearMask(lhs) | clearMask(rhs);
+}
+
+[[nodiscard]] constexpr auto operator|(ClearMask lhs, Clear rhs) noexcept -> ClearMask {
+  return lhs | clearMask(rhs);
 }
 
 } // namespace tria::gfx
