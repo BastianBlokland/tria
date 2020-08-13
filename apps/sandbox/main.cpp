@@ -28,7 +28,8 @@ struct alignas(16) ParticleData final {
 auto runApp(pal::Platform& platform, asset::Database& db, gfx::Context& gfx) {
 
   auto win    = platform.createWindow({1024, 1024});
-  auto canvas = gfx.createCanvas(&win, gfx::VSyncMode::Enable, gfx::clearMask(gfx::Clear::Color));
+  auto canvas = gfx.createCanvas(
+      &win, gfx::VSyncMode::Enable, gfx::DepthMode::Disable, gfx::clearMask(gfx::Clear::Color));
 
   const auto* particleGfx = db.get("graphics/particle.gfx")->downcast<asset::Graphic>();
 

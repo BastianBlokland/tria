@@ -270,7 +270,6 @@ template <typename T>
   res[2][2] = far / (far - near);
   res[3][2] = -near * far / (far - near);
   res[2][3] = 1;
-  res[3][3] = 0;
   return res;
 }
 
@@ -298,26 +297,12 @@ persProjHorMat4f(float horAngle, float aspect, float near, float far) noexcept {
 }
 
 /* Check if all columns of two matrices are approximately equal.
- * Note: Should not be used to compare to zero, use 'approxZero' instead.
  */
 template <typename T, size_t Size>
 [[nodiscard]] constexpr auto
 approx(Mat<T, Size> x, Mat<T, Size> y, T maxDelta = std::numeric_limits<T>::epsilon()) noexcept {
   for (auto i = 0U; i != Size; ++i) {
     if (!approx(x[i], y[i], maxDelta)) {
-      return false;
-    }
-  }
-  return true;
-}
-
-/* Check if all columns of the given matrix are approximately zero.
- */
-template <typename T, size_t Size>
-[[nodiscard]] constexpr auto
-approxZero(Mat<T, Size> x, T maxDelta = std::numeric_limits<T>::epsilon()) noexcept {
-  for (auto i = 0U; i != Size; ++i) {
-    if (!approxZero(x[i], maxDelta)) {
       return false;
     }
   }

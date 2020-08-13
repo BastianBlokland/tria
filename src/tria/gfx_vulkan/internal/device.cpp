@@ -199,7 +199,7 @@ Device::Device(
     throw err::GfxErr{"Selected vulkan device is missing a presentation queue"};
   }
 
-  const auto foundDepthFormat = pickVkFormat<3>(
+  const auto foundDepthFormat = pickVkFormat<1>(
       vkPhysicalDevice, {VK_FORMAT_D32_SFLOAT}, VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT);
   if (foundDepthFormat) {
     m_depthVkFormat = *foundDepthFormat;

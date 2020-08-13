@@ -210,20 +210,6 @@ TEST_CASE("[math] - Mat", "[math]") {
     CHECK(approx(mx, my));
     CHECK(!approx(mx, mz));
   }
-
-  SECTION("ApproxZero check if all columns of a matrix are approximately zero") {
-    CHECK(approxZero(Mat4f{}));
-    CHECK(!approxZero(identityMat4f()));
-
-    auto mx  = Mat4f{};
-    mx[1][2] = .0000001f;
-
-    auto my  = Mat4f{};
-    my[1][2] = .001f;
-
-    CHECK(approxZero(mx));
-    CHECK(!approxZero(my));
-  }
 }
 
 } // namespace tria::math::tests

@@ -48,6 +48,7 @@ add_library(tria_gfx STATIC
 
 message(STATUS "Finding vulkan package")
 find_package(Vulkan REQUIRED)
+message(STATUS "Found vulkan: ${Vulkan_LIBRARIES}, ${Vulkan_INCLUDE_DIRS}")
 target_link_libraries(tria_gfx PRIVATE ${Vulkan_LIBRARIES})
 target_include_directories(tria_gfx PRIVATE ${Vulkan_INCLUDE_DIRS})
 

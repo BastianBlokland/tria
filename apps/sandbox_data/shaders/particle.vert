@@ -4,8 +4,9 @@
 #include "include/instance.glsl"
 
 layout(location = 0, set = 0) in vec3 inVertPos;
-layout(location = 1, set = 0) in vec4 inVertColor;
-layout(location = 2, set = 0) in vec2 inVertTexcoord;
+layout(location = 1, set = 0) in vec3 inVertNrm;
+layout(location = 2, set = 0) in vec4 inVertColor;
+layout(location = 3, set = 0) in vec2 inVertTexcoord;
 
 struct InstanceData {
   vec2 pos;
