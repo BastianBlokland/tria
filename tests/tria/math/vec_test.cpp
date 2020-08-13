@@ -219,6 +219,22 @@ TEST_CASE("[math] - Vec", "[math]") {
     CHECK(approx(dot(vec1, vec2), -1.0f));
   }
 
+  SECTION("Cross of right and up is forward") {
+    CHECK(approx(cross(dir3d::right(), dir3d::up()), dir3d::forward()));
+  }
+
+  SECTION("Cross of up and right is backward") {
+    CHECK(approx(cross(dir3d::up(), dir3d::right()), dir3d::backward()));
+  }
+
+  SECTION("Cross of forward and right is up") {
+    CHECK(approx(cross(dir3d::forward(), dir3d::right()), dir3d::up()));
+  }
+
+  SECTION("Cross of right and forward is down") {
+    CHECK(approx(cross(dir3d::right(), dir3d::forward()), dir3d::down()));
+  }
+
   SECTION("Angle between parallel vectors is 0 radians") {
     const auto vec1 = Vec2f{0.0f, 1.0f};
     const auto vec2 = Vec2f{0.0f, 1.0f};
