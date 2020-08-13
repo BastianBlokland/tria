@@ -12,10 +12,16 @@ enum class VSyncMode {
   Enable,
 };
 
+enum class DepthMode {
+  Enable,  // Depth testing active.
+  Disable, // No depth testing.
+};
+
 using ClearMask = uint8_t;
 
 enum class Clear : uint8_t {
   Color = 1U << 0U,
+  Depth = 1U << 1U,
 };
 
 /*
@@ -35,7 +41,8 @@ public:
 
   /* Create a canvas to render into that outputs to the given window.
    */
-  [[nodiscard]] auto createCanvas(const pal::Window* window, VSyncMode vSync, ClearMask clear)
+  [[nodiscard]] auto
+  createCanvas(const pal::Window* window, VSyncMode vSync, DepthMode depth, ClearMask clear)
       -> Canvas;
 
 private:
@@ -47,6 +54,16 @@ private:
   case VSyncMode::Enable:
     return "enable";
   case VSyncMode::Disable:
+    return "disable";
+  }
+  return "unknown";
+}
+
+[[nodiscard]] constexpr auto getName(DepthMode mode) noexcept -> std::string_view {
+  switch (mode) {
+  case DepthMode::Enable:
+    return "enable";
+  case DepthMode::Disable:
     return "disable";
   }
   return "unknown";

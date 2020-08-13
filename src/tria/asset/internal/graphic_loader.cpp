@@ -10,13 +10,10 @@ namespace tria::asset::internal {
 
 namespace {
 
-using TexFilterMode = TextureSampler::FilterMode;
-using BlendMode     = Graphic::BlendMode;
-
-[[nodiscard]] auto getTextureFilterMode(std::string_view str) -> std::optional<TexFilterMode> {
-  static const std::unordered_map<std::string_view, TexFilterMode> table = {
-      {"nearest", TexFilterMode::Nearest},
-      {"linear", TexFilterMode::Linear},
+[[nodiscard]] auto getTextureFilterMode(std::string_view str) -> std::optional<FilterMode> {
+  static const std::unordered_map<std::string_view, FilterMode> table = {
+      {"nearest", FilterMode::Nearest},
+      {"linear", FilterMode::Linear},
   };
   const auto search = table.find(str);
   return search == table.end() ? std::nullopt : std::optional{search->second};
@@ -28,6 +25,15 @@ using BlendMode     = Graphic::BlendMode;
       {"alpha", BlendMode::Alpha},
       {"additive", BlendMode::Additive},
       {"alphaAdditive", BlendMode::AlphaAdditive},
+  };
+  const auto search = table.find(str);
+  return search == table.end() ? std::nullopt : std::optional{search->second};
+}
+
+[[nodiscard]] auto getDepthTestMode(std::string_view str) -> std::optional<DepthTestMode> {
+  static const std::unordered_map<std::string_view, DepthTestMode> table = {
+      {"none", DepthTestMode::None},
+      {"less", DepthTestMode::Less},
   };
   const auto search = table.find(str);
   return search == table.end() ? std::nullopt : std::optional{search->second};
@@ -87,7 +93,7 @@ auto loadGraphic(
       const auto* texture = db->get(AssetId{textureId})->downcast<Texture>();
 
       // Filter mode (optional field).
-      auto filterMode = TexFilterMode::Linear;
+      auto filterMode = FilterMode::Linear;
       std::string_view filterStr;
       if (!elem.at("filter").get(filterStr)) {
         auto filterModeOpt = getTextureFilterMode(filterStr);
@@ -112,8 +118,19 @@ auto loadGraphic(
     blendMode = *blendModeOpt;
   }
 
+  // Depth test mode (optional field).
+  auto depthTestMode = DepthTestMode::None;
+  std::string_view depthTestStr;
+  if (!obj.at("depth-test").get(depthTestStr)) {
+    auto depthTestModeOpt = getDepthTestMode(depthTestStr);
+    if (!depthTestModeOpt) {
+      throw err::AssetLoadErr{path, "Unsupported depth-test mode"};
+    }
+    depthTestMode = *depthTestModeOpt;
+  }
+
   return std::make_unique<Graphic>(
-      std::move(id), vertShader, fragShader, mesh, std::move(samplers), blendMode);
+      std::move(id), vertShader, fragShader, mesh, std::move(samplers), blendMode, depthTestMode);
 }
 
 } // namespace tria::asset::internal

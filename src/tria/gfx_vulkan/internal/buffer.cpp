@@ -2,7 +2,6 @@
 #include "memory_pool.hpp"
 #include "tria/gfx/err/gfx_err.hpp"
 #include "utils.hpp"
-#include "vulkan/vulkan_core.h"
 #include <cassert>
 
 namespace tria::gfx::internal {
@@ -45,7 +44,7 @@ namespace {
 } // namespace
 
 Buffer::Buffer(Device* device, size_t size, MemoryLocation location, BufferUsage usage) :
-    m_device{device}, m_location{location} {
+    m_device{device}, m_size{static_cast<uint32_t>(size)}, m_location{location} {
   assert(m_device);
 
   // Create a buffer.
@@ -71,7 +70,7 @@ auto Buffer::upload(const void* data, size_t size, uint32_t offset) -> void {
   if (!m_vkBuffer) {
     throw err::GfxErr{"Invalid buffer"};
   }
-  if (size > m_memory.getSize()) {
+  if (size + offset > m_size) {
     throw err::GfxErr{"Buffer too small"};
   }
   auto* mappedPtr = m_memory.getMappedPtr() + offset;

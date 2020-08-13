@@ -29,6 +29,7 @@ public:
       const NativeContext* context,
       const pal::Window* window,
       VSyncMode vSync,
+      DepthMode depth,
       ClearMask clear);
   NativeCanvas(const NativeCanvas& rhs)     = delete;
   NativeCanvas(NativeCanvas&& rhs) noexcept = delete;

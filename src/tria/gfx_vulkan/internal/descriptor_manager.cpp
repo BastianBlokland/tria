@@ -5,7 +5,6 @@
 #include "sampler.hpp"
 #include "tria/math/utils.hpp"
 #include "utils.hpp"
-#include "vulkan/vulkan_core.h"
 #include <cassert>
 
 namespace tria::gfx::internal {

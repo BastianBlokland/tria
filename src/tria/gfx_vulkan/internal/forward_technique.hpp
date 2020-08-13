@@ -12,7 +12,7 @@ class Device;
  */
 class ForwardTechnique final {
 public:
-  ForwardTechnique(Device* device, ClearMask clear);
+  ForwardTechnique(Device* device, DepthMode depth, ClearMask clear);
   ForwardTechnique(const ForwardTechnique& rhs)     = delete;
   ForwardTechnique(ForwardTechnique&& rhs) noexcept = delete;
   ~ForwardTechnique();
@@ -29,15 +29,16 @@ public:
    */
   auto prepareResources(const Swapchain& swapchain) -> void;
 
-  auto
-  beginRenderPass(VkCommandBuffer vkCommandBuffer, SwapchainIdx idx, math::Color clearCol) const
-      noexcept -> void;
+  auto beginRenderPass(VkCommandBuffer vkCommandBuffer, SwapchainIdx idx, math::Color clearCol)
+      const noexcept -> void;
 
 private:
   Device* m_device;
+  DepthMode m_depth;
   SwapchainSize m_size;
   SwapchainVersion m_swapVersion;
   VkRenderPass m_vkRenderPass;
+  Image m_depthImage;
   std::vector<VkFramebuffer> m_vkFramebuffers;
 };
 

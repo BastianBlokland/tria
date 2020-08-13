@@ -21,6 +21,7 @@ public:
   Buffer(const Buffer& rhs) = delete;
   Buffer(Buffer&& rhs) noexcept {
     m_device       = rhs.m_device;
+    m_size         = rhs.m_size;
     m_location     = rhs.m_location;
     m_vkBuffer     = rhs.m_vkBuffer;
     m_memory       = std::move(rhs.m_memory);
@@ -32,6 +33,7 @@ public:
 
   auto operator=(Buffer&& rhs) noexcept -> Buffer& {
     m_device       = rhs.m_device;
+    m_size         = rhs.m_size;
     m_location     = rhs.m_location;
     m_vkBuffer     = rhs.m_vkBuffer;
     m_memory       = std::move(rhs.m_memory);
@@ -39,9 +41,9 @@ public:
     return *this;
   }
 
+  [[nodiscard]] auto getSize() const noexcept { return m_size; }
   [[nodiscard]] auto getLocation() const noexcept { return m_location; }
   [[nodiscard]] auto getVkBuffer() const noexcept { return m_vkBuffer; }
-  [[nodiscard]] auto getSize() const noexcept { return m_memory.getSize(); }
 
   /* Upload data to the buffer.
    * Note: Only valid for buffers on the host (cpu) side. For gpu buffers an explicit transfer
@@ -51,6 +53,7 @@ public:
 
 private:
   const Device* m_device;
+  uint32_t m_size;
   MemoryLocation m_location;
   VkBuffer m_vkBuffer;
   MemoryBlock m_memory;

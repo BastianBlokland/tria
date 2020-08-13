@@ -58,29 +58,37 @@ auto Mesh::getVkVertexAttributeDescriptions() const noexcept
     -> std::vector<VkVertexInputAttributeDescription> {
   static_assert(
       sizeof(asset::Vertex::position) == sizeof(float) * 3, "Unexpected vertex position size");
+  static_assert(
+      sizeof(asset::Vertex::normal) == sizeof(float) * 3, "Unexpected vertex normal size");
   static_assert(sizeof(asset::Vertex::color) == sizeof(float) * 4, "Unexpected vertex color size");
   static_assert(
       sizeof(asset::Vertex::texcoord) == sizeof(float) * 2, "Unexpected vertex texcoord size");
 
-  auto result = std::vector<VkVertexInputAttributeDescription>{3};
+  auto result = std::vector<VkVertexInputAttributeDescription>{4};
 
   // Position.
   result[0].binding  = 0;
   result[0].location = 0;
-  result[0].format   = VK_FORMAT_R32G32B32_SFLOAT; // vec3
+  result[0].format   = VK_FORMAT_R32G32B32_SFLOAT; // vec3.
   result[0].offset   = offsetof(asset::Vertex, position);
 
-  // Color.
+  // Normal.
   result[1].binding  = 0;
   result[1].location = 1;
-  result[1].format   = VK_FORMAT_R32G32B32A32_SFLOAT; // vec4
-  result[1].offset   = offsetof(asset::Vertex, color);
+  result[1].format   = VK_FORMAT_R32G32B32_SFLOAT; // vec3.
+  result[1].offset   = offsetof(asset::Vertex, normal);
 
-  // Uv.
+  // Color.
   result[2].binding  = 0;
   result[2].location = 2;
-  result[2].format   = VK_FORMAT_R32G32_SFLOAT; // vec2
-  result[2].offset   = offsetof(asset::Vertex, texcoord);
+  result[2].format   = VK_FORMAT_R32G32B32A32_SFLOAT; // vec4.
+  result[2].offset   = offsetof(asset::Vertex, color);
+
+  // Uv.
+  result[3].binding  = 0;
+  result[3].location = 3;
+  result[3].format   = VK_FORMAT_R32G32_SFLOAT; // vec2.
+  result[3].offset   = offsetof(asset::Vertex, texcoord);
 
   return result;
 }

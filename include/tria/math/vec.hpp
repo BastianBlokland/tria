@@ -2,6 +2,7 @@
 #include "tria/log/param.hpp"
 #include "tria/math/rnd.hpp"
 #include "tria/math/utils.hpp"
+#include <algorithm>
 #include <array>
 #include <cassert>
 #include <cstring>
@@ -33,7 +34,6 @@ public:
   constexpr Vec(const Components&... comps) noexcept : m_comps{static_cast<Type>(comps)...} {}
 
   [[nodiscard]] constexpr auto getSize() noexcept -> size_t { return Size; }
-  [[nodiscard]] constexpr auto getByteSize() noexcept -> size_t { return sizeof(Type) * Size; };
 
   [[nodiscard]] constexpr auto begin() noexcept -> Type* { return m_comps.data(); }
   [[nodiscard]] constexpr auto begin() const noexcept -> const Type* { return m_comps.data(); }
@@ -295,6 +295,17 @@ template <typename T, size_t Size>
   return res;
 }
 
+/* Calculate the shortest angle in radians between the given vectors.
+ */
+template <typename T, size_t Size>
+[[nodiscard]] constexpr auto angle(Vec<T, Size> from, Vec<T, Size> to) noexcept -> T {
+  const auto denom = std::sqrt(from.getSqrMag() * to.getSqrMag());
+  if (denom <= std::numeric_limits<T>::epsilon()) {
+    return {};
+  }
+  return std::acos(std::clamp(dot(from, to) / denom, T{-1}, T{1}));
+}
+
 /* Project a vector onto another vector.
  */
 template <typename T, size_t Size>
@@ -319,11 +330,18 @@ template <typename T, size_t Size>
 template <typename T, size_t Size>
 [[nodiscard]] constexpr auto lerp(Vec<T, Size> x, Vec<T, Size> y, float t) noexcept
     -> Vec<T, Size> {
-  Vec<T, Size> res = {};
+  Vec<T, Size> res;
   for (auto i = 0U; i != Size; ++i) {
     res[i] = lerp(x[i], y[i], t);
   }
   return res;
+}
+
+/* Perspective divide: divide the vector by its w component.
+ */
+template <typename T>
+[[nodiscard]] constexpr auto persDivide(Vec<T, 4> vec) noexcept -> Vec<T, 3> {
+  return Vec<T, 3>(vec.x(), vec.y(), vec.z()) / vec.w();
 }
 
 /* Check if all components of two vectors are approximately equal.
@@ -357,7 +375,7 @@ approxZero(Vec<T, Size> x, T maxDelta = std::numeric_limits<T>::epsilon()) noexc
  */
 template <typename Rng, typename VecT, size_t VecSize>
 [[nodiscard]] auto rndInsideUnitCube(Rng& rng) noexcept {
-  auto res = Vec<VecT, VecSize>{};
+  Vec<VecT, VecSize> res;
   for (auto i = 0U; i < VecSize; ++i) {
     res[i] = rndSample(rng, -.5f, +.5f);
   }
@@ -383,7 +401,7 @@ template <typename Rng>
 template <typename Rng, typename VecT, size_t VecSize>
 [[nodiscard]] auto rndOnUnitSphere(Rng& rng) noexcept {
   // TODO(bastian): Should we just use a simple rejection method? Probably considerably faster.
-  auto res = Vec<VecT, VecSize>{};
+  Vec<VecT, VecSize> res;
   while (true) {
     // Fill the vector with random numbers with a gaussian distribution.
     for (auto i = 0U; i < VecSize; i += 2) {

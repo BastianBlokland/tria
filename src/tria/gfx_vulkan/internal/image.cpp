@@ -75,6 +75,8 @@ namespace {
   case ImageType::ColorAttachment:
   case ImageType::Swapchain:
     return VK_IMAGE_ASPECT_COLOR_BIT;
+  case ImageType::DepthAttachment:
+    return VK_IMAGE_ASPECT_DEPTH_BIT;
   }
   return {};
 }
@@ -92,9 +94,11 @@ namespace {
     return usage;
   }
   case ImageType::ColorAttachment:
-    // Assume that the image will be used as a color attachment.
     assert(!generatedMipMaps); // Attachments with genenerated mipmaps don't make sense.
     return VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+  case ImageType::DepthAttachment:
+    assert(!generatedMipMaps); // Attachments with genenerated mipmaps don't make sense.
+    return VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
   case ImageType::Swapchain:
     assert(false); // Swapchain images cannot be created manually.
     return {};
@@ -109,6 +113,8 @@ Image::Image(
     m_device{device}, m_size{size}, m_vkFormat{vkFormat}, m_type{type}, m_mipMode{mipMode} {
 
   assert(m_device);
+  assert(type != ImageType::ColorAttachment || getVkFormatChannelCount(m_vkFormat) == 4U);
+  assert(type != ImageType::DepthAttachment || getVkFormatChannelCount(m_vkFormat) == 1U);
 
   const auto genMipMaps = mipMode == ImageMipMode::Generate;
   m_mipLevels           = genMipMaps ? calcMipLevels(size) : 1U;
