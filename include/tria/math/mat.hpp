@@ -1,4 +1,5 @@
 #pragma once
+#include "tria/math/quat.hpp"
 #include "tria/math/vec.hpp"
 #include <array>
 #include <cassert>
@@ -228,6 +229,74 @@ template <typename T>
 /* Rotate specfied amount of radians around the z axis.
  */
 [[nodiscard]] constexpr auto rotZMat4f(float angle) noexcept { return rotZMat4(angle); }
+
+/* Construct a rotation matrix from a quaternion.
+ */
+template <typename T>
+[[nodiscard]] constexpr auto rotMat4(Quat<T> rot) noexcept {
+  /*
+   * [ 1 - 2y² - 2z²,   2xy + 2wz ,     2xz - 2wy,      0 ]
+   * [ 2xy - 2wz,       1 - 2x² - 2z²,  2yz + 2wx,      0 ]
+   * [ 2xz + 2wy,       2yz - 2wx,      1 - 2x² - 2y²,  0 ]
+   * [ 0,               0,              0,              1 ]
+   */
+  const auto& x = rot.x();
+  const auto& y = rot.y();
+  const auto& z = rot.z();
+  const auto& w = rot.w();
+
+  auto res  = Mat<T, 4>{};
+  res[0][0] = 1 - 2 * y * y - 2 * z * z;
+  res[0][1] = 2 * x * y + 2 * w * z;
+  res[0][2] = 2 * x * z - 2 * w * y;
+  res[1][0] = 2 * x * y - 2 * w * z;
+  res[1][1] = 1 - 2 * x * x - 2 * z * z;
+  res[1][2] = 2 * y * z + 2 * w * x;
+  res[2][0] = 2 * x * z + 2 * w * y;
+  res[2][1] = 2 * y * z - 2 * w * x;
+  res[2][2] = 1 - 2 * x * x - 2 * y * y;
+  res[3][3] = 1;
+  return res;
+}
+
+/* Construct a rotation matrix from a quaternion.
+ */
+[[nodiscard]] constexpr auto rotMat4f(Quat<float> rot) noexcept { return rotMat4(rot); }
+
+/* Construct a rotation matrix from identity to the given axes.
+ * Axis vectors have to be unit vectors and perpendicular to eachother.
+ */
+template <typename T>
+[[nodiscard]] constexpr auto rotMat4(Vec<T, 3> right, Vec<T, 3> up, Vec<T, 3> fwd) noexcept {
+
+  // TODO(bastian): Should we just always normalize and reconstruct the axes? Reason for not doing
+  // it atm is that the cost would be relatively high.
+  assert(approx(right.getSqrMag(), T{1}, T{.0001}));
+  assert(approx(up.getSqrMag(), T{1}, T{.0001}));
+  assert(approx(fwd.getSqrMag(), T{1}, T{.0001}));
+  assert(approx(cross(right, up), fwd, T{.0001}));
+
+  /*
+   * [ right.x,   up.x,   fwd.x,  0 ]
+   * [ right.y,   up.y,   fwd.y,  0 ]
+   * [ right.z,   up.z,   fwd.z,  0 ]
+   * [ 0,         0,      0,      1 ]
+   */
+
+  auto res  = Mat<T, 4>{};
+  res[0]    = {right.x(), right.y(), right.z(), 0};
+  res[1]    = {up.x(), up.y(), up.z(), 0};
+  res[2]    = {fwd.x(), fwd.y(), fwd.z(), 0};
+  res[3][3] = 1;
+  return res;
+}
+
+/* Construct a rotation matrix from identity to the given axes.
+ * Axis vectors have to be unit vectors and perpendicular to eachother.
+ */
+[[nodiscard]] constexpr auto rotMat4f(Vec3f right, Vec3f up, Vec3f fwd) noexcept {
+  return rotMat4<float>(right, up, fwd);
+}
 
 /* Orthographic projection matrix.
  */

@@ -1,6 +1,8 @@
 #include "catch2/catch.hpp"
 #include "tria/math/mat.hpp"
+#include "tria/math/quat.hpp"
 #include "tria/math/utils.hpp"
+#include "tria/math/vec.hpp"
 
 namespace tria::math::tests {
 
@@ -174,6 +176,15 @@ TEST_CASE("[math] - Mat", "[math]") {
     auto angle = pi<float>; // 180 degrees.
     auto mat   = rotZMat4f(angle);
     CHECK(approx(mat * Vec4f{1.f, 0.f, 0.f, 0.f}, Vec4f{-1.f, 0.f, 0.f, 0.f}));
+  }
+
+  SECTION("Rotation matrix from axes is the same as from a quaternion") {
+    auto rot         = angleAxisQuatf(dir3d::up(), 42.f) * angleAxisQuatf(dir3d::right(), 13.f);
+    auto newRight    = rot * dir3d::right();
+    auto newUp       = rot * dir3d::up();
+    auto newForward  = rot * dir3d::forward();
+    auto matFromAxes = rotMat4f(newRight, newUp, newForward);
+    CHECK(approx(matFromAxes, rotMat4f(rot), .000001f));
   }
 
   SECTION("Orthogonal projection scales to clip-space") {
