@@ -26,8 +26,9 @@ enum class FilterMode : uint8_t {
 /* Mode that is used when performing depth-tests.
  */
 enum class DepthTestMode : uint8_t {
-  None = 0, // No depth-testing (always render).
-  Less = 1, // Pass the depth-test if the fragment is closer.
+  None   = 0, // No depth-testing.
+  Less   = 1, // Pass the depth-test if the fragment is closer.
+  Always = 2, // Always pass the depth-test.
 };
 
 /*

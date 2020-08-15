@@ -101,13 +101,16 @@ template <uint32_t DescriptorSetCount>
     depthStencil.depthTestEnable = true;
     depthStencil.depthCompareOp  = VK_COMPARE_OP_LESS;
     break;
+  case asset::DepthTestMode::Always:
+    depthStencil.depthTestEnable = true;
+    depthStencil.depthCompareOp  = VK_COMPARE_OP_ALWAYS;
+    break;
   case asset::DepthTestMode::None:
   default:
     depthStencil.depthTestEnable = false;
     break;
   }
-  // TODO(bastian): Depth-write mode should probably be configurable separately.
-  depthStencil.depthWriteEnable      = depthTestMode != asset::DepthTestMode::None;
+  depthStencil.depthWriteEnable      = true;
   depthStencil.depthBoundsTestEnable = false;
   depthStencil.stencilTestEnable     = false;
 

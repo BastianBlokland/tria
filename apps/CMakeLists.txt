@@ -59,7 +59,9 @@ target_link_libraries(sandbox PRIVATE tria_gfx)
 configure_shaders(sandbox_data ${CMAKE_CURRENT_SOURCE_DIR}/sandbox_data
   shaders/obj.vert
   shaders/obj_nrm.frag
-  shaders/obj_tex.frag)
+  shaders/obj_tex.frag
+  shaders/sky.vert
+  shaders/sky.frag)
 configure_data(sandbox_data ${CMAKE_CURRENT_SOURCE_DIR}/sandbox_data
   graphics
   models

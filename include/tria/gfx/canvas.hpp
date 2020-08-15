@@ -59,10 +59,6 @@ public:
     static_assert(
         std::is_trivially_copyable_v<InstDataType>,
         "Instance data type has to be trivially copyable");
-    static_assert(
-        std::alignment_of_v<InstDataType> == 16,
-        "Instance data type has to be aligned to 16 bytes");
-
     draw(asset, &instData, sizeof(InstDataType), 1U);
   }
 

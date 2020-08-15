@@ -33,9 +33,9 @@ struct Obj final {
 
 auto runApp(pal::Platform& platform, asset::Database& db, gfx::Context& gfx) {
 
-  auto win    = platform.createWindow({1024, 1024});
-  auto canvas = gfx.createCanvas(
-      &win, gfx::VSyncMode::Enable, gfx::DepthMode::Enable, gfx::Clear::Color | gfx::Clear::Depth);
+  auto win = platform.createWindow({1024, 1024});
+  auto canvas =
+      gfx.createCanvas(&win, gfx::VSyncMode::Enable, gfx::DepthMode::Enable, gfx::noneClearMask());
 
   auto objs = std::vector<Obj>{
       {db.get("graphics/cube.gfx")->downcast<asset::Graphic>(),
@@ -77,16 +77,16 @@ auto runApp(pal::Platform& platform, asset::Database& db, gfx::Context& gfx) {
     }
 
     auto mouseDelta = win.getMousePosNrm() - prevMousePos;
-    // Rotate the camera using the mouse (while holding right-mouse or control).
     if (win.isKeyDown(pal::Key::MouseRight) || win.isKeyDown(pal::Key::Control)) {
+      // Rotate the camera based on the mouse movement.
       cam.rot() =
           (angleAxisQuatf(dir3d::up(), mouseDelta.x() * camRotSensitivity) *
            angleAxisQuatf(cam.getRight(), mouseDelta.y() * camRotSensitivity) * cam.rot());
     }
     prevMousePos = win.getMousePosNrm();
 
-    // Update window title every 30 frames.
     if (frameNum % 30 == 0) {
+      // Update window title every 30 frames.
       auto drawStats = canvas.getDrawStats();
       char titleBuffer[256];
       std::snprintf(
@@ -101,16 +101,15 @@ auto runApp(pal::Platform& platform, asset::Database& db, gfx::Context& gfx) {
       win.setTitle(titleBuffer);
     }
 
-    // Draw objects.
     if (canvas.drawBegin()) {
       auto vpMat = cam.getViewProjMat(win.getAspect());
+
+      canvas.draw(db.get("graphics/sky.gfx")->downcast<asset::Graphic>(), vpMat);
+
       for (const auto& obj : objs) {
-        struct alignas(16) {
-          Mat4f mat;
-        } instData;
-        instData.mat = vpMat * trsMat4f(obj.pos, obj.rot, obj.scale);
-        canvas.draw(obj.graphic, instData);
+        canvas.draw(obj.graphic, vpMat * trsMat4f(obj.pos, obj.rot, obj.scale));
       }
+
       canvas.drawEnd();
     } else {
       // Unable to draw, possibly due to a minimized window.

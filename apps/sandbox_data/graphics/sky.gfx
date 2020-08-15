@@ -1,0 +1,7 @@
+{
+  "vertShader": "shaders/sky.vert.spv",
+  "fragShader": "shaders/sky.frag.spv",
+  "mesh": "models/cube.obj",
+  "blend": "none",
+  "depthTest": "always"
+}
