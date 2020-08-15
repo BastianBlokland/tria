@@ -1,4 +1,5 @@
-#include "tria/math/vec.hpp"
+#include "tria/math/mat.hpp"
+#include "tria/math/vec_io.hpp"
 #include <iostream>
 
 namespace tria::math {
@@ -6,7 +7,7 @@ namespace tria::math {
 /* Specialization for iostream output.
  */
 template <typename Type, size_t Size>
-auto operator<<(std::ostream& out, const Vec<Type, Size>& rhs) -> std::ostream& {
+auto operator<<(std::ostream& out, const Mat<Type, Size>& rhs) -> std::ostream& {
   out << "[";
   for (auto i = 0U; i != Size; ++i) {
     out << rhs[i];

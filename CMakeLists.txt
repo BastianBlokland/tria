@@ -64,7 +64,7 @@ else()
   if(${TRIA_PLATFORM} STREQUAL "win32")
     set(CXX_FLAGS_SHARED "${CXX_FLAGS_SHARED} ${CXX_FLAGS_WIN32} -Wno-deprecated-declarations")
   endif()
-  set(CMAKE_CXX_FLAGS_DEBUG "-Og -g -fno-omit-frame-pointer ${CXX_FLAGS_SHARED}")
+  set(CMAKE_CXX_FLAGS_DEBUG "-g -fno-omit-frame-pointer ${CXX_FLAGS_SHARED}")
   set(CMAKE_CXX_FLAGS_RELEASE "-O3 -DNDEBUG ${CXX_FLAGS_SHARED}")
 endif()
 

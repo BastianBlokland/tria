@@ -295,6 +295,16 @@ template <typename T, size_t Size>
   return res;
 }
 
+/* Cross product of two 3d vectors.
+ */
+template <typename T>
+[[nodiscard]] constexpr auto cross(Vec<T, 3> x, Vec<T, 3> y) noexcept -> Vec<T, 3> {
+  return {
+      (x.y() * y.z() - x.z() * y.y()),
+      (x.z() * y.x() - x.x() * y.z()),
+      (x.x() * y.y() - x.y() * y.x())};
+}
+
 /* Calculate the shortest angle in radians between the given vectors.
  */
 template <typename T, size_t Size>
@@ -469,6 +479,26 @@ using Vec3i = Vec<int, 3>;
 using Vec4i = Vec<int, 4>;
 
 using Color = Vec<float, 4>;
+
+namespace dir2d {
+
+[[nodiscard]] constexpr auto up() noexcept { return Vec2f{0.0, 1.0}; }
+[[nodiscard]] constexpr auto down() noexcept { return Vec2f{0.0, -1.0}; }
+[[nodiscard]] constexpr auto right() noexcept { return Vec2f{1.0, 0.0}; }
+[[nodiscard]] constexpr auto left() noexcept { return Vec2f{-1.0, 0.0}; }
+
+} // namespace dir2d
+
+namespace dir3d {
+
+[[nodiscard]] constexpr auto up() noexcept { return Vec3f{0.0, 1.0, 0.0}; }
+[[nodiscard]] constexpr auto down() noexcept { return Vec3f{0.0, -1.0, 0.0}; }
+[[nodiscard]] constexpr auto right() noexcept { return Vec3f{1.0, 0.0, 0.0}; }
+[[nodiscard]] constexpr auto left() noexcept { return Vec3f{-1.0, 0.0, 0.0}; }
+[[nodiscard]] constexpr auto forward() noexcept { return Vec3f{0.0, 0.0, 1.0}; }
+[[nodiscard]] constexpr auto backward() noexcept { return Vec3f{0.0, 0.0, -1.0}; }
+
+} // namespace dir3d
 
 namespace color {
 

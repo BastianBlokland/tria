@@ -110,7 +110,7 @@ template <typename Type, size_t Size>
 /* Translation matrix.
  */
 template <typename T>
-[[nodiscard]] constexpr auto transMat4(Vec<T, 3> translation) noexcept {
+[[nodiscard]] constexpr auto transMat4(Vec<T, 3> trans) noexcept {
   /*
    * [ 1,  0,  0,  x ]
    * [ 0,  1,  0,  y ]
@@ -118,17 +118,13 @@ template <typename T>
    * [ 0,  0,  0,  1 ]
    */
   auto res  = identityMat<T, 4>();
-  res[3][0] = translation.x();
-  res[3][1] = translation.y();
-  res[3][2] = translation.z();
+  res[3][0] = trans.x();
+  res[3][1] = trans.y();
+  res[3][2] = trans.z();
   return res;
 }
 
-/* Translation matrix.
- */
-[[nodiscard]] constexpr auto transMat4f(Vec3f translation) noexcept {
-  return transMat4(translation);
-}
+[[nodiscard]] constexpr auto transMat4f(Vec3f trans) noexcept { return transMat4(trans); }
 
 /* Scale matrix.
  */
@@ -147,8 +143,6 @@ template <typename T>
   return res;
 }
 
-/* Scale matrix.
- */
 [[nodiscard]] constexpr auto scaleMat4f(Vec3f scale) noexcept { return scaleMat4(scale); }
 
 /* Uniform scale matrix.
@@ -159,17 +153,17 @@ template <typename T>
 
 /* Rotate specfied amount of radians around the x axis.
  */
-template <typename T>
-[[nodiscard]] constexpr auto rotXMat4(T angle) noexcept {
+template <typename T, size_t Size>
+[[nodiscard]] constexpr auto rotXMat(T angle) noexcept {
+  static_assert(Size >= 3);
   /*
-   * [ 1,  0,   0,    0 ]
-   * [ 0,  cos, -sin, 0 ]
-   * [ 0,  sin, cos,  0 ]
-   * [ 0,  0,   0,    1 ]
+   * [ 1,  0,   0    ]
+   * [ 0,  cos, -sin ]
+   * [ 0,  sin, cos  ]
    */
   auto c    = std::cos(angle);
   auto s    = std::sin(angle);
-  auto res  = identityMat<T, 4>();
+  auto res  = identityMat<T, Size>();
   res[1][1] = c;
   res[1][2] = s;
   res[2][1] = -s;
@@ -177,23 +171,22 @@ template <typename T>
   return res;
 }
 
-/* Rotate specfied amount of radians around the x axis.
- */
-[[nodiscard]] constexpr auto rotXMat4f(float angle) noexcept { return rotXMat4(angle); }
+[[nodiscard]] constexpr auto rotXMat3f(float angle) noexcept { return rotXMat<float, 3>(angle); }
+[[nodiscard]] constexpr auto rotXMat4f(float angle) noexcept { return rotXMat<float, 4>(angle); }
 
 /* Rotate specfied amount of radians around the y axis.
  */
-template <typename T>
-[[nodiscard]] constexpr auto rotYMat4(T angle) noexcept {
+template <typename T, size_t Size>
+[[nodiscard]] constexpr auto rotYMat(T angle) noexcept {
+  static_assert(Size >= 3);
   /*
-   * [ cos,  0,  sin, 0 ]
-   * [ 0,    1,  0,   0 ]
-   * [ -sin, 0,  cos, 0 ]
-   * [ 0,    0,  0,   1 ]
+   * [ cos,  0,  sin ]
+   * [ 0,    1,  0   ]
+   * [ -sin, 0,  cos ]
    */
   auto c    = std::cos(angle);
   auto s    = std::sin(angle);
-  auto res  = identityMat<T, 4>();
+  auto res  = identityMat<T, Size>();
   res[0][0] = c;
   res[0][2] = -s;
   res[2][0] = s;
@@ -201,23 +194,23 @@ template <typename T>
   return res;
 }
 
-/* Rotate specfied amount of radians around the y axis.
- */
-[[nodiscard]] constexpr auto rotYMat4f(float angle) noexcept { return rotYMat4(angle); }
+[[nodiscard]] constexpr auto rotYMat3f(float angle) noexcept { return rotYMat<float, 3>(angle); }
+[[nodiscard]] constexpr auto rotYMat4f(float angle) noexcept { return rotYMat<float, 4>(angle); }
 
 /* Rotate specfied amount of radians around the z axis.
  */
-template <typename T>
-[[nodiscard]] constexpr auto rotZMat4(T angle) noexcept {
+template <typename T, size_t Size>
+[[nodiscard]] constexpr auto rotZMat(T angle) noexcept {
+  static_assert(Size >= 3);
+
   /*
-   * [ cos, -sin, 0,  0 ]
-   * [ sin, cos,  0,  0 ]
-   * [ 0,   0,    1,  0 ]
-   * [ 0,   0,    0,  1 ]
+   * [ cos, -sin, 0 ]
+   * [ sin, cos,  0 ]
+   * [ 0,   0,    1 ]
    */
   auto c    = std::cos(angle);
   auto s    = std::sin(angle);
-  auto res  = identityMat<T, 4>();
+  auto res  = identityMat<T, Size>();
   res[0][0] = c;
   res[0][1] = s;
   res[1][0] = -s;
@@ -225,9 +218,48 @@ template <typename T>
   return res;
 }
 
-/* Rotate specfied amount of radians around the z axis.
+[[nodiscard]] constexpr auto rotZMat3f(float angle) noexcept { return rotZMat<float, 3>(angle); }
+[[nodiscard]] constexpr auto rotZMat4f(float angle) noexcept { return rotZMat<float, 4>(angle); }
+
+/* Construct a rotation matrix from identity to the given axes.
+ * Axis vectors have to be unit vectors and orthogonal to eachother.
  */
-[[nodiscard]] constexpr auto rotZMat4f(float angle) noexcept { return rotZMat4(angle); }
+template <typename T, size_t Size>
+[[nodiscard]] constexpr auto rotMat(Vec<T, 3> right, Vec<T, 3> up, Vec<T, 3> fwd) noexcept {
+  static_assert(Size >= 3);
+
+  // TODO(bastian): Should we just always normalize and reconstruct the axes? Reason for not doing
+  // it atm is that the cost would be relatively high.
+  assert(approx(right.getSqrMag(), T{1}, T{.0001}));
+  assert(approx(up.getSqrMag(), T{1}, T{.0001}));
+  assert(approx(fwd.getSqrMag(), T{1}, T{.0001}));
+  assert(approxZero(dot(right, up)));
+
+  /*
+   * [ right.x,   up.x,   fwd.x ]
+   * [ right.y,   up.y,   fwd.y ]
+   * [ right.z,   up.z,   fwd.z ]
+   */
+
+  auto res  = identityMat<T, Size>();
+  res[0][0] = right.x();
+  res[0][1] = right.y();
+  res[0][2] = right.z();
+  res[1][0] = up.x();
+  res[1][1] = up.y();
+  res[1][2] = up.z();
+  res[2][0] = fwd.x();
+  res[2][1] = fwd.y();
+  res[2][2] = fwd.z();
+  return res;
+}
+
+[[nodiscard]] constexpr auto rotMat3f(Vec3f right, Vec3f up, Vec3f fwd) noexcept {
+  return rotMat<float, 3>(right, up, fwd);
+}
+[[nodiscard]] constexpr auto rotMat4f(Vec3f right, Vec3f up, Vec3f fwd) noexcept {
+  return rotMat<float, 4>(right, up, fwd);
+}
 
 /* Orthographic projection matrix.
  */
@@ -248,8 +280,6 @@ template <typename T>
   return res;
 }
 
-/* Orthographic projection matrix.
- */
 [[nodiscard]] constexpr auto orthoProjMat4f(Vec2f size, float near, float far) noexcept {
   return orthoProjMat4(size, near, far);
 }
@@ -273,23 +303,17 @@ template <typename T>
   return res;
 }
 
-/* Orthographic projection matrix.
- */
 [[nodiscard]] constexpr auto
 persProjMat4f(float horAngle, float verAngle, float near, float far) noexcept {
   return persProjMat4(horAngle, verAngle, near, far);
 }
 
-/* Orthographic projection matrix.
- */
 [[nodiscard]] inline auto
 persProjVerMat4f(float verAngle, float aspect, float near, float far) noexcept {
   const auto horAngle = std::atan(std::tan(verAngle * .5f) * aspect) * 2.f;
   return persProjMat4(horAngle, verAngle, near, far);
 }
 
-/* Orthographic projection matrix.
- */
 [[nodiscard]] inline auto
 persProjHorMat4f(float horAngle, float aspect, float near, float far) noexcept {
   auto verAngle = std::atan(std::tan(horAngle * .5f) / aspect) * 2.f;

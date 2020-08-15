@@ -34,6 +34,7 @@ namespace {
   static const std::unordered_map<std::string_view, DepthTestMode> table = {
       {"none", DepthTestMode::None},
       {"less", DepthTestMode::Less},
+      {"always", DepthTestMode::Always},
   };
   const auto search = table.find(str);
   return search == table.end() ? std::nullopt : std::optional{search->second};
@@ -121,7 +122,7 @@ auto loadGraphic(
   // Depth test mode (optional field).
   auto depthTestMode = DepthTestMode::None;
   std::string_view depthTestStr;
-  if (!obj.at("depth-test").get(depthTestStr)) {
+  if (!obj.at("depthTest").get(depthTestStr)) {
     auto depthTestModeOpt = getDepthTestMode(depthTestStr);
     if (!depthTestModeOpt) {
       throw err::AssetLoadErr{path, "Unsupported depth-test mode"};
