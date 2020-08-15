@@ -20,7 +20,7 @@ TEST_CASE("[asset] - Graphic", "[asset]") {
           "\"fragShader\": \"test.frag.spv\","
           "\"mesh\": \"test.obj\","
           "\"blend\": \"alpha\","
-          "\"depth-test\": \"less\""
+          "\"depthTest\": \"less\""
           "}");
 
       auto db   = Database{nullptr, dir};

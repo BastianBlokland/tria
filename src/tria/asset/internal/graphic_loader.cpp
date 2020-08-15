@@ -121,7 +121,7 @@ auto loadGraphic(
   // Depth test mode (optional field).
   auto depthTestMode = DepthTestMode::None;
   std::string_view depthTestStr;
-  if (!obj.at("depth-test").get(depthTestStr)) {
+  if (!obj.at("depthTest").get(depthTestStr)) {
     auto depthTestModeOpt = getDepthTestMode(depthTestStr);
     if (!depthTestModeOpt) {
       throw err::AssetLoadErr{path, "Unsupported depth-test mode"};
