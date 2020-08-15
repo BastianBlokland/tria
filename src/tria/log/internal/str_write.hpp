@@ -1,10 +1,10 @@
 #pragma once
+#include "tria/log/level.hpp"
 #include <array>
 #include <chrono>
 #include <cmath>
 #include <ctime>
 #include <string>
-#include <tria/log/level.hpp>
 #include <type_traits>
 
 namespace tria::log::internal {

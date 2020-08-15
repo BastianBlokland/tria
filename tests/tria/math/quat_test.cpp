@@ -1,6 +1,7 @@
 #include "catch2/catch.hpp"
 #include "tria/math/mat.hpp"
 #include "tria/math/quat.hpp"
+#include "tria/math/quat_io.hpp"
 #include "tria/math/utils.hpp"
 #include "tria/math/vec.hpp"
 
@@ -145,6 +146,55 @@ TEST_CASE("[math] - Quat", "[math]") {
     auto rotMat  = rotZMat4f(42.f);
     auto rotQuat = angleAxisQuatf(dir3d::forward(), 42.f);
     CHECK(approx(rotMat, rotMat4f(rotQuat), .000001f));
+  }
+
+  SECTION("Rotation matrix from axes is the same as from a quaternion") {
+    auto rot         = angleAxisQuatf(dir3d::up(), 42.f) * angleAxisQuatf(dir3d::right(), 13.f);
+    auto newRight    = rot * dir3d::right();
+    auto newUp       = rot * dir3d::up();
+    auto newForward  = rot * dir3d::forward();
+    auto matFromAxes = rotMat4f(newRight, newUp, newForward);
+    CHECK(approx(matFromAxes, rotMat4f(rot), .000001f));
+  }
+
+  SECTION("Rotate 180 degrees over y axis rotation can be retrieved from rotation matrix") {
+    auto mat  = Mat3f{};
+    mat[0][0] = -1.f;
+    mat[1][1] = 1.f;
+    mat[2][2] = -1.f;
+    CHECK(approx(quatFromMat(mat), angleAxisQuatf(dir3d::up(), math::pi<float>), .000001f));
+  }
+
+  SECTION("Quaternion -> Matrix -> Quaternion produces the same value") {
+    auto rotQuat1 = angleAxisQuatf(dir3d::up(), 42.f) * angleAxisQuatf(dir3d::right(), 13.f);
+    auto rotQuat2 = quatFromMat(rotMat3f(rotQuat1));
+    auto vec      = Vec3f{.42, 13.37, -42};
+    CHECK(approx(rotQuat1 * vec, rotQuat2 * vec, .000001f));
+  }
+
+  SECTION("Quaternion created from orthogonal rotation matrix is normalized") {
+    auto mat  = rotXMat3f(42.f) * rotYMat3f(-13.37f) * rotZMat3f(1.1f);
+    auto quat = quatFromMat(mat);
+    CHECK(approx(quat.getSqrMag(), 1.f, .000001f));
+  }
+
+  SECTION("Look rotation rotates from identity to the given axis system") {
+    auto newFwd = Vec3f{.42, 13.37, -42}.getNorm();
+    auto rot    = lookRotQuatf(newFwd, dir3d::up());
+    CHECK(approx(rot * dir3d::forward(), newFwd, .000001f));
+  }
+
+  SECTION("Look rotation returns a normalized quaternion") {
+    auto rot = lookRotQuatf(Vec3f{.42, 13.37, -42}, dir3d::down());
+    CHECK(approx(rot.getSqrMag(), 1.f, .000001f));
+  }
+
+  SECTION("Look rotation is the same as building a rotation matrix from axes") {
+    auto rotQuat = lookRotQuatf(dir3d::right(), dir3d::down());
+    auto rotMat  = rotMat4f(dir3d::forward(), dir3d::down(), dir3d::right());
+    auto vec1    = rotMat * Vec4f{.42, 13.37, -42, 0.f};
+    auto vec2    = rotQuat * Vec3f{.42, 13.37, -42};
+    CHECK(approx(Vec3f{vec1.x(), vec1.y(), vec1.z()}, vec2, .00001f));
   }
 }
 

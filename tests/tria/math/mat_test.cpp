@@ -1,6 +1,6 @@
 #include "catch2/catch.hpp"
 #include "tria/math/mat.hpp"
-#include "tria/math/quat.hpp"
+#include "tria/math/mat_io.hpp"
 #include "tria/math/utils.hpp"
 #include "tria/math/vec.hpp"
 
@@ -141,50 +141,41 @@ TEST_CASE("[math] - Mat", "[math]") {
 
   SECTION("Rotating 45 degrees on x results in a vector 45 degrees from the original") {
     auto ang = pi<float> * .25f; // 45 degrees.
-    auto mat = rotXMat4f(ang);
-    auto vec = Vec4f{0, -2.f, 3.f, 0.f}.getNorm();
+    auto mat = rotXMat3f(ang);
+    auto vec = Vec3f{0, -2.f, 3.f}.getNorm();
     CHECK(approx(angle(mat * vec, vec), ang));
   }
 
   SECTION("Rotating 180 degrees on x flips the axis") {
     auto angle = pi<float>; // 180 degrees.
-    auto mat   = rotXMat4f(angle);
-    CHECK(approx(mat * Vec4f{0.f, 1.f, 0.f, 0.f}, Vec4f{0.f, -1.f, 0.f, 0.f}));
+    auto mat   = rotXMat3f(angle);
+    CHECK(approx(mat * Vec3f{0.f, 1.f, 0.f}, Vec3f{0.f, -1.f, 0.f}));
   }
 
   SECTION("Rotating 45 degrees on y results in a vector 45 degrees from the original") {
     auto ang = pi<float> * .25f; // 45 degrees.
-    auto mat = rotYMat4f(ang);
-    auto vec = Vec4f{-2.f, 0.f, 3.f, 0.f}.getNorm();
+    auto mat = rotYMat3f(ang);
+    auto vec = Vec3f{-2.f, 0.f, 3.f}.getNorm();
     CHECK(approx(angle(mat * vec, vec), ang));
   }
 
   SECTION("Rotating 180 degrees on y flips the axis") {
     auto angle = pi<float>; // 180 degrees.
-    auto mat   = rotYMat4f(angle);
-    CHECK(approx(mat * Vec4f{0.f, 0.f, 1.f, 0.f}, Vec4f{0.f, 0.f, -1.f, 0.f}));
+    auto mat   = rotYMat3f(angle);
+    CHECK(approx(mat * Vec3f{0.f, 0.f, 1.f}, Vec3f{0.f, 0.f, -1.f}));
   }
 
   SECTION("Rotating 45 degrees on z results in a vector 45 degrees from the original") {
     auto ang = pi<float> * .25f; // 45 degrees.
-    auto mat = rotZMat4f(ang);
-    auto vec = Vec4f{-2.f, 3.f, 0.f, 0.f}.getNorm();
+    auto mat = rotZMat3f(ang);
+    auto vec = Vec3f{-2.f, 3.f, 0.f}.getNorm();
     CHECK(approx(angle(mat * vec, vec), ang));
   }
 
   SECTION("Rotating 180 degrees on z flips the axis") {
     auto angle = pi<float>; // 180 degrees.
-    auto mat   = rotZMat4f(angle);
-    CHECK(approx(mat * Vec4f{1.f, 0.f, 0.f, 0.f}, Vec4f{-1.f, 0.f, 0.f, 0.f}));
-  }
-
-  SECTION("Rotation matrix from axes is the same as from a quaternion") {
-    auto rot         = angleAxisQuatf(dir3d::up(), 42.f) * angleAxisQuatf(dir3d::right(), 13.f);
-    auto newRight    = rot * dir3d::right();
-    auto newUp       = rot * dir3d::up();
-    auto newForward  = rot * dir3d::forward();
-    auto matFromAxes = rotMat4f(newRight, newUp, newForward);
-    CHECK(approx(matFromAxes, rotMat4f(rot), .000001f));
+    auto mat   = rotZMat3f(angle);
+    CHECK(approx(mat * Vec3f{1.f, 0.f, 0.f}, Vec3f{-1.f, 0.f, 0.f}));
   }
 
   SECTION("Orthogonal projection scales to clip-space") {
