@@ -22,9 +22,10 @@ struct Obj final {
   Vec3f pos;
   Quatf rot;
   float scale;
+  float rotSpeed;
 
-  Obj(const asset::Graphic* graphic, Vec3f pos, Quatf rot, float scale) :
-      graphic{graphic}, pos{pos}, rot{rot}, scale{scale} {}
+  Obj(const asset::Graphic* graphic, Vec3f pos, Quatf rot, float scale, float rotSpeed) :
+      graphic{graphic}, pos{pos}, rot{rot}, scale{scale}, rotSpeed{rotSpeed} {}
 };
 
 [[nodiscard]] auto trsMat4f(Vec3f trans, Quatf rot, float scale) noexcept {
@@ -35,12 +36,28 @@ auto runApp(pal::Platform& platform, asset::Database& db, gfx::Context& gfx) {
 
   auto win = platform.createWindow({1024, 1024});
   auto canvas =
-      gfx.createCanvas(&win, gfx::VSyncMode::Enable, gfx::DepthMode::Enable, gfx::noneClearMask());
+      gfx.createCanvas(&win, gfx::VSyncMode::Disable, gfx::DepthMode::Enable, gfx::noneClearMask());
 
   auto objs = std::vector<Obj>{
       {db.get("graphics/cube.gfx")->downcast<asset::Graphic>(),
        Vec3f{0, 0, 0},
        identityQuatf(),
+       1.f,
+       0.f},
+      {db.get("graphics/dragon.gfx")->downcast<asset::Graphic>(),
+       Vec3f{3, 0, 0},
+       identityQuatf(),
+       4.f,
+       1.f},
+      {db.get("graphics/bunny.gfx")->downcast<asset::Graphic>(),
+       Vec3f{-3, 0, 0},
+       angleAxisQuatf(dir3d::up(), math::pi<float>),
+       1.f,
+       0.f},
+      {db.get("graphics/head.gfx")->downcast<asset::Graphic>(),
+       Vec3f{-5, 0, 0},
+       identityQuatf(),
+       4.f,
        1.f},
   };
 
@@ -49,7 +66,7 @@ auto runApp(pal::Platform& platform, asset::Database& db, gfx::Context& gfx) {
   constexpr auto camFar            = 1'000.f;
   constexpr auto camMoveSpeed      = 10.f;
   constexpr auto camRotSensitivity = 3.f;
-  auto cam = scene::Cam3d({0, 0, -5}, identityQuatf(), camVerFov, camNear, camFar);
+  auto cam = scene::Cam3d({-1, 0, -10.f}, identityQuatf(), camVerFov, camNear, camFar);
 
   auto frameNum       = 0U;
   auto frameStartTime = high_resolution_clock::now();
@@ -61,6 +78,10 @@ auto runApp(pal::Platform& platform, asset::Database& db, gfx::Context& gfx) {
     const auto newTime   = high_resolution_clock::now();
     const auto deltaTime = duration<float>(newTime - frameStartTime);
     frameStartTime       = newTime;
+
+    for (auto& obj : objs) {
+      obj.rot = angleAxisQuatf(dir3d::up(), deltaTime.count() * obj.rotSpeed) * obj.rot;
+    }
 
     // Move the camera with wasd or the arrow keys.
     if (win.isKeyDown(pal::Key::W) || win.isKeyDown(pal::Key::ArrowUp)) {

@@ -1,0 +1,13 @@
+{
+  "vertShader": "shaders/obj.vert.spv",
+  "fragShader": "shaders/obj_tex.frag.spv",
+  "mesh": "assets/head/head.obj",
+  "samplers": [
+    {
+      "texture": "assets/head/lambertian.tga",
+      "filter": "linear"
+    }
+  ],
+  "blend": "none",
+  "depthTest": "less"
+}

@@ -47,6 +47,28 @@ function(configure_data targetName dataSrcDir)
   endforeach()
 endfunction(configure_data)
 
+# Utility function to copy external assets to the output.
+## Note: for license info see: https://bastian.tech/assets/license.txt
+function(configure_assets targetName)
+  message(STATUS "Configuring external assets: ${targetName}")
+  foreach(assetName IN LISTS ARGN)
+    set(srcUrl "https://bastian.tech/assets/${assetName}")
+    set(destPath ${EXECUTABLE_OUTPUT_PATH}/${targetName}/assets/${assetName})
+    set(cachePath ${CMAKE_CURRENT_BINARY_DIR}/assets/${assetName})
+
+    # If the file does not exist in the cache then download it.
+    if(NOT EXISTS ${cachePath})
+      message(STATUS "Download external asset from: ${srcUrl}")
+      file(DOWNLOAD ${srcUrl} ${cachePath})
+    endif()
+
+    # Register a command to copy it from the cache to the output at build time.
+    add_custom_command(
+      TARGET ${targetName} POST_BUILD
+      COMMAND ${CMAKE_COMMAND} -E copy ${cachePath} ${destPath})
+  endforeach()
+endfunction(configure_assets)
+
 # Sandbox.
 message(STATUS "Configuring sandbox executable")
 add_executable(sandbox
@@ -66,4 +88,10 @@ configure_data(sandbox_data ${CMAKE_CURRENT_SOURCE_DIR}/sandbox_data
   graphics
   models
   textures)
+configure_assets(sandbox_data
+  buddha.obj
+  dragon.obj
+  bunny.obj
+  head/head.obj
+  head/lambertian.tga)
 add_dependencies(sandbox sandbox_data)
