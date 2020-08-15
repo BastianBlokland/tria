@@ -1,48 +1,59 @@
 #include "tria/asset/database.hpp"
 #include "tria/gfx/context.hpp"
-#include "tria/math/vec.hpp"
+#include "tria/math/pod_vector.hpp"
+#include "tria/math/quat.hpp"
+#include "tria/math/utils.hpp"
 #include "tria/pal/interrupt.hpp"
+#include "tria/pal/key.hpp"
 #include "tria/pal/platform.hpp"
 #include "tria/pal/utils.hpp"
+#include "tria/scene/cam3d.hpp"
 #include <chrono>
-#include <cmath>
 #include <thread>
+#include <vector>
 
 using namespace std::literals;
 using namespace tria;
 using namespace tria::math;
 using namespace std::chrono;
 
-struct alignas(16) ParticleData final {
-  Vec2f pos;
-  Vec2f velocity;
-  Vec2f size;
-  Vec2f screenSize;
-  Color color;
-  float lifetime;
+struct Obj final {
+  const asset::Graphic* graphic;
+  Vec3f pos;
+  Quatf rot;
+  float scale;
 
-  ParticleData(Vec2f pos, Vec2f velocity, Vec2f size, Color color) :
-      pos{pos}, velocity{velocity}, size{size}, color{color}, lifetime{} {}
+  Obj(const asset::Graphic* graphic, Vec3f pos, Quatf rot, float scale) :
+      graphic{graphic}, pos{pos}, rot{rot}, scale{scale} {}
 };
+
+[[nodiscard]] auto trsMat4f(Vec3f trans, Quatf rot, float scale) noexcept {
+  return transMat4f(trans) * rotMat4f(rot) * scaleMat4f(scale);
+}
 
 auto runApp(pal::Platform& platform, asset::Database& db, gfx::Context& gfx) {
 
   auto win    = platform.createWindow({1024, 1024});
   auto canvas = gfx.createCanvas(
-      &win, gfx::VSyncMode::Enable, gfx::DepthMode::Disable, gfx::clearMask(gfx::Clear::Color));
+      &win, gfx::VSyncMode::Enable, gfx::DepthMode::Enable, gfx::Clear::Color | gfx::Clear::Depth);
 
-  const auto* particleGfx = db.get("graphics/particle.gfx")->downcast<asset::Graphic>();
+  auto objs = std::vector<Obj>{
+      {db.get("graphics/cube.gfx")->downcast<asset::Graphic>(),
+       Vec3f{0, 0, 0},
+       identityQuatf(),
+       1.f},
+  };
 
-  constexpr auto gravity             = 600.0f;
-  constexpr auto drag                = 0.002f;
-  constexpr auto radius              = 7.0f;
-  constexpr auto maxLifetime         = 20.0;
-  constexpr auto collisionElasticity = .75f;
-
-  auto particles = PodVector<ParticleData>{};
+  constexpr auto camVerFov         = 60.f;
+  constexpr auto camNear           = .1f;
+  constexpr auto camFar            = 1'000.f;
+  constexpr auto camMoveSpeed      = 10.f;
+  constexpr auto camRotSensitivity = 3.f;
+  auto cam = scene::Cam3d({0, 0, -5}, identityQuatf(), camVerFov, camNear, camFar);
 
   auto frameNum       = 0U;
   auto frameStartTime = high_resolution_clock::now();
+  auto prevMousePos   = win.getMousePosNrm();
   while (!win.getIsCloseRequested() && !pal::isInterruptRequested()) {
     platform.handleEvents();
 
@@ -51,63 +62,28 @@ auto runApp(pal::Platform& platform, asset::Database& db, gfx::Context& gfx) {
     const auto deltaTime = duration<float>(newTime - frameStartTime);
     frameStartTime       = newTime;
 
-    // Spawn a particle at the mouse position.
-    if (win.isKeyDown(pal::Key::MouseLeft)) {
-      particles.push_back(ParticleData(
-          win.getMousePos(), {10.0f, 10.0f}, {radius * 2.0f, radius * 2.0f}, color::get(frameNum)));
+    // Move the camera with wasd or the arrow keys.
+    if (win.isKeyDown(pal::Key::W) || win.isKeyDown(pal::Key::ArrowUp)) {
+      cam.pos() += cam.getFwd() * deltaTime.count() * camMoveSpeed;
+    }
+    if (win.isKeyDown(pal::Key::S) || win.isKeyDown(pal::Key::ArrowDown)) {
+      cam.pos() -= cam.getFwd() * deltaTime.count() * camMoveSpeed;
+    }
+    if (win.isKeyDown(pal::Key::D) || win.isKeyDown(pal::Key::ArrowRight)) {
+      cam.pos() += cam.getRight() * deltaTime.count() * camMoveSpeed;
+    }
+    if (win.isKeyDown(pal::Key::A) || win.isKeyDown(pal::Key::ArrowLeft)) {
+      cam.pos() -= cam.getRight() * deltaTime.count() * camMoveSpeed;
     }
 
-    // Update all particles.
-    auto windowSize = win.getSize();
-    for (auto i = particles.size(); i--;) {
-      auto& p = particles[i];
-
-      // Delete when too old.
-      p.lifetime += deltaTime.count();
-      if (p.lifetime > maxLifetime) {
-        particles.eraseIdx(i);
-        continue;
-      }
-
-      // Separate from others.
-      for (auto j = i + 1; j != particles.size(); ++j) {
-        auto& other               = particles[j];
-        const auto toOther        = other.pos - p.pos;
-        const auto sqrDistToOther = toOther.getSqrMag();
-        if (sqrDistToOther < (radius * 2.0f) * (radius * 2.0f)) {
-          const auto distToOther = std::sqrt(sqrDistToOther);
-          const auto sepDir      = sqrDistToOther == .0f ? Vec2f{0, 1} : toOther / distToOther;
-          const auto overlap     = (radius * 2.0f) - distToOther;
-
-          p.velocity = reflect(p.velocity, -sepDir) * collisionElasticity;
-          p.pos -= sepDir * (overlap + .001f);
-
-          other.velocity = reflect(other.velocity, sepDir) * collisionElasticity;
-          other.pos += sepDir * (overlap + .001f);
-        }
-      }
-
-      // Check the bounds of the screen.
-      if (p.pos.x() < radius) {
-        p.pos.x()      = radius;
-        p.velocity.x() = std::abs(p.velocity.x()) * collisionElasticity;
-      } else if (p.pos.y() < radius) {
-        p.pos.y()      = radius;
-        p.velocity.y() = std::abs(p.velocity.y()) * collisionElasticity;
-      } else if (p.pos.x() > windowSize.x() - radius) {
-        p.pos.x()      = windowSize.x() - radius;
-        p.velocity.x() = -std::abs(p.velocity.x()) * collisionElasticity;
-      } else if (p.pos.y() > windowSize.y() - radius) {
-        p.pos.y()      = windowSize.y() - radius;
-        p.velocity.y() = -std::abs(p.velocity.y()) * collisionElasticity;
-      }
-
-      p.velocity *= (1.0 - drag * deltaTime.count());
-      p.velocity.y() += gravity * deltaTime.count();
-
-      p.pos += p.velocity * deltaTime.count();
-      p.screenSize = windowSize;
+    auto mouseDelta = win.getMousePosNrm() - prevMousePos;
+    // Rotate the camera using the mouse (while holding right-mouse or control).
+    if (win.isKeyDown(pal::Key::MouseRight) || win.isKeyDown(pal::Key::Control)) {
+      cam.rot() =
+          (angleAxisQuatf(dir3d::up(), mouseDelta.x() * camRotSensitivity) *
+           angleAxisQuatf(cam.getRight(), mouseDelta.y() * camRotSensitivity) * cam.rot());
     }
+    prevMousePos = win.getMousePosNrm();
 
     // Update window title every 30 frames.
     if (frameNum % 30 == 0) {
@@ -116,9 +92,7 @@ auto runApp(pal::Platform& platform, asset::Database& db, gfx::Context& gfx) {
       std::snprintf(
           titleBuffer,
           sizeof(titleBuffer),
-          "particles: %u, cpu: %.2f ms, gpu: %.2f ms, tris: %llu, vertShaders: %llu, "
-          "fragShaders: %llu",
-          static_cast<uint32_t>(particles.size()),
+          "cpu: %.2f ms, gpu: %.2f ms, tris: %llu, vertShaders: %llu, fragShaders: %llu",
           deltaTime.count() * 1'000,
           drawStats.gpuTime.count() * 1'000,
           static_cast<unsigned long long>(drawStats.inputAssemblyPrimitives),
@@ -127,9 +101,16 @@ auto runApp(pal::Platform& platform, asset::Database& db, gfx::Context& gfx) {
       win.setTitle(titleBuffer);
     }
 
-    // Draw particles.
+    // Draw objects.
     if (canvas.drawBegin()) {
-      canvas.draw(particleGfx, particles.begin(), particles.end());
+      auto vpMat = cam.getViewProjMat(win.getAspect());
+      for (const auto& obj : objs) {
+        struct alignas(16) {
+          Mat4f mat;
+        } instData;
+        instData.mat = vpMat * trsMat4f(obj.pos, obj.rot, obj.scale);
+        canvas.draw(obj.graphic, instData);
+      }
       canvas.drawEnd();
     } else {
       // Unable to draw, possibly due to a minimized window.

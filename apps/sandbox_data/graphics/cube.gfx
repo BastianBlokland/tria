@@ -1,0 +1,13 @@
+{
+  "vertShader": "shaders/obj.vert.spv",
+  "fragShader": "shaders/obj_tex.frag.spv",
+  "mesh": "models/cube.obj",
+  "samplers": [
+    {
+      "texture": "textures/checker.ppm",
+      "filter": "nearest"
+    }
+  ],
+  "blend": "none",
+  "depthTest": "less"
+}
