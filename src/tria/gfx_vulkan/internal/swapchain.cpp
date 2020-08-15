@@ -13,13 +13,13 @@ namespace {
 
 [[nodiscard]] auto getSwapchainImageCount(const VkSurfaceCapabilitiesKHR& capabilities) noexcept
     -> uint32_t {
-  // One more then minimum to avoid having to block to acquire a new image.
-  auto result = capabilities.minImageCount + 1;
-  // Note '0' maxImageCount indicates that there is no maximum.
-  if (capabilities.maxImageCount != 0 && result > capabilities.maxImageCount) {
-    result = capabilities.maxImageCount;
+  // We want to use 2 images (one on screen and one being rendered to). But we also have to repsect
+  // the surface capabilities.
+  auto desired = std::max(capabilities.minImageCount, 2U);
+  if (capabilities.maxImageCount != 0U && capabilities.maxImageCount < desired) {
+    return capabilities.maxImageCount;
   }
-  return result;
+  return desired;
 }
 
 [[nodiscard]] auto getSwapchainImageSize(const VkSurfaceCapabilitiesKHR& capabilities) noexcept
