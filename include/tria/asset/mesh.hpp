@@ -13,17 +13,14 @@ using IndexType = uint32_t;
 struct Vertex final {
   math::Vec3f position;
   math::Vec3f normal;
-  math::Color color;
   math::Vec2f texcoord;
 
   constexpr Vertex() noexcept = default;
-  constexpr Vertex(
-      math::Vec3f position, math::Vec3f normal, math::Color color, math::Vec2f texcoord) :
-      position{position}, normal{normal}, color{color}, texcoord{texcoord} {}
+  constexpr Vertex(math::Vec3f position, math::Vec3f normal, math::Vec2f texcoord) :
+      position{position}, normal{normal}, texcoord{texcoord} {}
 
   [[nodiscard]] constexpr auto operator==(const Vertex& rhs) const noexcept -> bool {
-    return position == rhs.position && normal == rhs.normal && color == rhs.color &&
-        texcoord == rhs.texcoord;
+    return position == rhs.position && normal == rhs.normal && texcoord == rhs.texcoord;
   }
 
   [[nodiscard]] constexpr auto operator!=(const Vertex& rhs) const noexcept -> bool {
@@ -73,8 +70,8 @@ template <>
 struct hash<tria::asset::Vertex> final {
   auto operator()(const tria::asset::Vertex vert) const noexcept -> size_t {
     const auto posHash = std::hash<tria::math::Vec3f>{}(vert.position);
-    const auto colHash = std::hash<tria::math::Color>{}(vert.color);
-    return posHash ^ (colHash << 1);
+    const auto nrmHash = std::hash<tria::math::Vec3f>{}(vert.normal);
+    return posHash ^ (nrmHash << 1);
   }
 };
 
