@@ -5,7 +5,8 @@
   "samplers": [
     {
       "texture": "textures/checker.ppm",
-      "filter": "nearest"
+      "filter": "nearest",
+      "anisotropy": "none"
     }
   ],
   "blend": "none",
