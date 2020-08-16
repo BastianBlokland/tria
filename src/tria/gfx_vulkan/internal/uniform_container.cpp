@@ -28,7 +28,7 @@ UniformContainer::UniformContainer(log::Logger* logger, Device* device) :
     m_logger{logger}, m_device{device} {
   assert(m_device);
 
-  m_descInfo     = DescriptorInfo{0U, 1U};
+  m_descInfo     = DescriptorInfo{0U, 1U, 0U};
   m_minAlignment = m_device->getLimits().minUniformBufferOffsetAlignment;
   m_maxDataSize  = std::min(m_device->getLimits().maxUniformBufferRange, g_desiredMaxDataSize);
 }

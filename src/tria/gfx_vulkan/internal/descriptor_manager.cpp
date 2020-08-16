@@ -21,6 +21,26 @@ namespace {
 
   // TODO(bastian): The stage-flags should probably be configable somehow.
 
+  // Storage buffers.
+  for (auto i = 0U; i != info.getStorageBufferCount(); ++i, ++binding) {
+    VkDescriptorSetLayoutBinding storageBuffBinding = {};
+    storageBuffBinding.binding                      = binding;
+    storageBuffBinding.descriptorType               = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+    storageBuffBinding.descriptorCount              = 1U;
+    storageBuffBinding.stageFlags                   = VK_SHADER_STAGE_VERTEX_BIT;
+    bindings.push_back(storageBuffBinding);
+  }
+
+  // Dynamic uniform buffers.
+  for (auto i = 0U; i != info.getUniformBufferDynamicCount(); ++i, ++binding) {
+    VkDescriptorSetLayoutBinding uniBuffDynBinding = {};
+    uniBuffDynBinding.binding                      = binding;
+    uniBuffDynBinding.descriptorType               = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
+    uniBuffDynBinding.descriptorCount              = 1U;
+    uniBuffDynBinding.stageFlags                   = VK_SHADER_STAGE_VERTEX_BIT;
+    bindings.push_back(uniBuffDynBinding);
+  }
+
   // Images.
   for (auto i = 0U; i != info.getImageCount(); ++i, ++binding) {
     VkDescriptorSetLayoutBinding imgBinding = {};
@@ -29,16 +49,6 @@ namespace {
     imgBinding.descriptorCount              = 1U;
     imgBinding.stageFlags                   = VK_SHADER_STAGE_FRAGMENT_BIT;
     bindings.push_back(imgBinding);
-  }
-
-  // Dynamic uniform buffers.
-  for (auto i = 0U; i != info.getUniformBufferDynamicCount(); ++i, ++binding) {
-    VkDescriptorSetLayoutBinding buffBindingDyn = {};
-    buffBindingDyn.binding                      = binding;
-    buffBindingDyn.descriptorType               = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
-    buffBindingDyn.descriptorCount              = 1U;
-    buffBindingDyn.stageFlags                   = VK_SHADER_STAGE_VERTEX_BIT;
-    bindings.push_back(buffBindingDyn);
   }
 
   VkDescriptorSetLayoutCreateInfo layoutInfo = {};
@@ -58,10 +68,10 @@ namespace {
   std::array<VkDescriptorPoolSize, maxDescPoolSizes> sizes;
   auto sizesCount = 0U;
 
-  // Images.
-  if (info.getImageCount() > 0) {
-    sizes[sizesCount].type              = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-    sizes[sizesCount++].descriptorCount = info.getImageCount() * g_descriptorSetsPerGroup;
+  // Storage buffers.
+  if (info.getStorageBufferCount() > 0) {
+    sizes[sizesCount].type              = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+    sizes[sizesCount++].descriptorCount = info.getStorageBufferCount() * g_descriptorSetsPerGroup;
   }
 
   // Dynamic uniform buffers.
@@ -69,6 +79,12 @@ namespace {
     sizes[sizesCount].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
     sizes[sizesCount++].descriptorCount =
         info.getUniformBufferDynamicCount() * g_descriptorSetsPerGroup;
+  }
+
+  // Images.
+  if (info.getImageCount() > 0) {
+    sizes[sizesCount].type              = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    sizes[sizesCount++].descriptorCount = info.getImageCount() * g_descriptorSetsPerGroup;
   }
 
   VkDescriptorPoolCreateInfo poolInfo = {};
@@ -123,14 +139,18 @@ auto DescriptorSet::getVkDescSet() const noexcept -> VkDescriptorSet {
   return m_group ? m_group->getVkDescSet(m_id) : nullptr;
 }
 
-auto DescriptorSet::attachImage(uint32_t binding, const Image& img, const Sampler& sampler)
-    -> void {
-  m_group->attachImage(this, binding, img, sampler);
+auto DescriptorSet::attachStorageBuffer(uint32_t binding, const Buffer& buffer) -> void {
+  m_group->attachStorageBuffer(this, binding, buffer);
 }
 
 auto DescriptorSet::attachUniformBufferDynamic(
     uint32_t binding, const Buffer& buffer, uint32_t maxSize) -> void {
   m_group->attachUniformBufferDynamic(this, binding, buffer, maxSize);
+}
+
+auto DescriptorSet::attachImage(uint32_t binding, const Image& img, const Sampler& sampler)
+    -> void {
+  m_group->attachImage(this, binding, img, sampler);
 }
 
 DescriptorGroup::DescriptorGroup(
@@ -163,8 +183,9 @@ DescriptorGroup::DescriptorGroup(
       "Vulkan descriptor group allocated",
       {"id", m_groupId},
       {"setCount", g_descriptorSetsPerGroup},
-      {"setImgCount", info.getImageCount()},
-      {"setUniformDynamicCount", info.getUniformBufferDynamicCount()});
+      {"setStorageCount", info.getStorageBufferCount()},
+      {"setUniformDynamicCount", info.getUniformBufferDynamicCount()},
+      {"setImgCount", info.getImageCount()}, );
 }
 
 DescriptorGroup::~DescriptorGroup() {
@@ -190,26 +211,26 @@ auto DescriptorGroup::allocate() noexcept -> std::optional<DescriptorSet> {
   return DescriptorSet{this, static_cast<int32_t>(tz)};
 }
 
-auto DescriptorGroup::attachImage(
-    DescriptorSet* set, uint32_t binding, const Image& img, const Sampler& sampler) -> void {
+auto DescriptorGroup::attachStorageBuffer(
+    DescriptorSet* set, uint32_t binding, const Buffer& buffer) -> void {
   assert(set);
   assert(set->m_group == this);
   assert(set->m_id >= 0);
-  assert(m_info.getImageCount() > 0);
+  assert(m_info.getStorageBufferCount() > 0);
 
-  VkDescriptorImageInfo imgInfo = {};
-  imgInfo.imageLayout           = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-  imgInfo.imageView             = img.getVkImageView();
-  imgInfo.sampler               = sampler.getVkSampler();
+  VkDescriptorBufferInfo bufferInfo = {};
+  bufferInfo.buffer                 = buffer.getVkBuffer();
+  bufferInfo.offset                 = 0U;
+  bufferInfo.range                  = buffer.getSize();
 
   VkWriteDescriptorSet descriptorWrite = {};
   descriptorWrite.sType                = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
   descriptorWrite.dstSet               = m_sets[set->m_id];
   descriptorWrite.dstBinding           = binding;
   descriptorWrite.dstArrayElement      = 0U;
-  descriptorWrite.descriptorType       = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+  descriptorWrite.descriptorType       = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
   descriptorWrite.descriptorCount      = 1U;
-  descriptorWrite.pImageInfo           = &imgInfo;
+  descriptorWrite.pBufferInfo          = &bufferInfo;
 
   vkUpdateDescriptorSets(m_device->getVkDevice(), 1U, &descriptorWrite, 0U, nullptr);
 }
@@ -234,6 +255,30 @@ auto DescriptorGroup::attachUniformBufferDynamic(
   descriptorWrite.descriptorType       = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
   descriptorWrite.descriptorCount      = 1U;
   descriptorWrite.pBufferInfo          = &bufferInfo;
+
+  vkUpdateDescriptorSets(m_device->getVkDevice(), 1U, &descriptorWrite, 0U, nullptr);
+}
+
+auto DescriptorGroup::attachImage(
+    DescriptorSet* set, uint32_t binding, const Image& img, const Sampler& sampler) -> void {
+  assert(set);
+  assert(set->m_group == this);
+  assert(set->m_id >= 0);
+  assert(m_info.getImageCount() > 0);
+
+  VkDescriptorImageInfo imgInfo = {};
+  imgInfo.imageLayout           = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+  imgInfo.imageView             = img.getVkImageView();
+  imgInfo.sampler               = sampler.getVkSampler();
+
+  VkWriteDescriptorSet descriptorWrite = {};
+  descriptorWrite.sType                = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+  descriptorWrite.dstSet               = m_sets[set->m_id];
+  descriptorWrite.dstBinding           = binding;
+  descriptorWrite.dstArrayElement      = 0U;
+  descriptorWrite.descriptorType       = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+  descriptorWrite.descriptorCount      = 1U;
+  descriptorWrite.pImageInfo           = &imgInfo;
 
   vkUpdateDescriptorSets(m_device->getVkDevice(), 1U, &descriptorWrite, 0U, nullptr);
 }

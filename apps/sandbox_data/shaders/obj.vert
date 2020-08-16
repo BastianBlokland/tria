@@ -1,12 +1,9 @@
 #version 450
 #extension GL_ARB_separate_shader_objects : enable
 #extension GL_GOOGLE_include_directive : enable
-#include "include/instance.glsl"
+#include "include/common.glsl"
 
-layout(location = 0, set = 0) in vec3 inVertPos;
-layout(location = 1, set = 0) in vec3 inVertNrm;
-layout(location = 2, set = 0) in vec4 inVertColor;
-layout(location = 3, set = 0) in vec2 inVertTexcoord;
+VERTEX_INPUT_BINDING(set = 0);
 
 struct InstanceData {
   mat4 mat;
@@ -14,12 +11,10 @@ struct InstanceData {
 INSTANCE_INPUT_BINDING(set = 1, InstanceData);
 
 layout(location = 0) out vec3 outNrm;
-layout(location = 1) out vec4 outColor;
-layout(location = 2) out vec2 outTexcoord;
+layout(location = 1) out vec2 outTexcoord;
 
 void main() {
-  gl_Position = GET_INST().mat * vec4(inVertPos, 1.0);
-  outNrm      = inVertNrm;
-  outColor    = inVertColor;
-  outTexcoord = inVertTexcoord;
+  gl_Position = GET_INST().mat * vec4(GET_VERT_POS(), 1.0);
+  outNrm      = GET_VERT_NRM();
+  outTexcoord = GET_VERT_TEXCOORD();
 }
