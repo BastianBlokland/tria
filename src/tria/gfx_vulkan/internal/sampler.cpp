@@ -4,9 +4,11 @@ namespace tria::gfx::internal {
 
 namespace {
 
-[[nodiscard]] auto
-createVkSampler(const Device* device, SamplerFilterMode filterMode, uint32_t mipLevels)
-    -> VkSampler {
+[[nodiscard]] auto createVkSampler(
+    const Device* device,
+    SamplerFilterMode filterMode,
+    SamplerAnisotropyMode anisoMode,
+    uint32_t mipLevels) -> VkSampler {
   VkSamplerCreateInfo samplerInfo = {};
   samplerInfo.sType               = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
   switch (filterMode) {
@@ -20,11 +22,33 @@ createVkSampler(const Device* device, SamplerFilterMode filterMode, uint32_t mip
     samplerInfo.minFilter = VK_FILTER_LINEAR;
     break;
   }
-  samplerInfo.addressModeU            = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-  samplerInfo.addressModeV            = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-  samplerInfo.addressModeW            = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-  samplerInfo.anisotropyEnable        = false;
-  samplerInfo.maxAnisotropy           = 1.0f;
+  samplerInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+  samplerInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+  samplerInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+  if (device->getFeatures().samplerAnisotropy) {
+    samplerInfo.anisotropyEnable = anisoMode != SamplerAnisotropyMode::None;
+    switch (anisoMode) {
+    case SamplerAnisotropyMode::X2:
+      samplerInfo.maxAnisotropy = 2.0f;
+      break;
+    case SamplerAnisotropyMode::X4:
+      samplerInfo.maxAnisotropy = 4.0f;
+      break;
+    case SamplerAnisotropyMode::X8:
+      samplerInfo.maxAnisotropy = 8.0f;
+      break;
+    case SamplerAnisotropyMode::X16:
+      samplerInfo.maxAnisotropy = 16.0f;
+      break;
+    default:
+      samplerInfo.maxAnisotropy = 1.0f;
+      break;
+    }
+  } else {
+    // Anisotropic filtering not supported on this device.
+    samplerInfo.anisotropyEnable = false;
+    samplerInfo.maxAnisotropy    = 1.0f;
+  }
   samplerInfo.borderColor             = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
   samplerInfo.unnormalizedCoordinates = false;
   samplerInfo.compareEnable           = false;
@@ -41,9 +65,13 @@ createVkSampler(const Device* device, SamplerFilterMode filterMode, uint32_t mip
 
 } // namespace
 
-Sampler::Sampler(const Device* device, SamplerFilterMode filterMode, uint32_t mipLevels) :
+Sampler::Sampler(
+    const Device* device,
+    SamplerFilterMode filterMode,
+    SamplerAnisotropyMode anisoMode,
+    uint32_t mipLevels) :
     m_device{device} {
-  m_vkSampler = createVkSampler(device, filterMode, mipLevels);
+  m_vkSampler = createVkSampler(device, filterMode, anisoMode, mipLevels);
 }
 
 Sampler::~Sampler() {

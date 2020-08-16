@@ -19,6 +19,18 @@ namespace {
   return search == table.end() ? std::nullopt : std::optional{search->second};
 }
 
+[[nodiscard]] auto getTextureAnisotropyMode(std::string_view str) -> std::optional<AnisotropyMode> {
+  static const std::unordered_map<std::string_view, AnisotropyMode> table = {
+      {"none", AnisotropyMode::None},
+      {"x2", AnisotropyMode::X2},
+      {"x4", AnisotropyMode::X4},
+      {"x8", AnisotropyMode::X8},
+      {"x16", AnisotropyMode::X16},
+  };
+  const auto search = table.find(str);
+  return search == table.end() ? std::nullopt : std::optional{search->second};
+}
+
 [[nodiscard]] auto getBlendMode(std::string_view str) -> std::optional<BlendMode> {
   static const std::unordered_map<std::string_view, BlendMode> table = {
       {"none", BlendMode::None},
@@ -104,7 +116,18 @@ auto loadGraphic(
         filterMode = *filterModeOpt;
       }
 
-      samplers.push_back(TextureSampler{texture, filterMode});
+      // Anisotropy mode (optional field).
+      auto anisoMode = AnisotropyMode::None;
+      std::string_view anisoModeStr;
+      if (!elem.at("anisotropy").get(anisoModeStr)) {
+        auto anisoModeOpt = getTextureAnisotropyMode(anisoModeStr);
+        if (!anisoModeOpt) {
+          throw err::AssetLoadErr{path, "Unsupported anisotropy filter mode"};
+        }
+        anisoMode = *anisoModeOpt;
+      }
+
+      samplers.push_back(TextureSampler{texture, filterMode, anisoMode});
     }
   }
 

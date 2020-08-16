@@ -10,13 +10,25 @@ enum class SamplerFilterMode : uint8_t {
   Linear  = 1,
 };
 
+enum class SamplerAnisotropyMode : uint8_t {
+  None = 0,
+  X2   = 1,
+  X4   = 2,
+  X8   = 3,
+  X16  = 4,
+};
+
 /*
  * Handle to a sampler resource on the gpu.
  */
 class Sampler final {
 public:
   Sampler() = default;
-  Sampler(const Device* device, SamplerFilterMode filterMode, uint32_t mipLevels);
+  Sampler(
+      const Device* device,
+      SamplerFilterMode filterMode,
+      SamplerAnisotropyMode anisoMode,
+      uint32_t mipLevels);
   Sampler(const Sampler& rhs) = delete;
   Sampler(Sampler&& rhs) noexcept {
     m_device        = rhs.m_device;

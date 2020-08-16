@@ -217,7 +217,8 @@ Graphic::Graphic(
     const auto* tex = textures->get(itr->getTexture());
 
     const auto filterMode = static_cast<SamplerFilterMode>(itr->getFilterMode());
-    auto sampler          = Sampler{device, filterMode, tex->getImage().getMipLevels()};
+    const auto anisoMode  = static_cast<SamplerAnisotropyMode>(itr->getAnisoMode());
+    auto sampler          = Sampler{device, filterMode, anisoMode, tex->getImage().getMipLevels()};
     DBG_SAMPLER_NAME(m_device, sampler.getVkSampler(), m_asset->getId());
 
     m_descSet.attachImage(dstBinding++, tex->getImage(), sampler);

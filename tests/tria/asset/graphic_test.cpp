@@ -45,7 +45,8 @@ TEST_CASE("[asset] - Graphic", "[asset]") {
           "\"vertShader\": \"test.vert.spv\","
           "\"fragShader\": \"test.frag.spv\","
           "\"mesh\": \"test.obj\","
-          "\"samplers\": [{ \"texture\": \"test.ppm\", \"filter\": \"nearest\"}]"
+          "\"samplers\": [{ \"texture\": \"test.ppm\", \"filter\": \"nearest\", \"anisotropy\": "
+          "\"x4\"}]"
           "}");
 
       auto db   = Database{nullptr, dir};
@@ -56,6 +57,7 @@ TEST_CASE("[asset] - Graphic", "[asset]") {
       REQUIRE(gfx->getSamplerCount() == 1);
       CHECK(*gfx->getSamplerBegin()->getTexture()->getPixelBegin() == Pixel{1, 42, 137, 255});
       CHECK(gfx->getSamplerBegin()->getFilterMode() == FilterMode::Nearest);
+      CHECK(gfx->getSamplerBegin()->getAnisoMode() == AnisotropyMode::X4);
     });
   }
 

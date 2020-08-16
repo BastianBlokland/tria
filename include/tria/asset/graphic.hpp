@@ -23,6 +23,16 @@ enum class FilterMode : uint8_t {
   Linear  = 1, // Choose one of the pixels (sometimes known as 'point' filtering).
 };
 
+/* Mode that is used when appling anisotropic filtering.
+ */
+enum class AnisotropyMode : uint8_t {
+  None = 0, // No anisotropic filtering.
+  X2   = 1, // Anisotropic filtering using 2 samples.
+  X4   = 2, // Anisotropic filtering using 4 samples.
+  X8   = 3, // Anisotropic filtering using 8 samples.
+  X16  = 4, // Anisotropic filtering using 16 samples.
+};
+
 /* Mode that is used when performing depth-tests.
  */
 enum class DepthTestMode : uint8_t {
@@ -37,17 +47,19 @@ enum class DepthTestMode : uint8_t {
 class TextureSampler final {
 public:
   TextureSampler() = delete;
-  TextureSampler(const Texture* texture, FilterMode filterMode) :
-      m_texture{texture}, m_filterMode{filterMode} {
+  TextureSampler(const Texture* texture, FilterMode filterMode, AnisotropyMode anisoMode) :
+      m_texture{texture}, m_filterMode{filterMode}, m_anisoMode{anisoMode} {
     assert(texture);
   }
 
   [[nodiscard]] auto getTexture() const noexcept { return m_texture; }
   [[nodiscard]] auto getFilterMode() const noexcept { return m_filterMode; }
+  [[nodiscard]] auto getAnisoMode() const noexcept { return m_anisoMode; }
 
 private:
   const Texture* m_texture;
   FilterMode m_filterMode;
+  AnisotropyMode m_anisoMode;
 };
 
 /*

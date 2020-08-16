@@ -108,9 +108,12 @@ createVkDevice(VkPhysicalDevice vkPhysicalDevice, std::set<uint32_t> queueFamili
   vkGetPhysicalDeviceFeatures(vkPhysicalDevice, &supportedFeatures);
 
   VkPhysicalDeviceFeatures featuresToEnable = {};
+  // Optionally enable features.
   if (supportedFeatures.pipelineStatisticsQuery) {
-    // Optionally enable 'pipelineStatisticsQuery' to gather draw statistics.
     featuresToEnable.pipelineStatisticsQuery = true;
+  }
+  if (supportedFeatures.samplerAnisotropy) {
+    featuresToEnable.samplerAnisotropy = true;
   }
 
   // Queues to create on the device.
