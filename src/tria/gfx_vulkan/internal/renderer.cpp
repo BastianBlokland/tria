@@ -102,23 +102,6 @@ auto setScissor(VkCommandBuffer vkCommandBuffer, ImageSize size) -> void {
   vkCmdSetScissor(vkCommandBuffer, 0U, 1U, &scissor);
 }
 
-auto bindVertexBuffer(VkCommandBuffer vkCommandBuffer, const Buffer& buffer, size_t offset)
-    -> void {
-  std::array<VkBuffer, 1> vertexBuffers = {
-      buffer.getVkBuffer(),
-  };
-  std::array<VkDeviceSize, 1> vertexBufferOffsets = {
-      offset,
-  };
-  vkCmdBindVertexBuffers(
-      vkCommandBuffer, 0U, vertexBuffers.size(), vertexBuffers.data(), vertexBufferOffsets.data());
-}
-
-auto bindIndexBuffer(VkCommandBuffer vkCommandBuffer, const Buffer& buffer, size_t offset) -> void {
-  vkCmdBindIndexBuffer(
-      vkCommandBuffer, buffer.getVkBuffer(), offset, getVkIndexType<Mesh::IndexType>());
-}
-
 } // namespace
 
 Renderer::Renderer(log::Logger* logger, Device* device) :
@@ -235,13 +218,17 @@ auto Renderer::draw(
   DBG_CMD_BEGIN_LABEL(
       m_device, m_drawVkCommandBuffer, "Draw " + graphic->getId(), math::color::get(m_drawId));
 
-  // Prepare and bind per graphic resources (pipeline and mesh).
+  // Prepare and bind per graphic resources (pipeline and index buffer).
   graphic->prepareResources(m_transferer.get(), m_uni.get(), technique.getVkRenderPass());
   vkCmdBindPipeline(
       m_drawVkCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphic->getVkPipeline());
+
   const auto* mesh = graphic->getMesh();
-  bindVertexBuffer(m_drawVkCommandBuffer, mesh->getBuffer(), mesh->getBufferVertexOffset());
-  bindIndexBuffer(m_drawVkCommandBuffer, mesh->getBuffer(), mesh->getBufferIndexOffset());
+  vkCmdBindIndexBuffer(
+      m_drawVkCommandBuffer,
+      mesh->getIndexBuffer().getVkBuffer(),
+      0U,
+      getVkIndexType<Mesh::IndexType>());
 
   // Submit the draws in batches.
   while (count > 0U) {
@@ -293,15 +280,13 @@ auto Renderer::bindGraphicDescriptors(const Graphic* graphic, const void* uniDat
     -> void {
 
   constexpr auto maxDescSets = 2U;
-  std::array<VkDescriptorSet, maxDescSets> descSets;
+  std::array<VkDescriptorSet, maxDescSets> descSets{
+      graphic->getVkDescriptorSet(),
+  };
   std::array<uint32_t, maxDescSets> descDynamicOffsets;
-  auto descSetsCount           = 0U;
+  auto descSetsCount           = 1U;
   auto descDynamicOffsetsCount = 0U;
 
-  // Bind any descriptors from the graphic itself (for example textures).
-  if (graphic->getVkDescriptorSet()) {
-    descSets[descSetsCount++] = graphic->getVkDescriptorSet();
-  }
   // Bind the provided per-draw uniform data (if any).
   if (uniData && uniSize > 0) {
     auto [uniDescSet, uniOffset]                  = m_uni->upload(uniData, uniSize);
@@ -309,17 +294,15 @@ auto Renderer::bindGraphicDescriptors(const Graphic* graphic, const void* uniDat
     descDynamicOffsets[descDynamicOffsetsCount++] = uniOffset;
   }
 
-  if (descSetsCount > 0U) {
-    vkCmdBindDescriptorSets(
-        m_drawVkCommandBuffer,
-        VK_PIPELINE_BIND_POINT_GRAPHICS,
-        graphic->getVkPipelineLayout(),
-        0U,
-        descSetsCount,
-        descSets.data(),
-        descDynamicOffsetsCount,
-        descDynamicOffsets.data());
-  }
+  vkCmdBindDescriptorSets(
+      m_drawVkCommandBuffer,
+      VK_PIPELINE_BIND_POINT_GRAPHICS,
+      graphic->getVkPipelineLayout(),
+      0U,
+      descSetsCount,
+      descSets.data(),
+      descDynamicOffsetsCount,
+      descDynamicOffsets.data());
 }
 
 auto Renderer::waitForDone() const -> void {

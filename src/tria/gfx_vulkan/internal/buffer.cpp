@@ -10,13 +10,14 @@ namespace {
 
 [[nodiscard]] auto getVkBufferUsageFlags(BufferUsage usage) -> VkBufferUsageFlags {
   switch (usage) {
+  case BufferUsage::DeviceIndexData:
+    return VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
+  case BufferUsage::DeviceStorageData:
+    return VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
   case BufferUsage::HostUniformData:
     return VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
   case BufferUsage::HostTransfer:
     return VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
-  case BufferUsage::DeviceVertexAndIndexData:
-    return VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT |
-        VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
   }
   throw err::GfxErr{"Unexpected buffer-usage"};
 }

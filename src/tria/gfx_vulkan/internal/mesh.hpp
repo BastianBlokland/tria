@@ -8,6 +8,15 @@
 
 namespace tria::gfx::internal {
 
+/* Needs to match the layout of the vertex structure in GLSL.
+ */
+struct alignas(16) DeviceVertex final {
+  math::Vec3f pos;
+  float texcoordX;
+  math::Vec3f nrm;
+  float texcoordY;
+};
+
 /* Mesh resource.
  * Holds vertex and index data.
  */
@@ -27,27 +36,20 @@ public:
   [[nodiscard]] auto getVertexCount() const noexcept { return m_asset->getVertexCount(); }
   [[nodiscard]] auto getIndexCount() const noexcept { return m_asset->getIndexCount(); }
 
-  [[nodiscard]] auto getVkVertexBindingDescriptions() const noexcept
-      -> std::vector<VkVertexInputBindingDescription>;
-
-  [[nodiscard]] auto getVkVertexAttributeDescriptions() const noexcept
-      -> std::vector<VkVertexInputAttributeDescription>;
-
   /* Note: Call this before accessing any resources from this mesh.
    */
   auto prepareResources(Transferer* transferer) const -> void;
 
-  [[nodiscard]] auto getBuffer() const noexcept -> const Buffer& { return m_buffer; }
-  [[nodiscard]] auto getBufferVertexOffset() const noexcept -> size_t { return 0U; }
-  [[nodiscard]] auto getBufferIndexOffset() const noexcept -> size_t { return m_indexDataOffset; }
+  [[nodiscard]] auto getVertexBuffer() const noexcept -> const Buffer& { return m_vertexBuffer; }
+  [[nodiscard]] auto getIndexBuffer() const noexcept -> const Buffer& { return m_indexBuffer; }
 
 private:
   const asset::Mesh* m_asset;
   size_t m_vertexDataSize;
   size_t m_indexDataSize;
-  size_t m_indexDataOffset;
-  mutable bool m_bufferUploaded;
-  Buffer m_buffer;
+  mutable bool m_buffersUploaded;
+  Buffer m_vertexBuffer;
+  Buffer m_indexBuffer;
 };
 
 } // namespace tria::gfx::internal

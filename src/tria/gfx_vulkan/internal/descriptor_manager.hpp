@@ -18,40 +18,54 @@ class DescriptorGroup;
 
 /* Information about the types of descriptors in a DescriptorSet.
  * Note: The order of bindings in a descriptor set is fixed:
- * 1: ImageSampler
+ * 1: StorageBuffer
  * 2: UniformBufferDynamic
+ * 3: ImageSampler
  * Binding numbers are sequential starting from 0.
  */
 class DescriptorInfo final {
 public:
-  DescriptorInfo() noexcept : m_imageCount{0}, m_uniformBufferDynamicCount{0} {}
-  DescriptorInfo(unsigned int imageCount, unsigned int uniformBufferDynamicCount) noexcept :
-      m_imageCount{imageCount}, m_uniformBufferDynamicCount{uniformBufferDynamicCount} {}
+  DescriptorInfo() noexcept :
+      m_storageBufferCount{0}, m_uniformBufferDynamicCount{0}, m_imageCount{0} {}
+  DescriptorInfo(
+      unsigned int storageBufferCount,
+      unsigned int uniformBufferDynamicCount,
+      unsigned int imageCount) noexcept :
+      m_storageBufferCount{storageBufferCount},
+      m_uniformBufferDynamicCount{uniformBufferDynamicCount},
+      m_imageCount{imageCount} {}
 
   [[nodiscard]] constexpr auto operator==(const DescriptorInfo& rhs) const noexcept -> bool {
-    return m_imageCount == rhs.m_imageCount &&
-        m_uniformBufferDynamicCount == rhs.m_uniformBufferDynamicCount;
+    return (
+        m_storageBufferCount == rhs.m_storageBufferCount &&
+        m_uniformBufferDynamicCount == rhs.m_uniformBufferDynamicCount &&
+        m_imageCount == rhs.m_imageCount);
   }
 
   [[nodiscard]] constexpr auto operator!=(const DescriptorInfo& rhs) const noexcept -> bool {
     return !operator==(rhs);
   }
 
-  [[nodiscard]] constexpr auto getImageCount() const noexcept { return m_imageCount; }
+  [[nodiscard]] constexpr auto getStorageBufferCount() const noexcept {
+    return m_storageBufferCount;
+  }
 
   [[nodiscard]] constexpr auto getUniformBufferDynamicCount() const noexcept {
     return m_uniformBufferDynamicCount;
   }
 
+  [[nodiscard]] constexpr auto getImageCount() const noexcept { return m_imageCount; }
+
   /* Total amount of bindings.
    */
   [[nodiscard]] constexpr auto getBindingCount() const noexcept {
-    return m_imageCount + m_uniformBufferDynamicCount;
+    return m_storageBufferCount + m_uniformBufferDynamicCount + m_imageCount;
   }
 
 private:
-  unsigned int m_imageCount;
+  unsigned int m_storageBufferCount;
   unsigned int m_uniformBufferDynamicCount;
+  unsigned int m_imageCount;
 };
 
 /* Handle to an allocated VkDescriptorSet.
@@ -85,14 +99,18 @@ public:
   [[nodiscard]] auto getVkLayout() const noexcept -> VkDescriptorSetLayout;
   [[nodiscard]] auto getVkDescSet() const noexcept -> VkDescriptorSet;
 
-  /* Attach an image and sampler to a combined-image-sampler binding slot.
+  /* Attach a buffer to a storage-buffer binding slot.
    */
-  auto attachImage(uint32_t binding, const Image& img, const Sampler& sampler) -> void;
+  auto attachStorageBuffer(uint32_t binding, const Buffer& buffer) -> void;
 
-  /* Attach a uniform buffer to a uniform binding slot.
+  /* Attach a buffer to a dynamic uniform-buffer binding slot.
    * Size of the data is static but the offset into the buffer is given dynamically at bind-time.
    */
   auto attachUniformBufferDynamic(uint32_t binding, const Buffer& buffer, uint32_t size) -> void;
+
+  /* Attach an image and sampler to a combined-image-sampler binding slot.
+   */
+  auto attachImage(uint32_t binding, const Image& img, const Sampler& sampler) -> void;
 
 private:
   DescriptorGroup* m_group;
@@ -129,15 +147,19 @@ public:
    */
   [[nodiscard]] auto allocate() noexcept -> std::optional<DescriptorSet>;
 
-  /* Attach an image and sampler to an allocated DescriptorSet.
+  /* Attach a storage-buffer to an allocated DescriptorSet.
    */
-  auto attachImage(DescriptorSet* set, uint32_t binding, const Image& img, const Sampler& sampler)
-      -> void;
+  auto attachStorageBuffer(DescriptorSet* set, uint32_t binding, const Buffer& buffer) -> void;
 
   /* Attach a dynamic uniform-buffer to an allocated DescriptorSet.
    */
   auto attachUniformBufferDynamic(
       DescriptorSet* set, uint32_t binding, const Buffer& buffer, uint32_t maxSize) -> void;
+
+  /* Attach an image and sampler to an allocated DescriptorSet.
+   */
+  auto attachImage(DescriptorSet* set, uint32_t binding, const Image& img, const Sampler& sampler)
+      -> void;
 
   /* Return a DescriptorSet to the group.
    * Note: DescriptorSet has to have been allocated from this group.

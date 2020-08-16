@@ -12,14 +12,20 @@ namespace tria::gfx::internal {
 
 namespace {
 
-template <uint32_t DescriptorSetCount>
 [[nodiscard]] auto createPipelineLayout(
-    VkDevice vkDevice, const std::array<VkDescriptorSetLayout, DescriptorSetCount> descLayouts) {
+    VkDevice vkDevice,
+    VkDescriptorSetLayout graphicDescriptor,
+    VkDescriptorSetLayout instanceDescriptor) {
+
+  std::array<VkDescriptorSetLayout, 2U> descriptorLayouts = {
+      graphicDescriptor,
+      instanceDescriptor,
+  };
 
   VkPipelineLayoutCreateInfo pipelineLayoutInfo = {};
   pipelineLayoutInfo.sType                      = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-  pipelineLayoutInfo.setLayoutCount             = DescriptorSetCount;
-  pipelineLayoutInfo.pSetLayouts                = descLayouts.data();
+  pipelineLayoutInfo.setLayoutCount             = descriptorLayouts.size();
+  pipelineLayoutInfo.pSetLayouts                = descriptorLayouts.data();
 
   VkPipelineLayout result;
   checkVkResult(vkCreatePipelineLayout(vkDevice, &pipelineLayoutInfo, nullptr, &result));
@@ -32,13 +38,11 @@ template <uint32_t DescriptorSetCount>
     VkPipelineLayout layout,
     const Shader* vertShader,
     const Shader* fragShader,
-    const Mesh* mesh,
     asset::BlendMode blendMode,
     asset::DepthTestMode depthTestMode) {
 
   assert(vertShader);
   assert(fragShader);
-  assert(mesh);
 
   VkPipelineShaderStageCreateInfo vertShaderStageInfo = {};
   vertShaderStageInfo.sType  = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
@@ -57,15 +61,8 @@ template <uint32_t DescriptorSetCount>
       fragShaderStageInfo,
   };
 
-  auto vertexBindingDescriptions   = mesh->getVkVertexBindingDescriptions();
-  auto vertexAttributeDescriptions = mesh->getVkVertexAttributeDescriptions();
-
   VkPipelineVertexInputStateCreateInfo vertexInputInfo = {};
   vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-  vertexInputInfo.vertexBindingDescriptionCount   = vertexBindingDescriptions.size();
-  vertexInputInfo.vertexAttributeDescriptionCount = vertexAttributeDescriptions.size();
-  vertexInputInfo.pVertexBindingDescriptions      = vertexBindingDescriptions.data();
-  vertexInputInfo.pVertexAttributeDescriptions    = vertexAttributeDescriptions.data();
 
   VkPipelineInputAssemblyStateCreateInfo inputAssembly = {};
   inputAssembly.sType    = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
@@ -207,11 +204,13 @@ Graphic::Graphic(
 
   // Create a descriptor for the per graphic resources.
   m_descSet = device->getDescManager().allocate(
-      DescriptorInfo{static_cast<uint32_t>(asset->getSamplerCount()), 0U});
+      DescriptorInfo{1U, 0U, static_cast<uint32_t>(asset->getSamplerCount())});
+
+  auto dstBinding = 0U;
+  m_descSet.attachStorageBuffer(dstBinding++, m_mesh->getVertexBuffer());
 
   // Create the texture resources and bind them to our descriptor.
   m_textures.reserve(m_asset->getSamplerCount());
-  auto dstBinding = 0U;
   for (auto itr = m_asset->getSamplerBegin(); itr != m_asset->getSamplerEnd(); ++itr) {
     // Create a gpu resource for the texture.
     const auto* tex = textures->get(itr->getTexture());
@@ -242,21 +241,16 @@ auto Graphic::prepareResources(
   }
 
   if (!m_vkPipeline) {
-    // Bind to our own resources like textures (if any) and any per-draw uniform data.
-    if (m_descSet.hasBindingPoints()) {
-      m_vkPipelineLayout = createPipelineLayout<2>(
-          m_device->getVkDevice(), {m_descSet.getVkLayout(), uni->getVkDescLayout()});
-    } else {
-      m_vkPipelineLayout =
-          createPipelineLayout<1>(m_device->getVkDevice(), {uni->getVkDescLayout()});
-    }
+    // Bind to our own resources like vertex data and any per-draw uniform data.
+    m_vkPipelineLayout = createPipelineLayout(
+        m_device->getVkDevice(), m_descSet.getVkLayout(), uni->getVkDescLayout());
+
     m_vkPipeline = createPipeline(
         m_device->getVkDevice(),
         vkRenderPass,
         m_vkPipelineLayout,
         m_vertShader,
         m_fragShader,
-        m_mesh,
         m_asset->getBlendMode(),
         m_asset->getDepthTestMode());
 

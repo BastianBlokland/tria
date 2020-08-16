@@ -9,8 +9,7 @@ namespace tria::asset {
 
 // Pretty output for vertices in case of test failures.
 auto operator<<(std::ostream& out, const Vertex& rhs) -> std::ostream& {
-  out << "{" << rhs.position << ", " << rhs.normal << ", " << rhs.color << ", " << rhs.texcoord
-      << "}";
+  out << "{" << rhs.position << ", " << rhs.normal << ", " << rhs.texcoord << "}";
   return out;
 }
 
@@ -32,9 +31,10 @@ TEST_CASE("[asset] - Mesh Wavefront Obj", "[asset]") {
       auto vertices = std::vector<Vertex>(mesh->getVertexBegin(), mesh->getVertexEnd());
       CHECK(
           vertices ==
-          std::vector<Vertex>{{{1.0, 4.0, 7.0}, {0.f, 0.f, 1.f}, math::color::white(), {}},
-                              {{2.0, 5.0, 8.0}, {0.f, 0.f, 1.f}, math::color::white(), {}},
-                              {{3.0, 6.0, 9.0}, {0.f, 0.f, 1.f}, math::color::white(), {}}});
+          std::vector<Vertex>{
+              {{1.0, 4.0, 7.0}, {0.f, 0.f, 1.f}, {}},
+              {{2.0, 5.0, 8.0}, {0.f, 0.f, 1.f}, {}},
+              {{3.0, 6.0, 9.0}, {0.f, 0.f, 1.f}, {}}});
     });
   }
 
@@ -55,29 +55,10 @@ TEST_CASE("[asset] - Mesh Wavefront Obj", "[asset]") {
       auto vertices = std::vector<Vertex>(mesh->getVertexBegin(), mesh->getVertexEnd());
       CHECK(
           vertices ==
-          std::vector<Vertex>{{{1.0, 4.0, 7.0}, {1.f, 0.f, 0.f}, math::color::white(), {}},
-                              {{2.0, 5.0, 8.0}, {0.f, 1.f, 0.f}, math::color::white(), {}},
-                              {{3.0, 6.0, 9.0}, {0.f, 0.f, 1.f}, math::color::white(), {}}});
-    });
-  }
-
-  SECTION("Vertex colors (obj extension) are read") {
-    withTempDir([](const fs::path& dir) {
-      writeFile(
-          dir / "test.obj",
-          "v 1.0 4.0 7.0 1.0 0.0 0.0 \n"
-          "v 2.0 5.0 8.0 0.0 1.0 0.0 \n"
-          "v 3.0 6.0 9.0 0.0 0.0 1.0 \n"
-          "f 1 2 3 \n");
-
-      auto db       = Database{nullptr, dir};
-      auto mesh     = db.get("test.obj")->downcast<Mesh>();
-      auto vertices = std::vector<Vertex>(mesh->getVertexBegin(), mesh->getVertexEnd());
-      CHECK(
-          vertices ==
-          std::vector<Vertex>{{{1.0, 4.0, 7.0}, {0.f, 0.f, 1.f}, math::color::red(), {}},
-                              {{2.0, 5.0, 8.0}, {0.f, 0.f, 1.f}, math::color::lime(), {}},
-                              {{3.0, 6.0, 9.0}, {0.f, 0.f, 1.f}, math::color::blue(), {}}});
+          std::vector<Vertex>{
+              {{1.0, 4.0, 7.0}, {1.f, 0.f, 0.f}, {}},
+              {{2.0, 5.0, 8.0}, {0.f, 1.f, 0.f}, {}},
+              {{3.0, 6.0, 9.0}, {0.f, 0.f, 1.f}, {}}});
     });
   }
 
@@ -99,9 +80,9 @@ TEST_CASE("[asset] - Mesh Wavefront Obj", "[asset]") {
       CHECK(
           vertices ==
           std::vector<Vertex>{
-              {{1.0, 4.0, 7.0}, {0.f, 0.f, 1.f}, math::color::white(), {0.1, 0.5}},
-              {{2.0, 5.0, 8.0}, {0.f, 0.f, 1.f}, math::color::white(), {0.3, 0.5}},
-              {{3.0, 6.0, 9.0}, {0.f, 0.f, 1.f}, math::color::white(), {0.5, 0.5}}});
+              {{1.0, 4.0, 7.0}, {0.f, 0.f, 1.f}, {0.1, 0.5}},
+              {{2.0, 5.0, 8.0}, {0.f, 0.f, 1.f}, {0.3, 0.5}},
+              {{3.0, 6.0, 9.0}, {0.f, 0.f, 1.f}, {0.5, 0.5}}});
     });
   }
 
@@ -121,9 +102,9 @@ TEST_CASE("[asset] - Mesh Wavefront Obj", "[asset]") {
       CHECK(
           vertices ==
           std::vector<Vertex>{
-              {{1.0, 4.0, 7.0}, {0.f, 0.f, 1.f}, math::color::white(), {0.5, 0.5}},
-              {{2.0, 5.0, 8.0}, {0.f, 0.f, 1.f}, math::color::white(), {0.5, 0.5}},
-              {{3.0, 6.0, 9.0}, {0.f, 0.f, 1.f}, math::color::white(), {0.5, 0.5}}});
+              {{1.0, 4.0, 7.0}, {0.f, 0.f, 1.f}, {0.5, 0.5}},
+              {{2.0, 5.0, 8.0}, {0.f, 0.f, 1.f}, {0.5, 0.5}},
+              {{3.0, 6.0, 9.0}, {0.f, 0.f, 1.f}, {0.5, 0.5}}});
     });
   }
 
@@ -159,10 +140,11 @@ TEST_CASE("[asset] - Mesh Wavefront Obj", "[asset]") {
       auto indices  = std::vector<IndexType>(mesh->getIndexBegin(), mesh->getIndexEnd());
       CHECK(
           vertices ==
-          std::vector<Vertex>{{{-0.5, -0.5, 0.0}, {0.f, 0.f, 1.f}, math::color::white(), {}},
-                              {{+0.5, -0.5, 0.0}, {0.f, 0.f, 1.f}, math::color::white(), {}},
-                              {{-0.5, +0.5, 0.0}, {0.f, 0.f, 1.f}, math::color::white(), {}},
-                              {{+0.5, +0.5, 0.0}, {0.f, 0.f, 1.f}, math::color::white(), {}}});
+          std::vector<Vertex>{
+              {{-0.5, -0.5, 0.0}, {0.f, 0.f, 1.f}, {}},
+              {{+0.5, -0.5, 0.0}, {0.f, 0.f, 1.f}, {}},
+              {{-0.5, +0.5, 0.0}, {0.f, 0.f, 1.f}, {}},
+              {{+0.5, +0.5, 0.0}, {0.f, 0.f, 1.f}, {}}});
       CHECK(indices == std::vector<IndexType>{0, 1, 2, 0, 2, 3});
     });
   }
