@@ -6,8 +6,8 @@
 
 namespace tria::asset::tests {
 
-auto writeFile(const fs::path& path, std::string data) -> void;
-auto writeFile(const fs::path& path, math::RawData data) -> void;
+auto writeFile(const fs::path& path, const std::string& data) -> void;
+auto writeFile(const fs::path& path, const math::RawData& data) -> void;
 auto deleteDir(const fs::path& path) -> void;
 
 template <typename TestFunc>

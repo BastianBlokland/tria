@@ -6,7 +6,7 @@ add_executable(tria_tests
   tria/asset/texture_ppm_test.cpp
   tria/asset/texture_tga_test.cpp
   tria/asset/mesh_obj_test.cpp
-  tria/asset/shader_test.cpp
+  tria/asset/shader_spv_test.cpp
   tria/asset/utils.cpp
 
   tria/log/level_test.cpp

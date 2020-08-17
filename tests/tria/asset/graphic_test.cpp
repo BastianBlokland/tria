@@ -2,16 +2,38 @@
 #include "tria/asset/database.hpp"
 #include "tria/asset/err/asset_load_err.hpp"
 #include "tria/asset/graphic.hpp"
+#include "tria/math/base64.hpp"
 #include "utils.hpp"
 
 namespace tria::asset::tests {
+
+namespace {
+
+auto getTestVertShader() noexcept {
+  // Dummy vertex shader compiled to spir-v.
+  return math::base64Decode("AwIjBwAAAQAIAA0ABgAAAAAAAAARAAIAAQAAAAsABgABAAAAR0xTTC5zdGQuNDUwAAAAA"
+                            "A4AAwAAAAAAAQAAAA8ABQAAAAAABAAAAG1haW4AAAAAEwACAAIAAAAhAAMAAwAAAAIAAA"
+                            "A2AAUAAgAAAAQAAAAAAAAAAwAAAPgAAgAFAAAA/QABADgAAQA=");
+}
+
+auto getTestFragShader() noexcept {
+  // Dummy fragment shader compiled to spir-v.
+  return math::base64Decode(
+      "AwIjBwAAAQAIAA0ADAAAAAAAAAARAAIAAQAAAAsABgABAAAAR0xTTC5zdGQuNDUwAAAAAA4AAwAAAAAAAQAAAA8ABgAE"
+      "AAAABAAAAG1haW4AAAAACQAAABAAAwAEAAAABwAAAEcABAAJAAAAHgAAAAAAAAATAAIAAgAAACEAAwADAAAAAgAAABYA"
+      "AwAGAAAAIAAAABcABAAHAAAABgAAAAQAAAAgAAQACAAAAAMAAAAHAAAAOwAEAAgAAAAJAAAAAwAAACsABAAGAAAACgAA"
+      "AAAAgD8sAAcABwAAAAsAAAAKAAAACgAAAAoAAAAKAAAANgAFAAIAAAAEAAAAAAAAAAMAAAD4AAIABQAAAD4AAwAJAAAA"
+      "CwAAAP0AAQA4AAEA");
+}
+
+} // namespace
 
 TEST_CASE("[asset] - Graphic", "[asset]") {
 
   SECTION("Shaders and mesh are loaded as part of the graphic") {
     withTempDir([](const fs::path& dir) {
-      writeFile(dir / "test.vert.spv", "");
-      writeFile(dir / "test.frag.spv", "");
+      writeFile(dir / "test.vert.spv", getTestVertShader());
+      writeFile(dir / "test.frag.spv", getTestFragShader());
       writeFile(dir / "test.obj", "v 0.0 0.0 0.0\nf 1 1 1\n");
       writeFile(
           dir / "test.gfx",
@@ -35,8 +57,8 @@ TEST_CASE("[asset] - Graphic", "[asset]") {
 
   SECTION("Texture samplers are optionally loaded as part of the graphic") {
     withTempDir([](const fs::path& dir) {
-      writeFile(dir / "test.vert.spv", "");
-      writeFile(dir / "test.frag.spv", "");
+      writeFile(dir / "test.vert.spv", getTestVertShader());
+      writeFile(dir / "test.frag.spv", getTestFragShader());
       writeFile(dir / "test.obj", "v 0.0 0.0 0.0\nf 1 1 1\n");
       writeFile(dir / "test.ppm", "P3 1 1 255 1 42 137");
       writeFile(
@@ -76,7 +98,7 @@ TEST_CASE("[asset] - Graphic", "[asset]") {
 
   SECTION("Loading a graphic without a vertex shader throws") {
     withTempDir([](const fs::path& dir) {
-      writeFile(dir / "test.frag.spv", "");
+      writeFile(dir / "test.frag.spv", getTestFragShader());
       writeFile(dir / "test.obj", "v 0.0 0.0 0.0\nf 1 1 1\n");
       writeFile(
           dir / "test.gfx",
@@ -92,7 +114,7 @@ TEST_CASE("[asset] - Graphic", "[asset]") {
 
   SECTION("Loading a graphic without a fragment shader throws") {
     withTempDir([](const fs::path& dir) {
-      writeFile(dir / "test.vert.spv", "");
+      writeFile(dir / "test.vert.spv", getTestVertShader());
       writeFile(dir / "test.obj", "v 0.0 0.0 0.0\nf 1 1 1\n");
       writeFile(
           dir / "test.gfx",
@@ -108,8 +130,8 @@ TEST_CASE("[asset] - Graphic", "[asset]") {
 
   SECTION("Loading a graphic without a mesh throws") {
     withTempDir([](const fs::path& dir) {
-      writeFile(dir / "test.vert.spv", "");
-      writeFile(dir / "test.frag.spv", "");
+      writeFile(dir / "test.vert.spv", getTestVertShader());
+      writeFile(dir / "test.frag.spv", getTestFragShader());
       writeFile(
           dir / "test.gfx",
           "{"
@@ -124,7 +146,7 @@ TEST_CASE("[asset] - Graphic", "[asset]") {
 
   SECTION("Loading a graphic with incorrect vertex shader type throws") {
     withTempDir([](const fs::path& dir) {
-      writeFile(dir / "test.frag.spv", "");
+      writeFile(dir / "test.frag.spv", getTestFragShader());
       writeFile(dir / "test.obj", "v 0.0 0.0 0.0\nf 1 1 1\n");
       writeFile(
           dir / "test.gfx",
@@ -141,7 +163,7 @@ TEST_CASE("[asset] - Graphic", "[asset]") {
 
   SECTION("Loading a graphic with incorrect fragment shader type throws") {
     withTempDir([](const fs::path& dir) {
-      writeFile(dir / "test.vert.spv", "");
+      writeFile(dir / "test.vert.spv", getTestVertShader());
       writeFile(dir / "test.obj", "v 0.0 0.0 0.0\nf 1 1 1\n");
       writeFile(
           dir / "test.gfx",

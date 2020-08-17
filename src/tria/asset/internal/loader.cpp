@@ -9,7 +9,7 @@ auto loadGraphic(log::Logger*, DatabaseImpl*, AssetId, const fs::path&, RawData)
 auto loadMeshObj(log::Logger*, DatabaseImpl*, AssetId, const fs::path&, RawData) -> AssetUnique;
 auto loadTexturePpm(log::Logger*, DatabaseImpl*, AssetId, const fs::path&, RawData) -> AssetUnique;
 auto loadTextureTga(log::Logger*, DatabaseImpl*, AssetId, const fs::path&, RawData) -> AssetUnique;
-auto loadShader(log::Logger*, DatabaseImpl*, AssetId, const fs::path&, RawData) -> AssetUnique;
+auto loadShaderSpv(log::Logger*, DatabaseImpl*, AssetId, const fs::path&, RawData) -> AssetUnique;
 auto loadRawAsset(log::Logger*, DatabaseImpl*, AssetId, const fs::path&, RawData) -> AssetUnique;
 
 namespace {
@@ -22,7 +22,7 @@ auto getLoader(const fs::path& path) -> AssetLoader {
       {".obj", loadMeshObj},
       {".ppm", loadTexturePpm},
       {".tga", loadTextureTga},
-      {".spv", loadShader},
+      {".spv", loadShaderSpv},
   };
   auto itr = table.find(path.extension().string());
   if (itr != table.end()) {
