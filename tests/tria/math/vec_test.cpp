@@ -168,21 +168,27 @@ TEST_CASE("[math] - Vec", "[math]") {
   }
 
   SECTION("Square magnitude is sum of squared components") {
-    const auto vec = Vec3f{1.0f, 2.0f, 3.0f};
-    CHECK(approx(vec.getSqrMag(), 14.0f));
+    const auto vec = Vec3f{1.f, 2.f, 3.f};
+    CHECK(approx(vec.getSqrMag(), 14.f));
   }
 
   SECTION("Magnitude is the square root of the sum of squared components") {
-    const auto vec = Vec3f{0.0f, 42.0f, 0.0f};
+    const auto vec = Vec3f{0.f, 42.f, 0.f};
     CHECK(approx(vec.getMag(), 42.0f));
   }
 
   SECTION("Normalizing a vector results in a vector with length 1") {
-    const auto vec1 = Vec3f{0.0f, 42.0f, 0.0f};
-    CHECK(vec1.getNorm() == Vec3f{0.0f, 1.0f, 0.0f});
+    auto vec1 = Vec3f{0.f, 42.f, 0.f};
+    CHECK(approx(vec1.getNorm(), dir3d::up()));
 
-    const auto vec2 = Vec3f{1337.0f, 42.0f, -42.0f};
-    CHECK(approx(vec2.getNorm().getMag(), 1.0f));
+    vec1.norm();
+    CHECK(approx(vec1, dir3d::up()));
+
+    auto vec2 = Vec3f{1337.f, 42.f, -42.f};
+    CHECK(approx(vec2.getNorm().getMag(), 1.f));
+
+    vec2.norm();
+    CHECK(approx(vec2.getMag(), 1.f));
   }
 
   SECTION("Dot product of the same vector is equal to the magnitude squared") {
@@ -197,26 +203,26 @@ TEST_CASE("[math] - Vec", "[math]") {
   }
 
   SECTION("Dot product of perpendicular unit vectors is 0") {
-    const auto vec1 = Vec2f{0.0f, 1.0f};
-    const auto vec2 = Vec2f{1.0f, 0.0f};
+    const auto vec1 = Vec2f{0.f, 1.f};
+    const auto vec2 = Vec2f{1.f, 0.f};
     CHECK(approxZero(dot(vec1, vec2)));
   }
 
   SECTION("Dot product of the same unit vector is 1") {
-    const auto vec1 = Vec2f{0.0f, 1.0f};
-    CHECK(approx(dot(vec1, vec1), 1.0f));
+    const auto vec1 = Vec2f{0.f, 1.f};
+    CHECK(approx(dot(vec1, vec1), 1.f));
   }
 
   SECTION("Dot product of unit vectors is the cosine of the angle between them") {
-    const auto vec1 = Vec2f{0.0f, 1.0f};
-    const auto vec2 = Vec2f{1.0f, 1.0f}.getNorm();
+    const auto vec1 = Vec2f{0.f, 1.f};
+    const auto vec2 = Vec2f{1.f, 1.f}.getNorm();
     CHECK(approx(std::acos(dot(vec1, vec2)) * radToDeg<float>, 45.0f));
   }
 
   SECTION("Dot product of opposite unit vectors is -1") {
-    const auto vec1 = Vec2f{0.0f, 1.0f};
-    const auto vec2 = Vec2f{0.0f, -1.0f};
-    CHECK(approx(dot(vec1, vec2), -1.0f));
+    const auto vec1 = Vec2f{0.f, 1.f};
+    const auto vec2 = Vec2f{0.f, -1.f};
+    CHECK(approx(dot(vec1, vec2), -1.f));
   }
 
   SECTION("Cross of right and up is forward") {
@@ -236,14 +242,14 @@ TEST_CASE("[math] - Vec", "[math]") {
   }
 
   SECTION("Angle between parallel vectors is 0 radians") {
-    const auto vec1 = Vec2f{0.0f, 1.0f};
-    const auto vec2 = Vec2f{0.0f, 1.0f};
+    const auto vec1 = Vec2f{0.f, 1.f};
+    const auto vec2 = Vec2f{0.f, 1.f};
     CHECK(approxZero(angle(vec1, vec2)));
   }
 
   SECTION("Angle between opposite vectors is pi radians") {
-    const auto vec1 = Vec2f{0.0f, 1.0f};
-    const auto vec2 = Vec2f{0.0f, -1.0f};
+    const auto vec1 = Vec2f{0.f, 1.f};
+    const auto vec2 = Vec2f{0.f, -1.f};
     CHECK(approx(angle(vec1, vec2), pi<float>));
   }
 
@@ -267,49 +273,49 @@ TEST_CASE("[math] - Vec", "[math]") {
   }
 
   SECTION("Projecting a vector onto itself results in the same vector") {
-    const auto vec = Vec2f{0.0f, 1.0f};
+    const auto vec = Vec2f{0.f, 1.f};
     CHECK(approx(project(vec, vec), vec));
   }
 
   SECTION("Projecting onto a vector of zero length returns a zero vector") {
-    const auto vec = Vec2f{0.0f, 1.0f};
-    CHECK(approxZero(project(vec, Vec2f{0.0f, 0.0f})));
+    const auto vec = Vec2f{0.f, 1.f};
+    CHECK(approxZero(project(vec, Vec2f{0.f, 0.f})));
   }
 
   SECTION("Projecting a zero vector returns a zero vector") {
-    const auto vec = Vec2f{0.0f, 0.0f};
-    CHECK(approxZero(project(vec, Vec2f{0.0f, 1.0f})));
+    const auto vec = Vec2f{0.f, 0.f};
+    CHECK(approxZero(project(vec, Vec2f{0.f, 1.f})));
   }
 
   SECTION("Projecting a vector onto another returns the 'overlap'") {
-    const auto vec1 = Vec2f{3.0f, 3.0f};
-    const auto vec2 = Vec2f{0.0f, 10.0f};
-    CHECK(approx(project(vec1, vec2), Vec2f{0.0f, 3.0f}));
+    const auto vec1 = Vec2f{3.f, 3.f};
+    const auto vec2 = Vec2f{0.f, 10.f};
+    CHECK(approx(project(vec1, vec2), Vec2f{0.f, 3.f}));
   }
 
   SECTION("Reflecting a zero vector returns a zero vector") {
-    CHECK(approxZero(reflect(Vec2f{0.0f, 0.0f}, Vec2f{0.0f, 1.0f})));
+    CHECK(approxZero(reflect(Vec2f{0.f, 0.f}, Vec2f{0.f, 1.f})));
   }
 
   SECTION("Reflecting a vector onto a zero vector returns itself") {
-    const auto vec = Vec2f{5.0f, 1.0f};
+    const auto vec = Vec2f{5.0f, 1.f};
     CHECK(approx(reflect(vec, Vec2f{}), vec));
   }
 
   SECTION("Reflecting a vector onto an opposite normal reverses the direction") {
-    CHECK(approx(reflect(Vec2f{5.0f, 1.0f}, Vec2f{-1.0f, 0.0f}), Vec2f{-5.0f, 1.0f}));
+    CHECK(approx(reflect(Vec2f{5.0f, 1.f}, Vec2f{-1.f, 0.f}), Vec2f{-5.0f, 1.f}));
   }
 
   SECTION("Approx checks if vectors are approximately equal") {
-    CHECK(approx(Vec2f{1.0f, 2.0f}, Vec2f{1.0f, 2.0f}));
-    CHECK(approx(Vec2f{1.0f, 2.0f}, Vec2f{1.0f, 2.0000001f}));
-    CHECK(!approx(Vec2f{1.0f, 2.0f}, Vec2f{1.0f, 2.001f}));
+    CHECK(approx(Vec2f{1.f, 2.0f}, Vec2f{1.f, 2.0f}));
+    CHECK(approx(Vec2f{1.f, 2.0f}, Vec2f{1.f, 2.0000001f}));
+    CHECK(!approx(Vec2f{1.f, 2.0f}, Vec2f{1.f, 2.001f}));
   }
 
   SECTION("ApproxZero check if a value is approximately zero") {
-    CHECK(approxZero(Vec2f{0.0f, 0.0f}));
-    CHECK(!approxZero(Vec2f{0.001f, 0.0f}));
-    CHECK(approxZero(Vec2f{0.0000001f, 0.0f}));
+    CHECK(approxZero(Vec2f{0.f, 0.f}));
+    CHECK(!approxZero(Vec2f{0.001f, 0.f}));
+    CHECK(approxZero(Vec2f{0.0000001f, 0.f}));
   }
 
   SECTION("Approxing integers uses whole numbers") {
@@ -341,14 +347,14 @@ TEST_CASE("[math] - Vec", "[math]") {
     auto maxDev = std::numeric_limits<float>::epsilon() * 2;
     auto rng    = RngXorWow{42};
     for (auto i = 0U; i != 1'000; ++i) {
-      REQUIRE(approx(rndOnUnitSphere3f(rng).getSqrMag(), 1.0f, maxDev));
+      REQUIRE(approx(rndOnUnitSphere3f(rng).getSqrMag(), 1.f, maxDev));
     }
   }
 
   SECTION("rndInsideUnitSphere returns vectors of length 1 or less") {
     auto rng = RngXorWow{42};
     for (auto i = 0U; i != 1'000; ++i) {
-      REQUIRE(rndInsideUnitSphere3f(rng).getSqrMag() <= 1.0f);
+      REQUIRE(rndInsideUnitSphere3f(rng).getSqrMag() <= 1.f);
     }
   }
 
@@ -357,13 +363,13 @@ TEST_CASE("[math] - Vec", "[math]") {
     for (auto i = 0U; i != 100; ++i) {
       auto col = color::get(i);
       CHECK((col.r() > 0 || col.g() > 0 || col.b() > 0));
-      CHECK(approx(col.a(), 1.0f));
+      CHECK(approx(col.a(), 1.f));
     }
 
     // Or at compiletime.
     constexpr auto col = color::get(42);
     CHECK((col.r() > 0 || col.g() > 0 || col.b() > 0));
-    CHECK(approx(col.a(), 1.0f));
+    CHECK(approx(col.a(), 1.f));
   }
 
   SECTION("Identical vectors produce identical hash values") {
@@ -376,7 +382,7 @@ TEST_CASE("[math] - Vec", "[math]") {
   SECTION("Vectors map to a range of hash values") {
     // Note: This is not a good exhaustive check, instead just a quick sanity check.
     auto vecs = std::vector<Vec3f>{
-        Vec3f{0.0f, 1.2f, 0.5f},
+        Vec3f{0.f, 1.2f, 0.5f},
         Vec3f{0.1f, 1.2f, 0.5f},
         Vec3f{0.2f, 1.2f, 0.5f},
         Vec3f{0.3f, 1.2f, 0.5f},

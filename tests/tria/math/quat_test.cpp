@@ -36,6 +36,24 @@ TEST_CASE("[math] - Quat", "[math]") {
     CHECK(!(identityQuatf() != identityQuatf()));
   }
 
+  SECTION("Dividing a quaternion by a scalar divides each component") {
+    CHECK(approx(Quatf{2, 4, 6, 2} / 2, Quatf{1, 2, 3, 1}));
+  }
+
+  SECTION("Multiplying a quaternion by a scalar multiplies each component") {
+    CHECK(approx(Quatf{2, 4, 6, 2} * 2, Quatf{4, 8, 12, 4}));
+  }
+
+  SECTION("Square magnitude is sum of squared components") {
+    const auto q = Quatf{1.f, 2.f, 3.f, 1.f};
+    CHECK(approx(q.getSqrMag(), 15.f));
+  }
+
+  SECTION("Magnitude is the square root of the sum of squared components") {
+    const auto q = Quatf{0.f, 42.f, 0.f, 0.f};
+    CHECK(approx(q.getMag(), 42.0f));
+  }
+
   SECTION("Identity quat multiplied by a identity quat returns another identity quat") {
     CHECK(approx(identityQuatf() * identityQuatf(), identityQuatf()));
   }
@@ -195,6 +213,14 @@ TEST_CASE("[math] - Quat", "[math]") {
     auto vec1    = rotMat * Vec4f{.42, 13.37, -42, 0.f};
     auto vec2    = rotQuat * Vec3f{.42, 13.37, -42};
     CHECK(approx(Vec3f{vec1.x(), vec1.y(), vec1.z()}, vec2, .00001f));
+  }
+
+  SECTION("Normalizing a quaterion results in a quaternion with length 1") {
+    auto q = Quatf{1337.f, 42.f, -42.f, 5.f};
+    CHECK(approx(q.getNorm().getMag(), 1.f));
+
+    q.norm();
+    CHECK(approx(q.getMag(), 1.f));
   }
 }
 

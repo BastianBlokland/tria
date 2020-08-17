@@ -80,7 +80,7 @@ auto runApp(pal::Platform& platform, asset::Database& db, gfx::Context& gfx) {
     frameStartTime       = newTime;
 
     for (auto& obj : objs) {
-      obj.rot = angleAxisQuatf(dir3d::up(), deltaTime.count() * obj.rotSpeed) * obj.rot;
+      obj.rot = (angleAxisQuatf(dir3d::up(), deltaTime.count() * obj.rotSpeed) * obj.rot).getNorm();
     }
 
     // Move the camera with wasd or the arrow keys.

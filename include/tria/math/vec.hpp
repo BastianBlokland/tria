@@ -264,10 +264,11 @@ public:
   }
 
   /* Calculate a normalized version of this vector (unit vector).
-   * Note: If magnitude is 0 then call this function results in undefined behaviour.
+   * Note: If magnitude is 0 then the behaviour of this function is undefined.
    */
   [[nodiscard]] constexpr auto getNorm() const noexcept -> Vec<Type, Size> {
     auto mag = getMag();
+    assert(mag > std::numeric_limits<Type>::epsilon());
     return *this / mag;
   }
 
@@ -278,6 +279,17 @@ public:
     assert(outPtr);
     std::memcpy(outPtr, begin(), sizeof(Type) * Size);
     return outPtr;
+  }
+
+  /* Scale the vector so that the magnitude is 1.
+   * Note: If magnitude is 0 then the behaviour of this function is undefined.
+   */
+  constexpr auto norm() noexcept {
+    auto mag = getMag();
+    assert(mag > std::numeric_limits<Type>::epsilon());
+    for (auto i = 0U; i != Size; ++i) {
+      m_comps[i] /= mag;
+    }
   }
 
 private:

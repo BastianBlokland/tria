@@ -60,6 +60,22 @@ public:
     return res;
   }
 
+  [[nodiscard]] constexpr auto operator*(const Type& rhs) const noexcept -> Quat<Type> {
+    auto res = *this;
+    for (auto i = 0U; i != Size; ++i) {
+      res[i] *= rhs;
+    }
+    return res;
+  }
+
+  [[nodiscard]] constexpr auto operator/(const Type& rhs) const noexcept -> Quat<Type> {
+    auto res = *this;
+    for (auto i = 0U; i != Size; ++i) {
+      res[i] /= rhs;
+    }
+    return res;
+  }
+
   [[nodiscard]] constexpr auto operator*(const Vec<Type, 3>& rhs) const noexcept -> Vec<Type, 3> {
     /* Implemenation based on:
     https://gamedev.stackexchange.com/questions/28395/rotating-vector3-by-a-quaternion */
@@ -86,12 +102,41 @@ public:
     return res;
   }
 
+  /* Calculate the magnitude of the quaternion squared.
+   */
   [[nodiscard]] constexpr auto getSqrMag() const noexcept -> Type {
     Type res = {};
     for (auto i = 0U; i != Size; ++i) {
       res += m_comps[i] * m_comps[i];
     }
     return res;
+  }
+
+  /* Calculate the magnitude of the quaternion.
+   */
+  [[nodiscard]] constexpr auto getMag() const noexcept -> Type {
+    auto sqrMag = getSqrMag();
+    return sqrMag == 0 ? Type{} : std::sqrt(sqrMag);
+  }
+
+  /* Calculate a normalized version of this quaternion (magnitude of 1).
+   * Note: If magnitude is 0 then the behaviour of this function is undefined.
+   */
+  [[nodiscard]] constexpr auto getNorm() const noexcept -> Quat<Type> {
+    auto mag = getMag();
+    assert(mag > std::numeric_limits<Type>::epsilon());
+    return *this / mag;
+  }
+
+  /* Scale the quaternion so that the magnitude is 1.
+   * Note: If magnitude is 0 then the behaviour of this function is undefined.
+   */
+  constexpr auto norm() noexcept {
+    auto mag = getMag();
+    assert(mag > std::numeric_limits<Type>::epsilon());
+    for (auto i = 0U; i != Size; ++i) {
+      m_comps[i] /= mag;
+    }
   }
 
 private:
