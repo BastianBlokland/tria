@@ -40,12 +40,20 @@ TEST_CASE("[asset] - Shader SpirV", "[asset]") {
     });
   }
 
-  SECTION("Loading malformed spir-v shader throws") {
+  SECTION("Spir-v entry-point name is read") {
     withTempDir([](const fs::path& dir) {
-      writeFile(dir / "test.spv", "Hello world");
+      writeFile(
+          dir / "test.spv",
+          math::base64Decode(
+              "AwIjBwAAAQAIAA0ADAAAAAAAAAARAAIAAQAAAAsABgABAAAAR0xTTC5zdGQuNDUwAAAAAA4AAwAAAAAAAQAA"
+              "AA8ABgAEAAAABAAAAG1haW4AAAAACQAAABAAAwAEAAAABwAAAEcABAAJAAAAHgAAAAAAAAATAAIAAgAAACEA"
+              "AwADAAAAAgAAABYAAwAGAAAAIAAAABcABAAHAAAABgAAAAQAAAAgAAQACAAAAAMAAAAHAAAAOwAEAAgAAAAJ"
+              "AAAAAwAAACsABAAGAAAACgAAAAAAgD8sAAcABwAAAAsAAAAKAAAACgAAAAoAAAAKAAAANgAFAAIAAAAEAAAA"
+              "AAAAAAMAAAD4AAIABQAAAD4AAwAJAAAACwAAAP0AAQA4AAEA"));
 
       auto db = Database{nullptr, dir};
-      CHECK_THROWS_AS(db.get("test.spv"), err::ShaderSpvErr);
+      REQUIRE(db.get("test.spv")->getKind() == AssetKind::Shader);
+      CHECK(db.get("test.spv")->downcast<Shader>()->getEntryPointName() == "main");
     });
   }
 
@@ -61,6 +69,15 @@ TEST_CASE("[asset] - Shader SpirV", "[asset]") {
       auto* shader = db.get("test.spv")->downcast<Shader>();
       REQUIRE(shader->getSize() == rawContent.size());
       CHECK(std::memcmp(shader->getBegin(), rawContent.begin(), rawContent.size()) == 0);
+    });
+  }
+
+  SECTION("Loading malformed spir-v shader throws") {
+    withTempDir([](const fs::path& dir) {
+      writeFile(dir / "test.spv", "Hello world");
+
+      auto db = Database{nullptr, dir};
+      CHECK_THROWS_AS(db.get("test.spv"), err::ShaderSpvErr);
     });
   }
 }

@@ -64,27 +64,49 @@ struct SpvId {};
 
 struct SpvProgram {
   SpvExecutionModel execModel = SpvExecutionModelMax;
+  std::string entryPointName;
   std::vector<SpvId> ids;
 };
+
+auto readStringLiteral(const uint32_t* data, size_t maxWordSize) {
+  std::string result;
+  const auto* strData    = reinterpret_cast<const uint8_t*>(data);
+  const auto* strDataEnd = strData + maxWordSize * 4U;
+  for (; strData != strDataEnd; ++strData) {
+    if (*strData == '\0') {
+      const auto wordSize = (result.size() + 1U + 4U) / 4U; // +1 for null-term and +3 to round up.
+      return std::make_pair(result, wordSize);
+    }
+    result += *strData;
+  }
+  throw err::ShaderSpvErr{"Unterminated string literal"};
+}
 
 auto readProgram(Reader& reader, uint32_t maxId) -> SpvProgram {
   auto program = SpvProgram{};
   program.ids  = std::vector<SpvId>(maxId);
   while (reader.getRemainingCount() > 0) {
     const auto* instrBase       = reader.getCur();
-    const auto [opcode, opsize] = decodeInstructionHeader(instrBase[0]);
-    if (opsize == 0) {
+    const auto [opCode, opSize] = decodeInstructionHeader(instrBase[0]);
+    if (opCode == 0) {
       throw err::ShaderSpvErr{"Unexpected end of file"};
     }
-    reader.assertRemainingSize(opsize);
+    reader.assertRemainingSize(opSize);
 
-    switch (opcode) {
+    switch (opCode) {
     case SpvOpEntryPoint:
+      if (!program.entryPointName.empty()) {
+        throw err::ShaderSpvErr{"Multiple entrypoints are not supported"};
+      }
       reader.assertRemainingSize(2); // 1 for header + 1 for mode.
       program.execModel = static_cast<SpvExecutionModel>(instrBase[1]);
+      // const auto entryPointId = instrBase[2];
+      const auto [epName, epNameSize] =
+          readStringLiteral(instrBase + 3U, static_cast<size_t>(opSize - 3U));
+      program.entryPointName = epName;
       break;
     }
-    reader.skip(opsize);
+    reader.skip(opSize);
   }
   return program;
 }
@@ -124,10 +146,11 @@ auto loadShaderSpv(log::Logger* /*unused*/, DatabaseImpl* /*unused*/, AssetId id
   reader.skip(1); // Reserved.
 
   // Read the program.
-  const auto program    = readProgram(reader, maxId);
+  auto program          = readProgram(reader, maxId);
   const auto shaderKind = getShaderKind(program.execModel);
 
-  return std::make_unique<Shader>(std::move(id), shaderKind, std::move(raw));
+  return std::make_unique<Shader>(
+      std::move(id), shaderKind, std::move(program.entryPointName), std::move(raw));
 }
 
 } // namespace tria::asset::internal

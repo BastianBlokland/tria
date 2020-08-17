@@ -46,15 +46,15 @@ namespace {
 
   VkPipelineShaderStageCreateInfo vertShaderStageInfo = {};
   vertShaderStageInfo.sType  = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-  vertShaderStageInfo.stage  = VK_SHADER_STAGE_VERTEX_BIT;
+  vertShaderStageInfo.stage  = vertShader->getVkStage();
   vertShaderStageInfo.module = vertShader->getVkModule();
-  vertShaderStageInfo.pName  = "main";
+  vertShaderStageInfo.pName  = vertShader->getEntryPointName().data();
 
   VkPipelineShaderStageCreateInfo fragShaderStageInfo = {};
   fragShaderStageInfo.sType  = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-  fragShaderStageInfo.stage  = VK_SHADER_STAGE_FRAGMENT_BIT;
+  fragShaderStageInfo.stage  = fragShader->getVkStage();
   fragShaderStageInfo.module = fragShader->getVkModule();
-  fragShaderStageInfo.pName  = "main";
+  fragShaderStageInfo.pName  = fragShader->getEntryPointName().data();
 
   std::array<VkPipelineShaderStageCreateInfo, 2> shaderStages = {
       vertShaderStageInfo,
