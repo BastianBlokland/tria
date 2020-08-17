@@ -69,21 +69,17 @@ class Graphic final : public Asset {
 public:
   Graphic(
       AssetId id,
-      const Shader* vertShader,
-      const Shader* fragShader,
+      std::vector<const Shader*> shaders,
       const Mesh* mesh,
       std::vector<TextureSampler> samplers,
       BlendMode blendMode,
       DepthTestMode depthTestMode) :
       Asset{std::move(id), getKind()},
-      m_vertShader{vertShader},
-      m_fragShader{fragShader},
+      m_shaders{std::move(shaders)},
       m_mesh{mesh},
       m_samplers{std::move(samplers)},
       m_blendMode{blendMode},
       m_depthTestMode{depthTestMode} {
-    assert(m_vertShader);
-    assert(m_fragShader);
     assert(m_mesh);
   }
   Graphic(const Graphic& rhs) = delete;
@@ -95,8 +91,14 @@ public:
 
   [[nodiscard]] constexpr static auto getKind() -> AssetKind { return AssetKind::Graphic; }
 
-  [[nodiscard]] auto getVertShader() const noexcept { return m_vertShader; }
-  [[nodiscard]] auto getFragShader() const noexcept { return m_fragShader; }
+  [[nodiscard]] auto getShaderCount() const noexcept { return m_shaders.size(); }
+  [[nodiscard]] auto getShadersBegin() const noexcept -> const Shader* const* {
+    return m_shaders.data();
+  }
+  [[nodiscard]] auto getShadersEnd() const noexcept -> const Shader* const* {
+    return m_shaders.data() + m_shaders.size();
+  }
+
   [[nodiscard]] auto getMesh() const noexcept { return m_mesh; }
 
   [[nodiscard]] auto getSamplerCount() const noexcept { return m_samplers.size(); }
@@ -111,8 +113,7 @@ public:
   [[nodiscard]] auto getDepthTestMode() const noexcept { return m_depthTestMode; }
 
 private:
-  const Shader* m_vertShader;
-  const Shader* m_fragShader;
+  std::vector<const Shader*> m_shaders;
   const Mesh* m_mesh;
   std::vector<TextureSampler> m_samplers;
   BlendMode m_blendMode;

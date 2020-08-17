@@ -36,30 +36,20 @@ namespace {
     VkDevice vkDevice,
     VkRenderPass vkRenderPass,
     VkPipelineLayout layout,
-    const Shader* vertShader,
-    const Shader* fragShader,
+    const std::vector<const Shader*>& shaders,
     asset::BlendMode blendMode,
     asset::DepthTestMode depthTestMode) {
 
-  assert(vertShader);
-  assert(fragShader);
-
-  VkPipelineShaderStageCreateInfo vertShaderStageInfo = {};
-  vertShaderStageInfo.sType  = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-  vertShaderStageInfo.stage  = vertShader->getVkStage();
-  vertShaderStageInfo.module = vertShader->getVkModule();
-  vertShaderStageInfo.pName  = vertShader->getEntryPointName().data();
-
-  VkPipelineShaderStageCreateInfo fragShaderStageInfo = {};
-  fragShaderStageInfo.sType  = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-  fragShaderStageInfo.stage  = fragShader->getVkStage();
-  fragShaderStageInfo.module = fragShader->getVkModule();
-  fragShaderStageInfo.pName  = fragShader->getEntryPointName().data();
-
-  std::array<VkPipelineShaderStageCreateInfo, 2> shaderStages = {
-      vertShaderStageInfo,
-      fragShaderStageInfo,
-  };
+  auto shaderStages = std::vector<VkPipelineShaderStageCreateInfo>();
+  shaderStages.reserve(shaders.size());
+  for (const auto* shader : shaders) {
+    VkPipelineShaderStageCreateInfo stageInfo = {};
+    stageInfo.sType                           = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+    stageInfo.stage                           = shader->getVkStage();
+    stageInfo.module                          = shader->getVkModule();
+    stageInfo.pName                           = shader->getEntryPointName().data();
+    shaderStages.push_back(stageInfo);
+  }
 
   VkPipelineVertexInputStateCreateInfo vertexInputInfo = {};
   vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
@@ -198,9 +188,10 @@ Graphic::Graphic(
   assert(m_device);
   assert(m_asset);
 
-  m_vertShader = shaders->get(m_asset->getVertShader());
-  m_fragShader = shaders->get(m_asset->getFragShader());
-  m_mesh       = meshes->get(m_asset->getMesh());
+  for (auto* shdItr = asset->getShadersBegin(); shdItr != asset->getShadersEnd(); ++shdItr) {
+    m_shaders.push_back(shaders->get(*shdItr));
+  }
+  m_mesh = meshes->get(m_asset->getMesh());
 
   // Create a descriptor for the per graphic resources.
   m_descSet = device->getDescManager().allocate(
@@ -249,8 +240,7 @@ auto Graphic::prepareResources(
         m_device->getVkDevice(),
         vkRenderPass,
         m_vkPipelineLayout,
-        m_vertShader,
-        m_fragShader,
+        m_shaders,
         m_asset->getBlendMode(),
         m_asset->getDepthTestMode());
 

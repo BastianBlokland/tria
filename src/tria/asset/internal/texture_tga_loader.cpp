@@ -287,10 +287,8 @@ auto loadTextureTga(
     throw err::TextureTgaErr{"Malformed tga size, needs to be bigger then 0"};
   }
 
-  const auto pixelCount = static_cast<uint32_t>(size.x()) * size.y();
-
   auto pixels = readTgaPixels(reader, size, hasAlpha, isRle, origin);
-  assert(pixels.size() == pixelCount);
+  assert(pixels.size() == static_cast<uint32_t>(size.x()) * size.y());
 
   return std::make_unique<Texture>(std::move(id), size, std::move(pixels));
 }

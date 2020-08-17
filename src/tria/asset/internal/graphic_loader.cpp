@@ -1,6 +1,7 @@
 #include "json.hpp"
 #include "loader.hpp"
 #include "tria/asset/err/graphic_err.hpp"
+#include "tria/asset/err/json_err.hpp"
 #include "tria/asset/graphic.hpp"
 #include <optional>
 #include <string_view>
@@ -60,27 +61,31 @@ auto loadGraphic(log::Logger* /*unused*/, DatabaseImpl* db, AssetId id, math::Ra
   simdjson::dom::object obj;
   auto err = parseJson(raw).get(obj);
   if (err) {
-    throw err::GraphicErr{error_message(err)};
+    throw err::JsonErr{error_message(err)};
   }
 
-  // Vertex shader.
-  std::string_view vertShaderId;
-  if (obj.at("vertShader").get(vertShaderId)) {
-    throw err::GraphicErr{"No 'vertShader' field found on graphic"};
+  // Shaders.
+  auto shaders = std::vector<const Shader*>{};
+  simdjson::dom::array shadersArray;
+  if (!obj.at("shaders").get(shadersArray)) {
+    for (const auto& elem : shadersArray) {
+      std::string_view shaderId;
+      if (elem.get(shaderId)) {
+        throw err::GraphicErr{"Invalid shader reference"};
+      }
+      shaders.push_back(db->get(AssetId{shaderId})->downcast<Shader>());
+    }
   }
-  auto* vertShader = db->get(AssetId{vertShaderId})->downcast<Shader>();
-  if (vertShader->getShaderKind() != ShaderKind::SpvVertex) {
-    throw err::GraphicErr{"Invalid vertex shader"};
+  // Require exactly one vertex and one fragment shader at the moment.
+  if (std::count_if(shaders.begin(), shaders.end(), [](const auto* shader) {
+        return shader->getShaderKind() == ShaderKind::SpvVertex;
+      }) != 1U) {
+    throw err::GraphicErr{"Incorrect vertex shader count, expected 1"};
   }
-
-  // Fragment shader.
-  std::string_view fragShaderId;
-  if (obj.at("fragShader").get(fragShaderId)) {
-    throw err::GraphicErr{"No 'fragShader' field found on graphic"};
-  }
-  auto* fragShader = db->get(AssetId{fragShaderId})->downcast<Shader>();
-  if (fragShader->getShaderKind() != ShaderKind::SpvFragment) {
-    throw err::GraphicErr{"Invalid fragment shader"};
+  if (std::count_if(shaders.begin(), shaders.end(), [](const auto* shader) {
+        return shader->getShaderKind() == ShaderKind::SpvFragment;
+      }) != 1U) {
+    throw err::GraphicErr{"Incorrect fragment shader count, expected 1"};
   }
 
   // Mesh.
@@ -153,7 +158,7 @@ auto loadGraphic(log::Logger* /*unused*/, DatabaseImpl* db, AssetId id, math::Ra
   }
 
   return std::make_unique<Graphic>(
-      std::move(id), vertShader, fragShader, mesh, std::move(samplers), blendMode, depthTestMode);
+      std::move(id), std::move(shaders), mesh, std::move(samplers), blendMode, depthTestMode);
 }
 
 } // namespace tria::asset::internal

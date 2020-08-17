@@ -1,6 +1,8 @@
 {
-  "vertShader": "shaders/obj.vert.spv",
-  "fragShader": "shaders/obj_nrm.frag.spv",
+  "shaders": [
+    "shaders/obj.vert.spv",
+    "shaders/obj_nrm.frag.spv"
+  ],
   "mesh": "assets/bunny.obj",
   "samplers": [
     {

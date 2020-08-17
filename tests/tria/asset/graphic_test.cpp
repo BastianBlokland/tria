@@ -1,6 +1,7 @@
 #include "catch2/catch.hpp"
 #include "tria/asset/database.hpp"
 #include "tria/asset/err/graphic_err.hpp"
+#include "tria/asset/err/json_err.hpp"
 #include "tria/asset/graphic.hpp"
 #include "tria/math/base64.hpp"
 #include "utils.hpp"
@@ -38,8 +39,7 @@ TEST_CASE("[asset] - Graphic", "[asset]") {
       writeFile(
           dir / "test.gfx",
           "{"
-          "\"vertShader\": \"test.vert.spv\","
-          "\"fragShader\": \"test.frag.spv\","
+          "\"shaders\": [\"test.vert.spv\", \"test.frag.spv\"],"
           "\"mesh\": \"test.obj\","
           "\"blend\": \"alpha\","
           "\"depthTest\": \"less\""
@@ -47,8 +47,9 @@ TEST_CASE("[asset] - Graphic", "[asset]") {
 
       auto db   = Database{nullptr, dir};
       auto* gfx = db.get("test.gfx")->downcast<Graphic>();
-      CHECK(gfx->getVertShader()->getShaderKind() == ShaderKind::SpvVertex);
-      CHECK(gfx->getFragShader()->getShaderKind() == ShaderKind::SpvFragment);
+      REQUIRE(gfx->getShaderCount() == 2);
+      CHECK(gfx->getShadersBegin()[0]->getShaderKind() == ShaderKind::SpvVertex);
+      CHECK(gfx->getShadersBegin()[1]->getShaderKind() == ShaderKind::SpvFragment);
       CHECK(gfx->getMesh()->getKind() == AssetKind::Mesh);
       CHECK(gfx->getBlendMode() == BlendMode::Alpha);
       CHECK(gfx->getDepthTestMode() == DepthTestMode::Less);
@@ -64,8 +65,7 @@ TEST_CASE("[asset] - Graphic", "[asset]") {
       writeFile(
           dir / "test.gfx",
           "{"
-          "\"vertShader\": \"test.vert.spv\","
-          "\"fragShader\": \"test.frag.spv\","
+          "\"shaders\": [\"test.vert.spv\", \"test.frag.spv\"],"
           "\"mesh\": \"test.obj\","
           "\"samplers\": [{ \"texture\": \"test.ppm\", \"filter\": \"nearest\", \"anisotropy\": "
           "\"x4\"}]"
@@ -73,9 +73,6 @@ TEST_CASE("[asset] - Graphic", "[asset]") {
 
       auto db   = Database{nullptr, dir};
       auto* gfx = db.get("test.gfx")->downcast<Graphic>();
-      CHECK(gfx->getVertShader()->getShaderKind() == ShaderKind::SpvVertex);
-      CHECK(gfx->getFragShader()->getShaderKind() == ShaderKind::SpvFragment);
-      CHECK(gfx->getMesh()->getKind() == AssetKind::Mesh);
       REQUIRE(gfx->getSamplerCount() == 1);
       CHECK(*gfx->getSamplerBegin()->getTexture()->getPixelBegin() == Pixel{1, 42, 137, 255});
       CHECK(gfx->getSamplerBegin()->getFilterMode() == FilterMode::Nearest);
@@ -88,11 +85,10 @@ TEST_CASE("[asset] - Graphic", "[asset]") {
       writeFile(
           dir / "test.gfx",
           "{"
-          "\"vertShader\": \"test.vert.spv\","
-          "\"fragShader\": \"test.frag.spv\"");
+          "\"shaders\": [\"test.vert.spv\",\"test.frag.spv\"]");
 
       auto db = Database{nullptr, dir};
-      CHECK_THROWS_AS(db.get("test.gfx"), err::GraphicErr);
+      CHECK_THROWS_AS(db.get("test.gfx"), err::JsonErr);
     });
   }
 
@@ -103,7 +99,7 @@ TEST_CASE("[asset] - Graphic", "[asset]") {
       writeFile(
           dir / "test.gfx",
           "{"
-          "\"fragShader\": \"test.frag.spv\","
+          "\"shaders\": [\"test.frag.spv\"],"
           "\"mesh\": \"test.obj\""
           "}");
 
@@ -119,7 +115,7 @@ TEST_CASE("[asset] - Graphic", "[asset]") {
       writeFile(
           dir / "test.gfx",
           "{"
-          "\"vertShader\": \"test.vert.spv\","
+          "\"shaders\": [\"test.vert.spv\"],"
           "\"mesh\": \"test.obj\""
           "}");
 
@@ -135,8 +131,7 @@ TEST_CASE("[asset] - Graphic", "[asset]") {
       writeFile(
           dir / "test.gfx",
           "{"
-          "\"vertShader\": \"test.vert.spv\","
-          "\"fragShader\": \"test.frag.spv\""
+          "\"shaders\": [\"test.vert.spv\",\"test.frag.spv\"]"
           "}");
 
       auto db = Database{nullptr, dir};
@@ -151,8 +146,7 @@ TEST_CASE("[asset] - Graphic", "[asset]") {
       writeFile(
           dir / "test.gfx",
           "{"
-          "\"vertShader\": \"test.frag.spv\","
-          "\"fragShader\": \"test.frag.spv\","
+          "\"shaders\": [\"test.frag.spv\", \"test.frag.spv\"],"
           "\"mesh\": \"test.obj\""
           "}");
 
@@ -168,8 +162,7 @@ TEST_CASE("[asset] - Graphic", "[asset]") {
       writeFile(
           dir / "test.gfx",
           "{"
-          "\"vertShader\": \"test.vert.spv\","
-          "\"fragShader\": \"test.vert.spv\","
+          "\"shaders\": [\"test.vert.spv\", \"test.vert.spv\"],"
           "\"mesh\": \"test.obj\""
           "}");
 

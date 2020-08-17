@@ -1,6 +1,8 @@
 {
-  "vertShader": "shaders/sky.vert.spv",
-  "fragShader": "shaders/sky.frag.spv",
+  "shaders": [
+    "shaders/sky.vert.spv",
+    "shaders/sky.frag.spv"
+  ],
   "mesh": "models/quad.obj",
   "blend": "none",
   "depthTest": "always"

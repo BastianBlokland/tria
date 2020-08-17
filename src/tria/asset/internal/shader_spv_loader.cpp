@@ -101,9 +101,8 @@ auto readProgram(Reader& reader, uint32_t maxId) -> SpvProgram {
       reader.assertRemainingSize(2); // 1 for header + 1 for mode.
       program.execModel = static_cast<SpvExecutionModel>(instrBase[1]);
       // const auto entryPointId = instrBase[2];
-      const auto [epName, epNameSize] =
-          readStringLiteral(instrBase + 3U, static_cast<size_t>(opSize - 3U));
-      program.entryPointName = epName;
+      program.entryPointName =
+          readStringLiteral(instrBase + 3U, static_cast<size_t>(opSize - 3U)).first;
       break;
     }
     reader.skip(opSize);
