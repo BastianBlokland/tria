@@ -1,5 +1,5 @@
 #include "loader.hpp"
-#include "tria/asset/err/asset_load_err.hpp"
+#include "tria/asset/err/shader_spv_err.hpp"
 #include "tria/asset/shader.hpp"
 #include <utility>
 
@@ -43,7 +43,7 @@ public:
 
   auto assertRemainingSize(size_t size) {
     if (getRemainingCount() < size) {
-      throw err::AssetLoadErr{"", "Malformed spir-v"};
+      throw err::ShaderSpvErr{"Unexpected end of file"};
     }
   }
 
@@ -74,7 +74,7 @@ auto readProgram(Reader& reader, uint32_t maxId) -> SpvProgram {
     const auto* instrBase       = reader.getCur();
     const auto [opcode, opsize] = decodeInstructionHeader(instrBase[0]);
     if (opsize == 0) {
-      throw err::AssetLoadErr{"", "Malformed spir-v"};
+      throw err::ShaderSpvErr{"Unexpected end of file"};
     }
     reader.assertRemainingSize(opsize);
 
@@ -96,23 +96,19 @@ auto readProgram(Reader& reader, uint32_t maxId) -> SpvProgram {
   case SpvExecutionModelFragment:
     return ShaderKind::SpvFragment;
   default:
-    throw err::AssetLoadErr{"", "Unsupported shader kind"};
+    throw err::ShaderSpvErr{"Unsupported execution model (shader kind)"};
   }
 }
 
 } // namespace
 
-auto loadShaderSpv(
-    log::Logger* /*unused*/,
-    DatabaseImpl* /*unused*/,
-    AssetId id,
-    const fs::path& path,
-    math::RawData raw) -> AssetUnique {
+auto loadShaderSpv(log::Logger* /*unused*/, DatabaseImpl* /*unused*/, AssetId id, math::RawData raw)
+    -> AssetUnique {
 
   // SpirV consists of 32 bit words so we interpret the file as a set of 32 bit words.
   // TODO(bastian): Consider endianness differences.
   if (raw.size() % 4 != 0) {
-    throw err::AssetLoadErr{path, "Malformed spir-v"};
+    throw err::ShaderSpvErr{"Malformed spir-v"};
   }
   const auto* begin = reinterpret_cast<const uint32_t*>(raw.data());
   auto reader       = Reader{begin, begin + raw.size() / 4U};
@@ -120,7 +116,7 @@ auto loadShaderSpv(
   // Read the header.
   reader.assertRemainingSize(5); // Space needed for the header.
   if (reader.read() != SpvMagicNumber) {
-    throw err::AssetLoadErr{path, "Malformed spir-v"};
+    throw err::ShaderSpvErr{"Malformed spir-v"};
   }
   decodeVersion(reader.read());
   reader.skip(1); // Generators magic number.

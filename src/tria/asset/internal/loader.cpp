@@ -5,16 +5,16 @@ namespace tria::asset::internal {
 
 using RawData = math::RawData;
 
-auto loadGraphic(log::Logger*, DatabaseImpl*, AssetId, const fs::path&, RawData) -> AssetUnique;
-auto loadMeshObj(log::Logger*, DatabaseImpl*, AssetId, const fs::path&, RawData) -> AssetUnique;
-auto loadTexturePpm(log::Logger*, DatabaseImpl*, AssetId, const fs::path&, RawData) -> AssetUnique;
-auto loadTextureTga(log::Logger*, DatabaseImpl*, AssetId, const fs::path&, RawData) -> AssetUnique;
-auto loadShaderSpv(log::Logger*, DatabaseImpl*, AssetId, const fs::path&, RawData) -> AssetUnique;
-auto loadRawAsset(log::Logger*, DatabaseImpl*, AssetId, const fs::path&, RawData) -> AssetUnique;
+auto loadGraphic(log::Logger*, DatabaseImpl*, AssetId, RawData) -> AssetUnique;
+auto loadMeshObj(log::Logger*, DatabaseImpl*, AssetId, RawData) -> AssetUnique;
+auto loadTexturePpm(log::Logger*, DatabaseImpl*, AssetId, RawData) -> AssetUnique;
+auto loadTextureTga(log::Logger*, DatabaseImpl*, AssetId, RawData) -> AssetUnique;
+auto loadShaderSpv(log::Logger*, DatabaseImpl*, AssetId, RawData) -> AssetUnique;
+auto loadRawAsset(log::Logger*, DatabaseImpl*, AssetId, RawData) -> AssetUnique;
 
 namespace {
 
-using AssetLoader = AssetUnique (*)(log::Logger*, DatabaseImpl*, AssetId, const fs::path&, RawData);
+using AssetLoader = AssetUnique (*)(log::Logger*, DatabaseImpl*, AssetId, RawData);
 
 auto getLoader(const fs::path& path) -> AssetLoader {
   static const std::unordered_map<std::string, AssetLoader> table = {
@@ -37,7 +37,7 @@ auto getLoader(const fs::path& path) -> AssetLoader {
 auto loadAsset(log::Logger* logger, DatabaseImpl* db, AssetId id, const fs::path& path, RawData raw)
     -> AssetUnique {
   assert(db);
-  return getLoader(path)(logger, db, std::move(id), path, std::move(raw));
+  return getLoader(path)(logger, db, std::move(id), std::move(raw));
 }
 
 } // namespace tria::asset::internal

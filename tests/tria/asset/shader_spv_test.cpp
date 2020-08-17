@@ -1,6 +1,6 @@
 #include "catch2/catch.hpp"
 #include "tria/asset/database.hpp"
-#include "tria/asset/err/asset_load_err.hpp"
+#include "tria/asset/err/shader_spv_err.hpp"
 #include "tria/asset/shader.hpp"
 #include "tria/math/base64.hpp"
 #include "utils.hpp"
@@ -45,7 +45,7 @@ TEST_CASE("[asset] - Shader SpirV", "[asset]") {
       writeFile(dir / "test.spv", "Hello world");
 
       auto db = Database{nullptr, dir};
-      CHECK_THROWS_AS(db.get("test.spv"), err::AssetLoadErr);
+      CHECK_THROWS_AS(db.get("test.spv"), err::ShaderSpvErr);
     });
   }
 

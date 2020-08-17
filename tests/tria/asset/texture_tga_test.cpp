@@ -1,6 +1,6 @@
 #include "catch2/catch.hpp"
 #include "tria/asset/database.hpp"
-#include "tria/asset/err/asset_load_err.hpp"
+#include "tria/asset/err/texture_tga_err.hpp"
 #include "tria/asset/texture.hpp"
 #include "tria/math/base64.hpp"
 #include "utils.hpp"
@@ -193,7 +193,7 @@ TEST_CASE("[asset] - Texture Truevision TGA", "[asset]") {
       writeFile(dir / "test.tga", math::base64Decode("AAACAAAAAAAAAAAAAgACACAI/wAAk/////8AAP//"));
 
       auto db = Database{nullptr, dir};
-      CHECK_THROWS_AS(db.get("test.tga"), err::AssetLoadErr);
+      CHECK_THROWS_AS(db.get("test.tga"), err::TextureTgaErr);
     });
   }
 
@@ -203,7 +203,7 @@ TEST_CASE("[asset] - Texture Truevision TGA", "[asset]") {
           dir / "test.tga", math::base64Decode("AAAKAAAAAAAAAAAABAAEACAIA/////////+oAAAATEUuAA=="));
 
       auto db = Database{nullptr, dir};
-      CHECK_THROWS_AS(db.get("test.tga"), err::AssetLoadErr);
+      CHECK_THROWS_AS(db.get("test.tga"), err::TextureTgaErr);
     });
   }
 }

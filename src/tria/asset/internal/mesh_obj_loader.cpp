@@ -1,7 +1,6 @@
 #include "loader.hpp"
 #include "mesh_builder.hpp"
 #include "tiny_obj_loader.h"
-#include "tria/asset/err/asset_load_err.hpp"
 #include "tria/asset/mesh.hpp"
 #include "tria/math/vec.hpp"
 #include <istream>
@@ -31,12 +30,8 @@ public:
 
 } // namespace
 
-auto loadMeshObj(
-    log::Logger* logger,
-    DatabaseImpl* /*unused*/,
-    AssetId id,
-    const fs::path& path,
-    math::RawData raw) -> AssetUnique {
+auto loadMeshObj(log::Logger* logger, DatabaseImpl* /*unused*/, AssetId id, math::RawData raw)
+    -> AssetUnique {
 
   auto input     = IMemStream{raw.begin(), raw.size()};
   auto attrib    = tinyobj::attrib_t{};
@@ -45,15 +40,15 @@ auto loadMeshObj(
   auto warn      = std::string{};
   auto err       = std::string{};
   if (!tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err, &input)) {
-    throw err::AssetLoadErr{path, err};
+    throw err::MeshErr{err};
   }
 
   if (!warn.empty()) {
-    LOG_W(logger, "Obj import warning", {"message", warn}, {"id", id}, {"path", path.string()});
+    LOG_W(logger, "Obj import warning", {"message", warn}, {"id", id});
   }
 
   if (shapes.empty()) {
-    throw err::AssetLoadErr{path, "No shape found in obj"};
+    throw err::MeshErr{"No shape found in obj"};
   }
 
   auto vertices    = math::PodVector<Vertex>{};
@@ -62,20 +57,17 @@ auto loadMeshObj(
 
   for (const auto& shape : shapes) {
     for (const auto& index : shape.mesh.indices) {
-      auto pos = math::Vec3f{
-          attrib.vertices[index.vertex_index * 3 + 0],
-          attrib.vertices[index.vertex_index * 3 + 1],
-          attrib.vertices[index.vertex_index * 3 + 2]};
+      auto pos = math::Vec3f{attrib.vertices[index.vertex_index * 3 + 0],
+                             attrib.vertices[index.vertex_index * 3 + 1],
+                             attrib.vertices[index.vertex_index * 3 + 2]};
       auto nrm = index.normal_index < 0 ? math::Vec3f{0.f, 0.f, 1.f}
-                                        : math::Vec3f{
-                                              attrib.normals[index.normal_index * 3 + 0],
-                                              attrib.normals[index.normal_index * 3 + 1],
-                                              attrib.normals[index.normal_index * 3 + 2]};
+                                        : math::Vec3f{attrib.normals[index.normal_index * 3 + 0],
+                                                      attrib.normals[index.normal_index * 3 + 1],
+                                                      attrib.normals[index.normal_index * 3 + 2]};
       auto texcoord = index.texcoord_index < 0
           ? math::Vec2f{}
-          : math::Vec2f{
-                attrib.texcoords[index.texcoord_index * 2 + 0],
-                1.0f - attrib.texcoords[index.texcoord_index * 2 + 1]};
+          : math::Vec2f{attrib.texcoords[index.texcoord_index * 2 + 0],
+                        1.0f - attrib.texcoords[index.texcoord_index * 2 + 1]};
       meshBuilder.pushVertex(Vertex{pos, nrm, texcoord});
     }
   }

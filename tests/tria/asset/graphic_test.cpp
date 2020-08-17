@@ -1,6 +1,6 @@
 #include "catch2/catch.hpp"
 #include "tria/asset/database.hpp"
-#include "tria/asset/err/asset_load_err.hpp"
+#include "tria/asset/err/graphic_err.hpp"
 #include "tria/asset/graphic.hpp"
 #include "tria/math/base64.hpp"
 #include "utils.hpp"
@@ -92,7 +92,7 @@ TEST_CASE("[asset] - Graphic", "[asset]") {
           "\"fragShader\": \"test.frag.spv\"");
 
       auto db = Database{nullptr, dir};
-      CHECK_THROWS_AS(db.get("test.gfx"), err::AssetLoadErr);
+      CHECK_THROWS_AS(db.get("test.gfx"), err::GraphicErr);
     });
   }
 
@@ -108,7 +108,7 @@ TEST_CASE("[asset] - Graphic", "[asset]") {
           "}");
 
       auto db = Database{nullptr, dir};
-      CHECK_THROWS_AS(db.get("test.gfx"), err::AssetLoadErr);
+      CHECK_THROWS_AS(db.get("test.gfx"), err::GraphicErr);
     });
   }
 
@@ -124,7 +124,7 @@ TEST_CASE("[asset] - Graphic", "[asset]") {
           "}");
 
       auto db = Database{nullptr, dir};
-      CHECK_THROWS_AS(db.get("test.gfx"), err::AssetLoadErr);
+      CHECK_THROWS_AS(db.get("test.gfx"), err::GraphicErr);
     });
   }
 
@@ -140,7 +140,7 @@ TEST_CASE("[asset] - Graphic", "[asset]") {
           "}");
 
       auto db = Database{nullptr, dir};
-      CHECK_THROWS_AS(db.get("test.gfx"), err::AssetLoadErr);
+      CHECK_THROWS_AS(db.get("test.gfx"), err::GraphicErr);
     });
   }
 
@@ -157,7 +157,7 @@ TEST_CASE("[asset] - Graphic", "[asset]") {
           "}");
 
       auto db = Database{nullptr, dir};
-      CHECK_THROWS_AS(db.get("test.gfx"), err::AssetLoadErr);
+      CHECK_THROWS_AS(db.get("test.gfx"), err::GraphicErr);
     });
   }
 
@@ -174,7 +174,7 @@ TEST_CASE("[asset] - Graphic", "[asset]") {
           "}");
 
       auto db = Database{nullptr, dir};
-      CHECK_THROWS_AS(db.get("test.gfx"), err::AssetLoadErr);
+      CHECK_THROWS_AS(db.get("test.gfx"), err::GraphicErr);
     });
   }
 }
