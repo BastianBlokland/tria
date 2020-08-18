@@ -193,12 +193,18 @@ Graphic::Graphic(
   }
   m_mesh = meshes->get(m_asset->getMesh());
 
+  auto bindings = DescriptorBindings{};
+  bindings.emplace_back(0U, DescriptorBindingKind::StorageBuffer); // Vertex data.
+  for (auto i = 0U; i != asset->getSamplerCount(); ++i) {
+    bindings.emplace_back(1U + i, DescriptorBindingKind::CombinedImageSampler);
+  }
+
   // Create a descriptor for the per graphic resources.
-  m_descSet = device->getDescManager().allocate(
-      DescriptorInfo{1U, 0U, static_cast<uint32_t>(asset->getSamplerCount())});
+  m_descSet = device->getDescManager().allocate(bindings);
 
   auto dstBinding = 0U;
-  m_descSet.attachStorageBuffer(dstBinding++, m_mesh->getVertexBuffer());
+  m_descSet.attachBuffer(
+      dstBinding++, m_mesh->getVertexBuffer(), m_mesh->getVertexBuffer().getSize());
 
   // Create the texture resources and bind them to our descriptor.
   m_textures.reserve(m_asset->getSamplerCount());

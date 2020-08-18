@@ -1,6 +1,7 @@
 #include "loader.hpp"
 #include "tria/asset/err/shader_spv_err.hpp"
 #include "tria/asset/shader.hpp"
+#include <array>
 #include <utility>
 
 // The spriv.h header can unfortunately exist in a few places depending on the vulkan sdk version.

@@ -3,6 +3,7 @@
 #include <array>
 #include <forward_list>
 #include <optional>
+#include <utility>
 #include <vulkan/vulkan.h>
 
 namespace tria::gfx::internal {
@@ -16,57 +17,22 @@ class Sampler;
 class Buffer;
 class DescriptorGroup;
 
-/* Information about the types of descriptors in a DescriptorSet.
- * Note: The order of bindings in a descriptor set is fixed:
- * 1: StorageBuffer
- * 2: UniformBufferDynamic
- * 3: ImageSampler
- * Binding numbers are sequential starting from 0.
+/* Type of a binding.
  */
-class DescriptorInfo final {
-public:
-  DescriptorInfo() noexcept :
-      m_storageBufferCount{0}, m_uniformBufferDynamicCount{0}, m_imageCount{0} {}
-  DescriptorInfo(
-      unsigned int storageBufferCount,
-      unsigned int uniformBufferDynamicCount,
-      unsigned int imageCount) noexcept :
-      m_storageBufferCount{storageBufferCount},
-      m_uniformBufferDynamicCount{uniformBufferDynamicCount},
-      m_imageCount{imageCount} {}
-
-  [[nodiscard]] constexpr auto operator==(const DescriptorInfo& rhs) const noexcept -> bool {
-    return (
-        m_storageBufferCount == rhs.m_storageBufferCount &&
-        m_uniformBufferDynamicCount == rhs.m_uniformBufferDynamicCount &&
-        m_imageCount == rhs.m_imageCount);
-  }
-
-  [[nodiscard]] constexpr auto operator!=(const DescriptorInfo& rhs) const noexcept -> bool {
-    return !operator==(rhs);
-  }
-
-  [[nodiscard]] constexpr auto getStorageBufferCount() const noexcept {
-    return m_storageBufferCount;
-  }
-
-  [[nodiscard]] constexpr auto getUniformBufferDynamicCount() const noexcept {
-    return m_uniformBufferDynamicCount;
-  }
-
-  [[nodiscard]] constexpr auto getImageCount() const noexcept { return m_imageCount; }
-
-  /* Total amount of bindings.
-   */
-  [[nodiscard]] constexpr auto getBindingCount() const noexcept {
-    return m_storageBufferCount + m_uniformBufferDynamicCount + m_imageCount;
-  }
-
-private:
-  unsigned int m_storageBufferCount;
-  unsigned int m_uniformBufferDynamicCount;
-  unsigned int m_imageCount;
+enum class DescriptorBindingKind {
+  CombinedImageSampler = 1,
+  UniformBuffer        = 2,
+  UniformBufferDynamic = 3,
+  StorageBuffer        = 4,
 };
+
+/* Binding id + the kind of binding.
+ */
+using DescriptorBinding = std::pair<uint32_t, DescriptorBindingKind>;
+
+/* Set of bindings.
+ */
+using DescriptorBindings = std::vector<DescriptorBinding>;
 
 /* Handle to an allocated VkDescriptorSet.
  * Is automatically freed in the destructor.
@@ -92,21 +58,12 @@ public:
     return *this;
   }
 
-  /* Does this handle point to a VkDescriptorSet that has any binding points.
-   */
-  [[nodiscard]] auto hasBindingPoints() const noexcept { return m_group; }
-  [[nodiscard]] auto getInfo() const noexcept -> const DescriptorInfo&;
   [[nodiscard]] auto getVkLayout() const noexcept -> VkDescriptorSetLayout;
   [[nodiscard]] auto getVkDescSet() const noexcept -> VkDescriptorSet;
 
-  /* Attach a buffer to a storage-buffer binding slot.
+  /* Attach a buffer (uniform (dynamic), storage) to a storage-buffer binding slot.
    */
-  auto attachStorageBuffer(uint32_t binding, const Buffer& buffer) -> void;
-
-  /* Attach a buffer to a dynamic uniform-buffer binding slot.
-   * Size of the data is static but the offset into the buffer is given dynamically at bind-time.
-   */
-  auto attachUniformBufferDynamic(uint32_t binding, const Buffer& buffer, uint32_t size) -> void;
+  auto attachBuffer(uint32_t binding, const Buffer& buffer, uint32_t size) -> void;
 
   /* Attach an image and sampler to a combined-image-sampler binding slot.
    */
@@ -125,7 +82,8 @@ private:
 class DescriptorGroup final {
 public:
   DescriptorGroup() = delete;
-  DescriptorGroup(log::Logger* logger, const Device* device, DescriptorInfo info, uint32_t groupId);
+  DescriptorGroup(
+      log::Logger* logger, const Device* device, DescriptorBindings bindings, uint32_t groupId);
   DescriptorGroup(const DescriptorGroup& rhs) = delete;
   DescriptorGroup(DescriptorGroup&& rhs)      = delete;
   ~DescriptorGroup();
@@ -133,7 +91,19 @@ public:
   auto operator=(const DescriptorGroup& rhs) -> DescriptorGroup& = delete;
   auto operator=(DescriptorGroup&& rhs) -> DescriptorGroup& = delete;
 
-  [[nodiscard]] auto getInfo() const noexcept -> const DescriptorInfo& { return m_info; }
+  [[nodiscard]] auto getBindings() const noexcept -> const DescriptorBindings& {
+    return m_bindings;
+  }
+
+  [[nodiscard]] auto getBindingKind(uint32_t binding) -> std::optional<DescriptorBindingKind> {
+    for (const auto& b : m_bindings) {
+      if (b.first == binding) {
+        return b.second;
+      }
+    }
+    return std::nullopt;
+  }
+
   [[nodiscard]] auto getVkLayout() const noexcept -> VkDescriptorSetLayout { return m_vkLayout; }
 
   /* Lookup a VkDescriptorSet that has been allocated from this group.
@@ -147,14 +117,10 @@ public:
    */
   [[nodiscard]] auto allocate() noexcept -> std::optional<DescriptorSet>;
 
-  /* Attach a storage-buffer to an allocated DescriptorSet.
+  /* Attach a buffer to an allocated DescriptorSet.
    */
-  auto attachStorageBuffer(DescriptorSet* set, uint32_t binding, const Buffer& buffer) -> void;
-
-  /* Attach a dynamic uniform-buffer to an allocated DescriptorSet.
-   */
-  auto attachUniformBufferDynamic(
-      DescriptorSet* set, uint32_t binding, const Buffer& buffer, uint32_t maxSize) -> void;
+  auto attachBuffer(DescriptorSet* set, uint32_t binding, const Buffer& buffer, uint32_t size)
+      -> void;
 
   /* Attach an image and sampler to an allocated DescriptorSet.
    */
@@ -169,7 +135,7 @@ public:
 private:
   tria::log::Logger* m_logger;
   const Device* m_device;
-  DescriptorInfo m_info;
+  DescriptorBindings m_bindings;
   uint32_t m_groupId;
   VkDescriptorPool m_vkPool;
   VkDescriptorSetLayout m_vkLayout;
@@ -191,13 +157,13 @@ public:
   auto operator=(const DescriptorManager& rhs) -> DescriptorManager& = delete;
   auto operator=(DescriptorManager&& rhs) noexcept -> DescriptorManager& = delete;
 
-  /* Get a VkDescriptorSetLayout that is compatible to the given DescriptorInfo.
+  /* Get a VkDescriptorSetLayout that is compatible with the given descriptor bindings.
    */
-  [[nodiscard]] auto getVkLayout(const DescriptorInfo& info) -> VkDescriptorSetLayout;
+  [[nodiscard]] auto getVkLayout(const DescriptorBindings& info) -> VkDescriptorSetLayout;
 
-  /* Allocate a DescriptorSet that satisfies the given DescriptorInfo.
+  /* Allocate a DescriptorSet that satisfies the given descriptor bindings.
    */
-  [[nodiscard]] auto allocate(const DescriptorInfo& info) -> DescriptorSet;
+  [[nodiscard]] auto allocate(const DescriptorBindings& info) -> DescriptorSet;
 
 private:
   log::Logger* m_logger;

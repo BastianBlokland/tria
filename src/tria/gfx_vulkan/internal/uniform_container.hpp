@@ -26,7 +26,7 @@ public:
    * Note: Provides a single binding at location 0.
    */
   [[nodiscard]] auto getVkDescLayout() const noexcept {
-    return m_device->getDescManager().getVkLayout(m_descInfo);
+    return m_device->getDescManager().getVkLayout(m_descBindings);
   }
 
   /* Maximum amount of data that can be uploaded to a single entry.
@@ -56,7 +56,7 @@ private:
 
   log::Logger* m_logger;
   Device* m_device;
-  DescriptorInfo m_descInfo;
+  DescriptorBindings m_descBindings;
   uint32_t m_minAlignment;
   uint32_t m_maxDataSize;
 
