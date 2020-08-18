@@ -188,7 +188,7 @@ Graphic::Graphic(
   assert(m_device);
   assert(m_asset);
 
-  for (auto* shdItr = asset->getShadersBegin(); shdItr != asset->getShadersEnd(); ++shdItr) {
+  for (auto* shdItr = asset->getShaderBegin(); shdItr != asset->getShaderEnd(); ++shdItr) {
     m_shaders.push_back(shaders->get(*shdItr));
   }
   m_mesh = meshes->get(m_asset->getMesh());

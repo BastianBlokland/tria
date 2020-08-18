@@ -11,20 +11,22 @@ namespace tria::asset::tests {
 namespace {
 
 auto getTestVertShader() noexcept {
-  // Dummy vertex shader compiled to spir-v.
-  return math::base64Decode("AwIjBwAAAQAIAA0ABgAAAAAAAAARAAIAAQAAAAsABgABAAAAR0xTTC5zdGQuNDUwAAAAA"
-                            "A4AAwAAAAAAAQAAAA8ABQAAAAAABAAAAG1haW4AAAAAEwACAAIAAAAhAAMAAwAAAAIAAA"
-                            "A2AAUAAgAAAAQAAAAAAAAAAwAAAPgAAgAFAAAA/QABADgAAQA=");
+  // Dummy vertex shader compiled to spir-v 1.3.
+  return math::base64Decode("AwIjBwADAQAIAA0ABgAAAAAAAAARAAIAAQAAAAsABgABAAAAR0xTTC5zdGQuNDUwAAAAAA"
+                            "4AAwAAAAAAAQAAAA8ABQAAAAAABAAAAG1haW4AAAAAEwACAAIAAAAhAAMAAwAAAAIAAAA2"
+                            "AAUAAgAAAAQAAAAAAAAAAwAAAPgAAgAFAAAA/QABADgAAQA=");
 }
 
 auto getTestFragShader() noexcept {
-  // Dummy fragment shader compiled to spir-v.
+  // Dummy fragment shader compiled to spir-v 1.3.
   return math::base64Decode(
-      "AwIjBwAAAQAIAA0ADAAAAAAAAAARAAIAAQAAAAsABgABAAAAR0xTTC5zdGQuNDUwAAAAAA4AAwAAAAAAAQAAAA8ABgAE"
-      "AAAABAAAAG1haW4AAAAACQAAABAAAwAEAAAABwAAAEcABAAJAAAAHgAAAAAAAAATAAIAAgAAACEAAwADAAAAAgAAABYA"
-      "AwAGAAAAIAAAABcABAAHAAAABgAAAAQAAAAgAAQACAAAAAMAAAAHAAAAOwAEAAgAAAAJAAAAAwAAACsABAAGAAAACgAA"
-      "AAAAgD8sAAcABwAAAAsAAAAKAAAACgAAAAoAAAAKAAAANgAFAAIAAAAEAAAAAAAAAAMAAAD4AAIABQAAAD4AAwAJAAAA"
-      "CwAAAP0AAQA4AAEA");
+      "AwIjBwADAQAIAA0ADAAAAAAAAAARAAIAAQAAAAsABgABAAAAR0xTTC5zdGQuNDUwAAAAAA4AAwAAAAAAAQAAAA8ABgAE"
+      "AAAABAAAAG1haW4AAAAACQAAABAAAwAEAAAABwAAAAMAAwACAAAAwgEAAAQACQBHTF9BUkJfc2VwYXJhdGVfc2hhZGVy"
+      "X29iamVjdHMAAAQACgBHTF9HT09HTEVfY3BwX3N0eWxlX2xpbmVfZGlyZWN0aXZlAAAEAAgAR0xfR09PR0xFX2luY2x1"
+      "ZGVfZGlyZWN0aXZlAAUABAAEAAAAbWFpbgAAAAAFAAUACQAAAG91dENvbG9yAAAAAEcABAAJAAAAHgAAAAAAAAATAAIA"
+      "AgAAACEAAwADAAAAAgAAABYAAwAGAAAAIAAAABcABAAHAAAABgAAAAQAAAAgAAQACAAAAAMAAAAHAAAAOwAEAAgAAAAJ"
+      "AAAAAwAAACsABAAGAAAACgAAAAAAgD8sAAcABwAAAAsAAAAKAAAACgAAAAoAAAAKAAAANgAFAAIAAAAEAAAAAAAAAAMA"
+      "AAD4AAIABQAAAD4AAwAJAAAACwAAAP0AAQA4AAEA");
 }
 
 } // namespace
@@ -48,8 +50,8 @@ TEST_CASE("[asset] - Graphic", "[asset]") {
       auto db   = Database{nullptr, dir};
       auto* gfx = db.get("test.gfx")->downcast<Graphic>();
       REQUIRE(gfx->getShaderCount() == 2);
-      CHECK(gfx->getShadersBegin()[0]->getShaderKind() == ShaderKind::SpvVertex);
-      CHECK(gfx->getShadersBegin()[1]->getShaderKind() == ShaderKind::SpvFragment);
+      CHECK(gfx->getShaderBegin()[0]->getShaderKind() == ShaderKind::SpvVertex);
+      CHECK(gfx->getShaderBegin()[1]->getShaderKind() == ShaderKind::SpvFragment);
       CHECK(gfx->getMesh()->getKind() == AssetKind::Mesh);
       CHECK(gfx->getBlendMode() == BlendMode::Alpha);
       CHECK(gfx->getDepthTestMode() == DepthTestMode::Less);

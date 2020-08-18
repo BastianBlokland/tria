@@ -53,7 +53,7 @@ auto makeVkAppInfo(const std::string appName) noexcept -> VkApplicationInfo {
   appInfo.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
   appInfo.pEngineName        = ENGINE_NAME;
   appInfo.engineVersion = VK_MAKE_VERSION(ENGINE_VER_MAJOR, ENGINE_VER_MINOR, ENGINE_VER_PATCH);
-  appInfo.apiVersion    = VK_API_VERSION_1_2;
+  appInfo.apiVersion    = VK_API_VERSION_1_1;
   return appInfo;
 }
 

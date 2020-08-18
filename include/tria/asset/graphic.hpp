@@ -92,10 +92,10 @@ public:
   [[nodiscard]] constexpr static auto getKind() -> AssetKind { return AssetKind::Graphic; }
 
   [[nodiscard]] auto getShaderCount() const noexcept { return m_shaders.size(); }
-  [[nodiscard]] auto getShadersBegin() const noexcept -> const Shader* const* {
+  [[nodiscard]] auto getShaderBegin() const noexcept -> const Shader* const* {
     return m_shaders.data();
   }
-  [[nodiscard]] auto getShadersEnd() const noexcept -> const Shader* const* {
+  [[nodiscard]] auto getShaderEnd() const noexcept -> const Shader* const* {
     return m_shaders.data() + m_shaders.size();
   }
 

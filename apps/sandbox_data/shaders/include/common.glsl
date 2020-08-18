@@ -8,7 +8,7 @@ struct VertexData {
 };
 
 #define VERTEX_INPUT_BINDING(SET)                                                                  \
-  layout(binding = 0, SET) readonly buffer VertexBuffer { VertexData[] vertices; }
+  layout(SET, binding = 0) readonly buffer VertexBuffer { VertexData[] vertices; }
 
 #define GET_VERT() vertices[gl_VertexIndex]
 
@@ -25,6 +25,6 @@ struct VertexData {
 const int maxInstances = 2048;
 
 #define INSTANCE_INPUT_BINDING(SET, DATA)                                                          \
-  layout(binding = 0, SET) readonly uniform InstanceBuffer { DATA[maxInstances] instances; }
+  layout(SET, binding = 0) readonly uniform InstanceBuffer { DATA[maxInstances] instances; }
 
 #define GET_INST() instances[gl_InstanceIndex]

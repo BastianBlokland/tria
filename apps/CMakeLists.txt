@@ -22,7 +22,9 @@ function(configure_shaders targetName shaderSrcDir)
     add_custom_command(
       OUTPUT ${fileDst}
       DEPENDS ${fileSrc}
-      COMMAND ${glslcPath} -O -o ${fileDst} ${fileSrc})
+      COMMAND ${glslcPath}
+      --target-env=vulkan1.1 --target-spv=spv1.3 -Werror -O
+      -o ${fileDst} ${fileSrc})
 
     # Keep a list of all output files.
     list(APPEND shaderArtifacts ${fileDst})
