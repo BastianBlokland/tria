@@ -20,12 +20,12 @@ using namespace std::chrono;
 struct Obj final {
   const asset::Graphic* graphic;
   Vec3f pos;
-  Quatf rot;
+  Quatf orient;
   float scale;
   float rotSpeed;
 
-  Obj(const asset::Graphic* graphic, Vec3f pos, Quatf rot, float scale, float rotSpeed) :
-      graphic{graphic}, pos{pos}, rot{rot}, scale{scale}, rotSpeed{rotSpeed} {}
+  Obj(const asset::Graphic* graphic, Vec3f pos, Quatf orient, float scale, float rotSpeed) :
+      graphic{graphic}, pos{pos}, orient{orient}, scale{scale}, rotSpeed{rotSpeed} {}
 };
 
 [[nodiscard]] auto trsMat4f(Vec3f trans, Quatf rot, float scale) noexcept {
@@ -80,7 +80,8 @@ auto runApp(pal::Platform& platform, asset::Database& db, gfx::Context& gfx) {
     frameStartTime       = newTime;
 
     for (auto& obj : objs) {
-      obj.rot = (angleAxisQuatf(dir3d::up(), deltaTime.count() * obj.rotSpeed) * obj.rot).getNorm();
+      obj.orient =
+          (angleAxisQuatf(dir3d::up(), deltaTime.count() * obj.rotSpeed) * obj.orient).getNorm();
     }
 
     // Move the camera with wasd or the arrow keys.
@@ -100,9 +101,10 @@ auto runApp(pal::Platform& platform, asset::Database& db, gfx::Context& gfx) {
     auto mouseDelta = win.getMousePosNrm() - prevMousePos;
     if (win.isKeyDown(pal::Key::MouseRight) || win.isKeyDown(pal::Key::Control)) {
       // Rotate the camera based on the mouse movement.
-      cam.rot() =
+      cam.orient() =
           (angleAxisQuatf(dir3d::up(), mouseDelta.x() * camRotSensitivity) *
-           angleAxisQuatf(cam.getRight(), mouseDelta.y() * camRotSensitivity) * cam.rot());
+           angleAxisQuatf(cam.getRight(), mouseDelta.y() * camRotSensitivity) * cam.orient())
+              .getNorm();
     }
     prevMousePos = win.getMousePosNrm();
 
@@ -128,7 +130,7 @@ auto runApp(pal::Platform& platform, asset::Database& db, gfx::Context& gfx) {
       canvas.draw(db.get("graphics/sky.gfx")->downcast<asset::Graphic>(), vpMat);
 
       for (const auto& obj : objs) {
-        canvas.draw(obj.graphic, vpMat * trsMat4f(obj.pos, obj.rot, obj.scale));
+        canvas.draw(obj.graphic, vpMat * trsMat4f(obj.pos, obj.orient, obj.scale));
       }
 
       canvas.drawEnd();
