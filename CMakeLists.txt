@@ -90,8 +90,7 @@ message(STATUS "Fetching dependency: simdjson")
 FetchContent_Declare(
   simdjson
   GIT_REPOSITORY https://github.com/simdjson/simdjson.git
-  GIT_TAG 501fed6c4fb5c9a5bf30e90c4299de3477119b56
-  GIT_SHALLOW TRUE)
+  GIT_TAG 501fed6c4fb5c9a5bf30e90c4299de3477119b56)
 set(SIMDJSON_JUST_LIBRARY ON CACHE INTERNAL "")
 set(SIMDJSON_BUILD_STATIC ON CACHE INTERNAL "")
 set(SIMDJSON_COMPETITION OFF CACHE INTERNAL "")
