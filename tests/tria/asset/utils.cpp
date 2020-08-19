@@ -8,13 +8,13 @@
 
 namespace tria::asset::tests {
 
-auto writeFile(const fs::path& path, std::string data) -> void {
+auto writeFile(const fs::path& path, const std::string& data) -> void {
   auto file = std::ofstream{path.string(), std::ios::out | std::ios::binary};
   file.write(data.data(), data.size());
   file.close();
 }
 
-auto writeFile(const fs::path& path, math::RawData data) -> void {
+auto writeFile(const fs::path& path, const math::RawData& data) -> void {
   auto file = std::ofstream{path.string(), std::ios::out | std::ios::binary};
   file.write(reinterpret_cast<const char*>(data.data()), data.size());
   file.close();

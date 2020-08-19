@@ -1,14 +1,9 @@
 {
-  "vertShader": "shaders/obj.vert.spv",
-  "fragShader": "shaders/obj_nrm.frag.spv",
-  "mesh": "assets/bunny.obj",
-  "samplers": [
-    {
-      "texture": "textures/checker.ppm",
-      "filter": "nearest",
-      "anisotropy": "none"
-    }
+  "shaders": [
+    "shaders/obj.vert.spv",
+    "shaders/obj_nrm.frag.spv"
   ],
+  "mesh": "assets/bunny.obj",
   "blend": "none",
   "depthTest": "less"
 }

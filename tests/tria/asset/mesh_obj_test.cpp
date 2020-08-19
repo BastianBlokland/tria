@@ -1,6 +1,6 @@
 #include "catch2/catch.hpp"
 #include "tria/asset/database.hpp"
-#include "tria/asset/err/asset_load_err.hpp"
+#include "tria/asset/err/mesh_err.hpp"
 #include "tria/asset/mesh.hpp"
 #include "tria/math/vec_io.hpp"
 #include "utils.hpp"
@@ -31,10 +31,9 @@ TEST_CASE("[asset] - Mesh Wavefront Obj", "[asset]") {
       auto vertices = std::vector<Vertex>(mesh->getVertexBegin(), mesh->getVertexEnd());
       CHECK(
           vertices ==
-          std::vector<Vertex>{
-              {{1.0, 4.0, 7.0}, {0.f, 0.f, 1.f}, {}},
-              {{2.0, 5.0, 8.0}, {0.f, 0.f, 1.f}, {}},
-              {{3.0, 6.0, 9.0}, {0.f, 0.f, 1.f}, {}}});
+          std::vector<Vertex>{{{1.0, 4.0, 7.0}, {0.f, 0.f, 1.f}, {}},
+                              {{2.0, 5.0, 8.0}, {0.f, 0.f, 1.f}, {}},
+                              {{3.0, 6.0, 9.0}, {0.f, 0.f, 1.f}, {}}});
     });
   }
 
@@ -55,10 +54,9 @@ TEST_CASE("[asset] - Mesh Wavefront Obj", "[asset]") {
       auto vertices = std::vector<Vertex>(mesh->getVertexBegin(), mesh->getVertexEnd());
       CHECK(
           vertices ==
-          std::vector<Vertex>{
-              {{1.0, 4.0, 7.0}, {1.f, 0.f, 0.f}, {}},
-              {{2.0, 5.0, 8.0}, {0.f, 1.f, 0.f}, {}},
-              {{3.0, 6.0, 9.0}, {0.f, 0.f, 1.f}, {}}});
+          std::vector<Vertex>{{{1.0, 4.0, 7.0}, {1.f, 0.f, 0.f}, {}},
+                              {{2.0, 5.0, 8.0}, {0.f, 1.f, 0.f}, {}},
+                              {{3.0, 6.0, 9.0}, {0.f, 0.f, 1.f}, {}}});
     });
   }
 
@@ -79,10 +77,9 @@ TEST_CASE("[asset] - Mesh Wavefront Obj", "[asset]") {
       auto vertices = std::vector<Vertex>(mesh->getVertexBegin(), mesh->getVertexEnd());
       CHECK(
           vertices ==
-          std::vector<Vertex>{
-              {{1.0, 4.0, 7.0}, {0.f, 0.f, 1.f}, {0.1, 0.5}},
-              {{2.0, 5.0, 8.0}, {0.f, 0.f, 1.f}, {0.3, 0.5}},
-              {{3.0, 6.0, 9.0}, {0.f, 0.f, 1.f}, {0.5, 0.5}}});
+          std::vector<Vertex>{{{1.0, 4.0, 7.0}, {0.f, 0.f, 1.f}, {0.1, 0.5}},
+                              {{2.0, 5.0, 8.0}, {0.f, 0.f, 1.f}, {0.3, 0.5}},
+                              {{3.0, 6.0, 9.0}, {0.f, 0.f, 1.f}, {0.5, 0.5}}});
     });
   }
 
@@ -101,10 +98,9 @@ TEST_CASE("[asset] - Mesh Wavefront Obj", "[asset]") {
       auto vertices = std::vector<Vertex>(mesh->getVertexBegin(), mesh->getVertexEnd());
       CHECK(
           vertices ==
-          std::vector<Vertex>{
-              {{1.0, 4.0, 7.0}, {0.f, 0.f, 1.f}, {0.5, 0.5}},
-              {{2.0, 5.0, 8.0}, {0.f, 0.f, 1.f}, {0.5, 0.5}},
-              {{3.0, 6.0, 9.0}, {0.f, 0.f, 1.f}, {0.5, 0.5}}});
+          std::vector<Vertex>{{{1.0, 4.0, 7.0}, {0.f, 0.f, 1.f}, {0.5, 0.5}},
+                              {{2.0, 5.0, 8.0}, {0.f, 0.f, 1.f}, {0.5, 0.5}},
+                              {{3.0, 6.0, 9.0}, {0.f, 0.f, 1.f}, {0.5, 0.5}}});
     });
   }
 
@@ -140,11 +136,10 @@ TEST_CASE("[asset] - Mesh Wavefront Obj", "[asset]") {
       auto indices  = std::vector<IndexType>(mesh->getIndexBegin(), mesh->getIndexEnd());
       CHECK(
           vertices ==
-          std::vector<Vertex>{
-              {{-0.5, -0.5, 0.0}, {0.f, 0.f, 1.f}, {}},
-              {{+0.5, -0.5, 0.0}, {0.f, 0.f, 1.f}, {}},
-              {{-0.5, +0.5, 0.0}, {0.f, 0.f, 1.f}, {}},
-              {{+0.5, +0.5, 0.0}, {0.f, 0.f, 1.f}, {}}});
+          std::vector<Vertex>{{{-0.5, -0.5, 0.0}, {0.f, 0.f, 1.f}, {}},
+                              {{+0.5, -0.5, 0.0}, {0.f, 0.f, 1.f}, {}},
+                              {{-0.5, +0.5, 0.0}, {0.f, 0.f, 1.f}, {}},
+                              {{+0.5, +0.5, 0.0}, {0.f, 0.f, 1.f}, {}}});
       CHECK(indices == std::vector<IndexType>{0, 1, 2, 0, 2, 3});
     });
   }
@@ -154,7 +149,7 @@ TEST_CASE("[asset] - Mesh Wavefront Obj", "[asset]") {
       writeFile(dir / "test.obj", "Hello world");
 
       auto db = Database{nullptr, dir};
-      CHECK_THROWS_AS(db.get("test.obj"), err::AssetLoadErr);
+      CHECK_THROWS_AS(db.get("test.obj"), err::MeshErr);
     });
   }
 
@@ -168,7 +163,7 @@ TEST_CASE("[asset] - Mesh Wavefront Obj", "[asset]") {
           "v 0.5 0.5 0.0 \n");
 
       auto db = Database{nullptr, dir};
-      CHECK_THROWS_AS(db.get("test.obj"), err::AssetLoadErr);
+      CHECK_THROWS_AS(db.get("test.obj"), err::MeshErr);
     });
   }
 }

@@ -1,3 +1,6 @@
+const uint graphicSet  = 0; // 'Per graphic' resources, like the mesh and textures.
+const uint instanceSet = 1; // 'Per instance' resources, like a transformation matrix.
+
 /*
  * Utilities for defining and retreiving vertex data.
  */
@@ -7,8 +10,8 @@ struct VertexData {
   vec4 nrmAndV;
 };
 
-#define VERTEX_INPUT_BINDING(SET)                                                                  \
-  layout(binding = 0, SET) readonly buffer VertexBuffer { VertexData[] vertices; }
+#define VERTEX_INPUT_BINDING()                                                                     \
+  layout(set = graphicSet, binding = 0) readonly buffer VertexBuffer { VertexData[] vertices; }
 
 #define GET_VERT() vertices[gl_VertexIndex]
 
@@ -22,9 +25,11 @@ struct VertexData {
  * Utilities for defining and retreiving per-instance data.
  */
 
-const int maxInstances = 2048;
+const uint maxInstances = 2048;
 
-#define INSTANCE_INPUT_BINDING(SET, DATA)                                                          \
-  layout(binding = 0, SET) readonly uniform InstanceBuffer { DATA[maxInstances] instances; }
+#define INSTANCE_INPUT_BINDING(DATA)                                                               \
+  layout(set = instanceSet, binding = 0) readonly uniform InstanceBuffer {                         \
+    DATA[maxInstances] instances;                                                                  \
+  }
 
 #define GET_INST() instances[gl_InstanceIndex]

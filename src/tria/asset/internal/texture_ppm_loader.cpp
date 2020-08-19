@@ -1,5 +1,5 @@
 #include "loader.hpp"
-#include "tria/asset/err/asset_load_err.hpp"
+#include "tria/asset/err/texture_ppm_err.hpp"
 #include "tria/asset/texture.hpp"
 
 namespace tria::asset::internal {
@@ -162,8 +162,7 @@ private:
 /* Read binary encoded pixels.
  * Returns empty vector when not enough data is available for the requested amount of pixels.
  */
-[[nodiscard]] auto readPixelsBinary(Reader& reader, unsigned int count) noexcept
-    -> math::PodVector<Pixel> {
+[[nodiscard]] auto readPixelsBinary(Reader& reader, unsigned int count) -> math::PodVector<Pixel> {
 
   // A single character should separate the header and the data.
   // Note: this means you cannot use a windows style line-ending between the header and data, but a
@@ -172,7 +171,7 @@ private:
 
   // Check if enough data for the given pixels is left in the reader.
   if (reader.getEnd() - reader.getCurrent() < count * 3) {
-    return {};
+    throw err::TexturePpmErr{"Unexpected end of ppm file"};
   }
 
   auto result = math::PodVector<Pixel>(count);
@@ -187,23 +186,20 @@ private:
 } // namespace
 
 auto loadTexturePpm(
-    log::Logger* /*unused*/,
-    DatabaseImpl* /*unused*/,
-    AssetId id,
-    const fs::path& path,
-    math::RawData raw) -> AssetUnique {
+    log::Logger* /*unused*/, DatabaseImpl* /*unused*/, AssetId id, math::RawData raw)
+    -> AssetUnique {
 
   auto reader = Reader{raw.begin(), raw.end()};
   auto header = readHeader(reader);
 
   if (header.type == PixmapType::Unknown) {
-    throw err::AssetLoadErr{path, "Malformed pixmap type, expected 'P3' or 'P6"};
+    throw err::TexturePpmErr{"Malformed pixmap type, expected 'P3' or 'P6"};
   }
   if (header.width == 0U || header.height == 0U) {
-    throw err::AssetLoadErr{path, "Malformed pixmap size, needs to be bigger then 0"};
+    throw err::TexturePpmErr{"Malformed pixmap size, needs to be bigger then 0"};
   }
   if (header.maxValue != 255) {
-    throw err::AssetLoadErr{path, "Only 8 bit Pixmap files are supported"};
+    throw err::TexturePpmErr{"Only 8 bit Pixmap files are supported"};
   }
 
   auto size       = TextureSize{header.width, header.height};
@@ -212,7 +208,7 @@ auto loadTexturePpm(
                                                  : readPixelsBinary(reader, pixelCount);
 
   if (pixels.size() < pixelCount) {
-    throw err::AssetLoadErr{path, "Not enough pixel data in file for specified amount of pixels"};
+    throw err::TexturePpmErr{"Not enough pixel data in file for specified amount of pixels"};
   }
   return std::make_unique<Texture>(std::move(id), size, std::move(pixels));
 }

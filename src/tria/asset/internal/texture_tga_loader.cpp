@@ -1,5 +1,5 @@
 #include "loader.hpp"
-#include "tria/asset/err/asset_load_err.hpp"
+#include "tria/asset/err/texture_tga_err.hpp"
 #include "tria/asset/texture.hpp"
 #include <limits>
 #include <optional>
@@ -150,8 +150,7 @@ private:
  * Returns empty vector when not enough data is available in the reader.
  */
 template <bool HasAlpha, bool Rle, bool YFlip>
-[[nodiscard]] auto readTgaPixels(Reader& reader, TextureSize size) noexcept
-    -> math::PodVector<Pixel> {
+[[nodiscard]] auto readTgaPixels(Reader& reader, TextureSize size) -> math::PodVector<Pixel> {
 
   const auto pixelCount    = static_cast<uint32_t>(size.x()) * size.y();
   constexpr auto pixelSize = HasAlpha ? 4U : 3U;
@@ -159,7 +158,7 @@ template <bool HasAlpha, bool Rle, bool YFlip>
   if constexpr (!Rle) {
     // Without run-length-encoding we can ahead of time check if enough data is available.
     if (reader.getRemainingCount() < pixelCount * pixelSize) {
-      return {};
+      throw err::TextureTgaErr{"Unexpected end of tga file"};
     }
   }
 
@@ -185,7 +184,7 @@ template <bool HasAlpha, bool Rle, bool YFlip>
 
           if (reader.getRemainingCount() <= pixelSize) {
             // Not enough data for a header byte and a single pixel.
-            return {};
+            throw err::TextureTgaErr{"Unexpected end of tga file"};
           }
           auto packetHeader = reader.consume<1>();
           auto isRlePacket  = (packetHeader & 0b1000'0000) != 0U; // Msb indicates packet type.
@@ -194,7 +193,7 @@ template <bool HasAlpha, bool Rle, bool YFlip>
 
           // For raw packets there needs to be enough data left for 'count' of pixels.
           if (!isRlePacket && reader.getRemainingCount() < packetRemaining * pixelSize) {
-            return {};
+            throw err::TextureTgaErr{"Unexpected end of tga file"};
           }
         } else {
           // This pixel is still start of the same packet.
@@ -225,7 +224,7 @@ template <bool HasAlpha, bool Rle, bool YFlip>
  * Returns empty vector when not enough data is available in the reader.
  */
 [[nodiscard]] auto
-readTgaPixels(Reader& reader, TextureSize size, bool hasAlpha, bool rle, TgaOrigin origin) noexcept
+readTgaPixels(Reader& reader, TextureSize size, bool hasAlpha, bool rle, TgaOrigin origin)
     -> math::PodVector<Pixel> {
   // TODO(bastian): Support images with the origin on the right? Haven't seen any in the wild.
   switch (origin) {
@@ -248,55 +247,48 @@ readTgaPixels(Reader& reader, TextureSize size, bool hasAlpha, bool rle, TgaOrig
 } // namespace
 
 auto loadTextureTga(
-    log::Logger* /*unused*/,
-    DatabaseImpl* /*unused*/,
-    AssetId id,
-    const fs::path& path,
-    math::RawData raw) -> AssetUnique {
+    log::Logger* /*unused*/, DatabaseImpl* /*unused*/, AssetId id, math::RawData raw)
+    -> AssetUnique {
 
   auto reader       = Reader{raw.begin(), raw.end()};
   const auto header = readTgaHeader(reader);
 
   if (!header) {
-    throw err::AssetLoadErr{path, "Malformed tga header"};
+    throw err::TextureTgaErr{"Malformed tga header"};
   }
   if (header->colorMapType == TgaColorMapType::Present) {
-    throw err::AssetLoadErr{path, "Colormapped tga files are not supported"};
+    throw err::TextureTgaErr{"Colormapped tga files are not supported"};
   }
   if (header->imageSpec.bitsPerPixel != 24 && header->imageSpec.bitsPerPixel != 32U) {
-    throw err::AssetLoadErr{
-        path, "Unsupported pixel bit depth, only 24 bit (RGB) and 32 bit (RGBA) are supported"};
+    throw err::TextureTgaErr{
+        "Unsupported pixel bit depth, only 24 bit (RGB) and 32 bit (RGBA) are supported"};
   }
   const auto hasAlpha = header->imageSpec.bitsPerPixel == 32U;
   if (hasAlpha && header->imageSpec.descriptor.attributeDepth != 8U) {
-    throw err::AssetLoadErr{path, "Only 8 bit alpha channel is supported"};
+    throw err::TextureTgaErr{"Only 8 bit alpha channel is supported"};
   }
   if (header->imageSpec.descriptor.interleave != TgaInterleave::None) {
-    throw err::AssetLoadErr{path, "Interleaved tga files are not supported"};
+    throw err::TextureTgaErr{"Interleaved tga files are not supported"};
   }
   if (header->imageType != TgaImageType::TrueColor &&
       header->imageType != TgaImageType::RleTrueColor) {
-    throw err::AssetLoadErr{path, "Unsupported image-type, only TrueColor is supported"};
+    throw err::TextureTgaErr{"Unsupported image-type, only TrueColor is supported"};
   }
   const auto isRle = header->imageType == TgaImageType::RleTrueColor;
 
   // Skip over the id field.
   if (!reader.skip(header->idLength)) {
-    throw err::AssetLoadErr{path, "Unexpected end of tga file"};
+    throw err::TextureTgaErr{"Unexpected end of tga file"};
   }
 
   const auto origin = header->imageSpec.descriptor.origin;
   const auto size   = TextureSize{header->imageSpec.size};
   if (size.x() == 0U || size.y() == 0U) {
-    throw err::AssetLoadErr{path, "Malformed tga size, needs to be bigger then 0"};
+    throw err::TextureTgaErr{"Malformed tga size, needs to be bigger then 0"};
   }
-
-  const auto pixelCount = static_cast<uint32_t>(size.x()) * size.y();
 
   auto pixels = readTgaPixels(reader, size, hasAlpha, isRle, origin);
-  if (pixels.size() != pixelCount) {
-    throw err::AssetLoadErr{path, "Unexpected end of tga file"};
-  }
+  assert(pixels.size() == static_cast<uint32_t>(size.x()) * size.y());
 
   return std::make_unique<Texture>(std::move(id), size, std::move(pixels));
 }

@@ -14,6 +14,9 @@ class Mesh;
 class Texture;
 class Shader;
 
+constexpr auto g_shaderResourceGraphicSetId  = 0U; // Per graphic resources.
+constexpr auto g_shaderResourceInstanceSetId = 1U; // Per instance resources.
+
 /* Graphic resource.
  * Holding a vulkan pipeline and dependencies.
  */
@@ -60,8 +63,7 @@ private:
   log::Logger* m_logger;
   const Device* m_device;
   const asset::Graphic* m_asset;
-  const Shader* m_vertShader;
-  const Shader* m_fragShader;
+  std::vector<const Shader*> m_shaders;
   const Mesh* m_mesh;
 
   DescriptorSet m_descSet;

@@ -80,12 +80,12 @@ auto DatabaseImpl::get(const AssetId& id) -> const Asset* {
         {"size", log::MemSize{dataSize}},
         {"duration", Clock::now() - loadBeginTime});
 
-  } catch (const err::AssetLoadErr& err) {
-    LOG_W(
+  } catch (const std::exception& e) {
+    LOG_E(
         m_logger,
         "Failed to load asset",
         {"id", id},
-        {"reason", err.getInnerMsg()},
+        {"reason", std::string{e.what()}},
         {"path", path.string()});
     throw;
   } catch (...) {

@@ -279,8 +279,8 @@ auto Renderer::drawEnd() -> void {
 auto Renderer::bindGraphicDescriptors(const Graphic* graphic, const void* uniData, size_t uniSize)
     -> void {
 
-  constexpr auto maxDescSets = 2U;
-  std::array<VkDescriptorSet, maxDescSets> descSets{
+  constexpr auto maxDescSets                        = 2U;
+  std::array<VkDescriptorSet, maxDescSets> descSets = {
       graphic->getVkDescriptorSet(),
   };
   std::array<uint32_t, maxDescSets> descDynamicOffsets;

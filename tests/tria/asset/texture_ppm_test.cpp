@@ -1,6 +1,6 @@
 #include "catch2/catch.hpp"
 #include "tria/asset/database.hpp"
-#include "tria/asset/err/asset_load_err.hpp"
+#include "tria/asset/err/texture_ppm_err.hpp"
 #include "tria/asset/texture.hpp"
 #include "utils.hpp"
 
@@ -138,7 +138,7 @@ TEST_CASE("[asset] - Texture Portable Pixmap", "[asset]") {
       writeFile(dir / "test.ppm", "P9 1 1 255 255 255 255");
 
       auto db = Database{nullptr, dir};
-      CHECK_THROWS_AS(db.get("test.ppm"), err::AssetLoadErr);
+      CHECK_THROWS_AS(db.get("test.ppm"), err::TexturePpmErr);
     });
   }
 
@@ -147,7 +147,7 @@ TEST_CASE("[asset] - Texture Portable Pixmap", "[asset]") {
       writeFile(dir / "test.ppm", "P3 0 0 255 255 255 255");
 
       auto db = Database{nullptr, dir};
-      CHECK_THROWS_AS(db.get("test.ppm"), err::AssetLoadErr);
+      CHECK_THROWS_AS(db.get("test.ppm"), err::TexturePpmErr);
     });
   }
 
@@ -156,7 +156,7 @@ TEST_CASE("[asset] - Texture Portable Pixmap", "[asset]") {
       writeFile(dir / "test.ppm", "P3 0 0 128 128 128 128");
 
       auto db = Database{nullptr, dir};
-      CHECK_THROWS_AS(db.get("test.ppm"), err::AssetLoadErr);
+      CHECK_THROWS_AS(db.get("test.ppm"), err::TexturePpmErr);
     });
   }
 

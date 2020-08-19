@@ -1,3 +1,7 @@
+message(STATUS "Finding vulkan package")
+find_package(Vulkan REQUIRED)
+message(STATUS "Found vulkan: ${Vulkan_LIBRARIES}, ${Vulkan_INCLUDE_DIRS}")
+
 # Asset (asset loading library).
 message(STATUS "Configuring asset library")
 add_library(tria_asset STATIC
@@ -6,11 +10,13 @@ add_library(tria_asset STATIC
   tria/asset/internal/loader.cpp
   tria/asset/internal/mesh_obj_loader.cpp
   tria/asset/internal/raw_asset_loader.cpp
-  tria/asset/internal/shader_loader.cpp
+  tria/asset/internal/shader_spv_loader.cpp
   tria/asset/internal/texture_ppm_loader.cpp
   tria/asset/internal/texture_tga_loader.cpp
   tria/asset/database.cpp
   tria/asset/database_impl.cpp)
+# Asset library depends on the vulkan headers for spir-v info at the moment.
+target_include_directories(tria_asset PRIVATE ${Vulkan_INCLUDE_DIRS})
 target_compile_features(tria_asset PRIVATE cxx_std_17)
 target_include_directories(tria_asset PUBLIC ${PROJECT_SOURCE_DIR}/include)
 target_include_directories(tria_asset PRIVATE ${tinyobjloader_INCLUDE_DIRS})
@@ -45,10 +51,6 @@ add_library(tria_gfx STATIC
   tria/gfx_vulkan/native_context.cpp
   tria/gfx_vulkan/native_canvas.cpp
   tria/gfx_vulkan/canvas.cpp)
-
-message(STATUS "Finding vulkan package")
-find_package(Vulkan REQUIRED)
-message(STATUS "Found vulkan: ${Vulkan_LIBRARIES}, ${Vulkan_INCLUDE_DIRS}")
 target_link_libraries(tria_gfx PRIVATE ${Vulkan_LIBRARIES})
 target_include_directories(tria_gfx PRIVATE ${Vulkan_INCLUDE_DIRS})
 

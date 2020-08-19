@@ -108,7 +108,7 @@ createVkDevice(VkPhysicalDevice vkPhysicalDevice, std::set<uint32_t> queueFamili
   vkGetPhysicalDeviceFeatures(vkPhysicalDevice, &supportedFeatures);
 
   VkPhysicalDeviceFeatures featuresToEnable = {};
-  // Optionally enable features.
+  // Optionally enable some features.
   if (supportedFeatures.pipelineStatisticsQuery) {
     featuresToEnable.pipelineStatisticsQuery = true;
   }

@@ -28,7 +28,7 @@ UniformContainer::UniformContainer(log::Logger* logger, Device* device) :
     m_logger{logger}, m_device{device} {
   assert(m_device);
 
-  m_descInfo     = DescriptorInfo{0U, 1U, 0U};
+  m_descBindings = {{0U, DescriptorBindingKind::UniformBufferDynamic}};
   m_minAlignment = m_device->getLimits().minUniformBufferOffsetAlignment;
   m_maxDataSize  = std::min(m_device->getLimits().maxUniformBufferRange, g_desiredMaxDataSize);
 }
@@ -69,13 +69,13 @@ auto UniformContainer::upload(const void* data, size_t size)
   }
 
   // If no set has enough space then create a new one.
-  auto descSet = m_device->getDescManager().allocate(m_descInfo);
+  auto descSet = m_device->getDescManager().allocate(m_descBindings);
   auto buffer =
       Buffer{m_device, g_uniformBufferSize, MemoryLocation::Host, BufferUsage::HostUniformData};
 
   DBG_BUFFER_NAME(m_device, buffer.getVkBuffer(), "uniform_container");
 
-  descSet.attachUniformBufferDynamic(0U, buffer, m_maxDataSize);
+  descSet.attachBuffer(0U, buffer, m_maxDataSize);
   m_sets.emplace_back(std::move(descSet), std::move(buffer), paddedSize);
 
   LOG_D(

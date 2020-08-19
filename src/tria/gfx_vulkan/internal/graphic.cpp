@@ -4,6 +4,8 @@
 #include "mesh.hpp"
 #include "shader.hpp"
 #include "texture.hpp"
+#include "tria/gfx/err/graphic_err.hpp"
+#include "tria/gfx/err/shader_err.hpp"
 #include "utils.hpp"
 #include <array>
 #include <cassert>
@@ -12,6 +14,10 @@ namespace tria::gfx::internal {
 
 namespace {
 
+/* Graphic pipelines get two descriptors bound to them, the 'graphicDescriptor' containing 'per
+ * graphic' resources like vertices and textures. And a 'instanceDescriptor' containing the 'per
+ * instance' data like a transformation matrix.
+ */
 [[nodiscard]] auto createPipelineLayout(
     VkDevice vkDevice,
     VkDescriptorSetLayout graphicDescriptor,
@@ -36,31 +42,23 @@ namespace {
     VkDevice vkDevice,
     VkRenderPass vkRenderPass,
     VkPipelineLayout layout,
-    const Shader* vertShader,
-    const Shader* fragShader,
+    const std::vector<const Shader*>& shaders,
     asset::BlendMode blendMode,
     asset::DepthTestMode depthTestMode) {
 
-  assert(vertShader);
-  assert(fragShader);
+  auto shaderStages = std::vector<VkPipelineShaderStageCreateInfo>();
+  shaderStages.reserve(shaders.size());
+  for (const auto* shader : shaders) {
+    VkPipelineShaderStageCreateInfo stageInfo = {};
+    stageInfo.sType                           = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+    stageInfo.stage                           = shader->getVkStage();
+    stageInfo.module                          = shader->getVkModule();
+    stageInfo.pName                           = shader->getEntryPointName().data();
+    shaderStages.push_back(stageInfo);
+  }
 
-  VkPipelineShaderStageCreateInfo vertShaderStageInfo = {};
-  vertShaderStageInfo.sType  = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-  vertShaderStageInfo.stage  = VK_SHADER_STAGE_VERTEX_BIT;
-  vertShaderStageInfo.module = vertShader->getVkModule();
-  vertShaderStageInfo.pName  = "main";
-
-  VkPipelineShaderStageCreateInfo fragShaderStageInfo = {};
-  fragShaderStageInfo.sType  = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-  fragShaderStageInfo.stage  = VK_SHADER_STAGE_FRAGMENT_BIT;
-  fragShaderStageInfo.module = fragShader->getVkModule();
-  fragShaderStageInfo.pName  = "main";
-
-  std::array<VkPipelineShaderStageCreateInfo, 2> shaderStages = {
-      vertShaderStageInfo,
-      fragShaderStageInfo,
-  };
-
+  // We don't use the input assembler to feed vertex data to the shaders, instead we bind a storage
+  // buffer containing vertex data.
   VkPipelineVertexInputStateCreateInfo vertexInputInfo = {};
   vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
 
@@ -69,14 +67,13 @@ namespace {
   inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
 
   // Note: viewport and scissor are set dynamically at draw time.
-  VkViewport viewport = {};
-  VkRect2D scissor    = {};
-
+  VkViewport viewport                             = {};
+  VkRect2D scissor                                = {};
   VkPipelineViewportStateCreateInfo viewportState = {};
   viewportState.sType         = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
-  viewportState.viewportCount = 1;
+  viewportState.viewportCount = 1U;
   viewportState.pViewports    = &viewport;
-  viewportState.scissorCount  = 1;
+  viewportState.scissorCount  = 1U;
   viewportState.pScissors     = &scissor;
 
   VkPipelineRasterizationStateCreateInfo rasterizer = {};
@@ -86,6 +83,7 @@ namespace {
   rasterizer.cullMode    = VK_CULL_MODE_BACK_BIT;
   rasterizer.frontFace   = VK_FRONT_FACE_CLOCKWISE;
 
+  // No multi-sampling is enabled at the moment.
   VkPipelineMultisampleStateCreateInfo multisampling = {};
   multisampling.sType                = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
   multisampling.sampleShadingEnable  = false;
@@ -112,8 +110,9 @@ namespace {
   depthStencil.stencilTestEnable     = false;
 
   VkPipelineColorBlendAttachmentState colorBlendAttachment = {};
-  colorBlendAttachment.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT |
-      VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
+  colorBlendAttachment.colorWriteMask =
+      (VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT |
+       VK_COLOR_COMPONENT_A_BIT);
   switch (blendMode) {
   case asset::BlendMode::Alpha:
     colorBlendAttachment.blendEnable         = true;
@@ -155,6 +154,8 @@ namespace {
   colorBlending.attachmentCount = 1;
   colorBlending.pAttachments    = &colorBlendAttachment;
 
+  // Viewport and scissor are bound dynamically so avoid having to recreate all pipelines when
+  // resizing the render target.
   std::array<VkDynamicState, 2> dynamicStates = {
       VK_DYNAMIC_STATE_VIEWPORT,
       VK_DYNAMIC_STATE_SCISSOR,
@@ -185,6 +186,74 @@ namespace {
   return result;
 }
 
+/* Map a ShaderSourceKind to a DescriptorBindingKind.
+ */
+[[nodiscard]] auto getDescBindingKind(const asset::ShaderResourceKind shaderResourceKind) noexcept {
+  switch (shaderResourceKind) {
+  case asset::ShaderResourceKind::Texture:
+    return DescriptorBindingKind::CombinedImageSampler;
+  case asset::ShaderResourceKind::UniformBuffer:
+    // TODO(bastian): This makes the assumption that all uniform-buffers will be bound as dynamic
+    // uniform buffers.
+    return DescriptorBindingKind::UniformBufferDynamic;
+  case asset::ShaderResourceKind::StorageBuffer:
+    return DescriptorBindingKind::StorageBuffer;
+  }
+  assert(!"Unsupported ShaderResourceKind");
+  return DescriptorBindingKind::UniformBuffer;
+}
+
+/* Gather all 'per graphic' bindings that the shader exposes. Also it verifies if the 'per instance'
+   binding is correct. Throws if it encounters a invalid binding.
+ */
+[[nodiscard]] auto getGraphicDescBindings(const asset::Shader* shader) {
+  auto bindings = DescriptorBindings{};
+  for (auto* resItr = shader->getResourceBegin(); resItr != shader->getResourceEnd(); ++resItr) {
+    const auto& resource = *resItr;
+    switch (resource.getSet()) {
+
+    // Per graphic resources.
+    case g_shaderResourceGraphicSetId:
+      bindings.emplace(resource.getBinding(), getDescBindingKind(resource.getKind()));
+      break;
+
+    // Per shader resources.
+    case g_shaderResourceInstanceSetId:
+      if (resource.getBinding() != 0U ||
+          resource.getKind() != asset::ShaderResourceKind::UniformBuffer) {
+        throw err::ShaderErr{
+            resource.getSet(),
+            resource.getBinding(),
+            shader->getId(),
+            "Unsupported per-instance binding, supported is a uniform buffer with binding 0"};
+      }
+      break;
+
+    // Unsupported  resources.
+    default:
+      throw err::ShaderErr{
+          resource.getSet(),
+          resource.getBinding(),
+          shader->getId(),
+          "Unsupported set, supported are 0 for per-graphic and 1 for per-instance data"};
+    }
+  }
+  return bindings;
+}
+
+/* Gather all 'per graphic' bindings that the given shaders expose.
+ */
+[[nodiscard]] auto getGraphicDescBindings(
+    const asset::Shader* const* shaderBegin, const asset::Shader* const* shaderEnd) {
+  auto bindings = DescriptorBindings{};
+  for (auto* shaderItr = shaderBegin; shaderItr != shaderEnd; ++shaderItr) {
+    // TODO(bastian): We should probably throw if multiple shaders define the same binding as a
+    // different kind? Currently the earlier shader would win.
+    bindings.merge(getGraphicDescBindings(*shaderItr));
+  }
+  return bindings;
+}
+
 } // namespace
 
 Graphic::Graphic(
@@ -198,30 +267,51 @@ Graphic::Graphic(
   assert(m_device);
   assert(m_asset);
 
-  m_vertShader = shaders->get(m_asset->getVertShader());
-  m_fragShader = shaders->get(m_asset->getFragShader());
-  m_mesh       = meshes->get(m_asset->getMesh());
+  // Create shader resources.
+  for (auto* shdItr = asset->getShaderBegin(); shdItr != asset->getShaderEnd(); ++shdItr) {
+    m_shaders.push_back(shaders->get(*shdItr));
+  }
+  m_mesh = meshes->get(m_asset->getMesh());
 
-  // Create a descriptor for the per graphic resources.
-  m_descSet = device->getDescManager().allocate(
-      DescriptorInfo{1U, 0U, static_cast<uint32_t>(asset->getSamplerCount())});
+  // Create a descriptor for the 'per graphic' resources.
+  auto graphicBindings = getGraphicDescBindings(asset->getShaderBegin(), asset->getShaderEnd());
+  m_descSet            = device->getDescManager().allocate(graphicBindings);
 
-  auto dstBinding = 0U;
-  m_descSet.attachStorageBuffer(dstBinding++, m_mesh->getVertexBuffer());
+  // Bind vertex data (mandatory at the moment).
+  if (graphicBindings.empty() || graphicBindings.begin()->first != 0U ||
+      graphicBindings.begin()->second != DescriptorBindingKind::StorageBuffer) {
+    throw err::GraphicErr{
+        asset->getId(),
+        "Shaders are required to bind to a storage buffer at binding 0 for receiving vertex data"};
+  }
+  m_descSet.attachBuffer(0U, m_mesh->getVertexBuffer(), m_mesh->getVertexBuffer().getSize());
 
-  // Create the texture resources and bind them to our descriptor.
+  // Create the texture resources.
   m_textures.reserve(m_asset->getSamplerCount());
   for (auto itr = m_asset->getSamplerBegin(); itr != m_asset->getSamplerEnd(); ++itr) {
-    // Create a gpu resource for the texture.
+
     const auto* tex = textures->get(itr->getTexture());
 
     const auto filterMode = static_cast<SamplerFilterMode>(itr->getFilterMode());
     const auto anisoMode  = static_cast<SamplerAnisotropyMode>(itr->getAnisoMode());
-    auto sampler          = Sampler{device, filterMode, anisoMode, tex->getImage().getMipLevels()};
+
+    auto sampler = Sampler{device, filterMode, anisoMode, tex->getImage().getMipLevels()};
     DBG_SAMPLER_NAME(m_device, sampler.getVkSampler(), m_asset->getId());
 
-    m_descSet.attachImage(dstBinding++, tex->getImage(), sampler);
     m_textures.emplace_back(tex, std::move(sampler));
+  }
+
+  // Bind the texture resources to our descriptor.
+  auto textureIdx = 0U;
+  for (const auto& binding : graphicBindings) {
+    if (binding.second == DescriptorBindingKind::CombinedImageSampler) {
+      if (m_textures.size() == textureIdx) {
+        throw err::GraphicErr{asset->getId(),
+                              "Graphic does not have enough samplers to satisfy shader inputs"};
+      }
+      const auto& tex = m_textures[textureIdx++];
+      m_descSet.attachImage(binding.first, tex.texture->getImage(), tex.sampler);
+    }
   }
 }
 
@@ -241,27 +331,21 @@ auto Graphic::prepareResources(
   }
 
   if (!m_vkPipeline) {
-    // Bind to our own resources like vertex data and any per-draw uniform data.
+
     m_vkPipelineLayout = createPipelineLayout(
         m_device->getVkDevice(), m_descSet.getVkLayout(), uni->getVkDescLayout());
-
     m_vkPipeline = createPipeline(
         m_device->getVkDevice(),
         vkRenderPass,
         m_vkPipelineLayout,
-        m_vertShader,
-        m_fragShader,
+        m_shaders,
         m_asset->getBlendMode(),
         m_asset->getDepthTestMode());
 
     DBG_PIPELINELAYOUT_NAME(m_device, m_vkPipelineLayout, m_asset->getId());
     DBG_PIPELINE_NAME(m_device, m_vkPipeline, m_asset->getId());
 
-    LOG_D(
-        m_logger,
-        "Vulkan pipline created",
-        {"asset", m_asset->getId()},
-        {"texCount", m_textures.size()});
+    LOG_D(m_logger, "Vulkan pipline created", {"asset", m_asset->getId()});
   }
 }
 
