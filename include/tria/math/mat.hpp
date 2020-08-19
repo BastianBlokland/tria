@@ -264,60 +264,62 @@ template <typename T, size_t Size>
 /* Orthographic projection matrix.
  */
 template <typename T>
-[[nodiscard]] constexpr auto orthoProjMat4(Vec<T, 2> size, T near, T far) noexcept {
+[[nodiscard]] constexpr auto orthoProjMat4(Vec<T, 2> size, T zNear, T zFar) noexcept {
   /*
    * [ 2 / w,       0,           0,           0            ]
    * [ 0,           -(2 / h),    0,           0            ]
-   * [ 0,           0,           1 / (f - n), -n / (f - n) ]
+   * [ 0,           0,           1 / (n - f), -f / (n - f) ]
    * [ 0,           0,           0,           1            ]
+   *
+   * Note: Setup for reversed-z depth so near objects are at depth 1 and far at 0.
    */
   auto res  = Mat<T, 4>{};
   res[0][0] = 2 / size.x();
   res[1][1] = -(2 / size.y());
-  res[2][2] = 1 / (far - near);
-  res[3][2] = -near / (far - near);
+  res[2][2] = 1 / (zNear - zFar);
+  res[3][2] = -zFar / (zNear - zFar);
   res[3][3] = 1;
   return res;
 }
 
-[[nodiscard]] constexpr auto orthoProjMat4f(Vec2f size, float near, float far) noexcept {
-  return orthoProjMat4(size, near, far);
+[[nodiscard]] constexpr auto orthoProjMat4f(Vec2f size, float zNear, float zFar) noexcept {
+  return orthoProjMat4(size, zNear, zFar);
 }
 
 /* Perspective projection matrix.
  */
 template <typename T>
-[[nodiscard]] constexpr auto persProjMat4(T horAngle, T verAngle, T near, T far) noexcept {
+[[nodiscard]] constexpr auto persProjMat4(T horAngle, T verAngle, T zNear) noexcept {
   /*
-   * [ 1 / tan(hor / 2),  0,                    0,           0                ]
-   * [ 0,                 -(1 / tan(ver / 2)),  0,           0                ]
-   * [ 0,                 0,                    f / (f - n), -n * f / (f - n) ]
-   * [ 0,                 0,                    1,           0                ]
+   * [ 1 / tan(hor / 2),  0,                    0,               0      ]
+   * [ 0,                 -(1 / tan(ver / 2)),  0,               0      ]
+   * [ 0,                 0,                    0,               zNear  ]
+   * [ 0,                 0,                    1,               0      ]
+   *
+   * Note: Setup for reversed-z with an infinite far plane, so near objects are at depth 1 and depth
+   * approaches 0 at infinite z.
    */
   auto res  = Mat<T, 4>{};
   res[0][0] = 1 / std::tan(horAngle * .5);
   res[1][1] = -(1 / std::tan(verAngle * .5));
-  res[2][2] = far / (far - near);
-  res[3][2] = -near * far / (far - near);
+  res[2][2] = 0;
+  res[3][2] = zNear;
   res[2][3] = 1;
   return res;
 }
 
-[[nodiscard]] constexpr auto
-persProjMat4f(float horAngle, float verAngle, float near, float far) noexcept {
-  return persProjMat4(horAngle, verAngle, near, far);
+[[nodiscard]] constexpr auto persProjMat4f(float horAngle, float verAngle, float zNear) noexcept {
+  return persProjMat4(horAngle, verAngle, zNear);
 }
 
-[[nodiscard]] inline auto
-persProjVerMat4f(float verAngle, float aspect, float near, float far) noexcept {
+[[nodiscard]] inline auto persProjVerMat4f(float verAngle, float aspect, float zNear) noexcept {
   const auto horAngle = std::atan(std::tan(verAngle * .5f) * aspect) * 2.f;
-  return persProjMat4(horAngle, verAngle, near, far);
+  return persProjMat4(horAngle, verAngle, zNear);
 }
 
-[[nodiscard]] inline auto
-persProjHorMat4f(float horAngle, float aspect, float near, float far) noexcept {
+[[nodiscard]] inline auto persProjHorMat4f(float horAngle, float aspect, float zNear) noexcept {
   auto verAngle = std::atan(std::tan(horAngle * .5f) / aspect) * 2.f;
-  return persProjMat4(horAngle, verAngle, near, far);
+  return persProjMat4(horAngle, verAngle, zNear);
 }
 
 /* Check if all columns of two matrices are approximately equal.

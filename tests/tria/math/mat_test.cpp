@@ -186,15 +186,20 @@ TEST_CASE("[math] - Mat", "[math]") {
     CHECK(approx(proj * Vec4f{-5.f, 0.f, 0.f, 1.f}, Vec4f{-1.f, 0.f, .5f, 1.f}));
     CHECK(approx(proj * Vec4f{-5.f, 5.f, 0.f, 1.f}, Vec4f{-1.f, -2.f, .5f, 1.f}));
     CHECK(approx(proj * Vec4f{-5.f, -5.f, 0.f, 1.f}, Vec4f{-1.f, 2.f, .5f, 1.f}));
-    CHECK(approx(proj * Vec4f{-5.f, 0.f, -2.f, 1.f}, Vec4f{-1.f, 0.f, 0.f, 1.f}));
-    CHECK(approx(proj * Vec4f{-5.f, 0.f, +2.f, 1.f}, Vec4f{-1.f, 0.f, 1.f, 1.f}));
+
+    // Reversed-z so near is at depth 1 and far is at depth 0.
+    CHECK(approx(proj * Vec4f{-5.f, 0.f, -2.f, 1.f}, Vec4f{-1.f, 0.f, 1.f, 1.f}));
+    CHECK(approx(proj * Vec4f{-5.f, 0.f, +2.f, 1.f}, Vec4f{-1.f, 0.f, 0.f, 1.f}));
   }
 
   SECTION("Perspective projection scales to clip-space") {
     const auto fov  = 90.f * math::degToRad<float>;
-    const auto proj = persProjMat4f(fov, fov, 1.f, 10.f);
-    CHECK(approx(persDivide(proj * Vec4f{0.f, 0.f, 1.f, 1.f}), Vec3f{0.f, 0.f, 0.f}));
-    CHECK(approx(persDivide(proj * Vec4f{0.f, 0.f, 10.f, 1.f}), Vec3f{0.f, 0.f, 1.f}));
+    const auto proj = persProjMat4f(fov, fov, 1.f);
+
+    // Reversed-z depth so, near plane is at depth 1.
+    CHECK(approx(persDivide(proj * Vec4f{0.f, 0.f, 1.f, 1.f}), Vec3f{0.f, 0.f, 1.f}));
+    // Reversed-z depth with infinite far plane, so infinite z is at depth 0.
+    CHECK(approx(persDivide(proj * Vec4f{0.f, 0.f, 999999.f, 1.f}), Vec3f{0.f, 0.f, 0.f}, .001f));
   }
 
   SECTION("Approx checks if two matrices are approximately equal") {
