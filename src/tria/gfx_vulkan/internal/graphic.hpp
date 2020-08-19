@@ -14,6 +14,9 @@ class Mesh;
 class Texture;
 class Shader;
 
+constexpr auto g_shaderResourceGraphicSetId  = 0U; // Per graphic resources.
+constexpr auto g_shaderResourceInstanceSetId = 1U; // Per instance resources.
+
 /* Graphic resource.
  * Holding a vulkan pipeline and dependencies.
  */

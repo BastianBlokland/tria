@@ -23,8 +23,8 @@ enum class ShaderResourceKind : uint8_t {
 
 /* Upper bounds on shader set and binding.
  */
-constexpr auto maxShaderSets     = 32U; // Sets 0 - 31 are valid.
-constexpr auto maxShaderBindings = 32U; // Bindings 0 - 31 are valid.
+constexpr auto g_maxShaderSets     = 32U; // Sets 0 - 31 are valid.
+constexpr auto g_maxShaderBindings = 32U; // Bindings 0 - 31 are valid.
 
 /* Shader input resource.
  * Set and binding are used by the graphics driver to link a resource to a shader.

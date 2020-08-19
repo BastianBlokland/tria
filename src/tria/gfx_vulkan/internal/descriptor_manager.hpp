@@ -2,13 +2,14 @@
 #include "tria/log/api.hpp"
 #include <array>
 #include <forward_list>
+#include <map>
 #include <optional>
 #include <utility>
 #include <vulkan/vulkan.h>
 
 namespace tria::gfx::internal {
 
-// TODO(bastian): Needs testing to what number of sets per VkDescriptorPool makes sense.
+// TODO(bastian): Needs testing to see what number of sets per VkDescriptorPool makes sense.
 constexpr auto g_descriptorSetsPerGroup = 6;
 
 class Device;
@@ -26,13 +27,9 @@ enum class DescriptorBindingKind {
   StorageBuffer        = 4,
 };
 
-/* Binding id + the kind of binding.
+/* Collection of bindings.
  */
-using DescriptorBinding = std::pair<uint32_t, DescriptorBindingKind>;
-
-/* Set of bindings.
- */
-using DescriptorBindings = std::vector<DescriptorBinding>;
+using DescriptorBindings = std::map<uint32_t, DescriptorBindingKind>;
 
 /* Handle to an allocated VkDescriptorSet.
  * Is automatically freed in the destructor.

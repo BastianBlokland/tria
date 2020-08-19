@@ -281,7 +281,7 @@ getShaderResourceKind(const SpvProgram& program, uint32_t typeIdx, SpvStorageCla
     case SpvStorageClassStorageBuffer:
       return ShaderResourceKind::StorageBuffer;
     default:
-      [[fallthrough]];
+      break;
     }
   default:
     throw err::ShaderSpvErr{"Unsupported shader resource found in SpirV"};
@@ -289,8 +289,8 @@ getShaderResourceKind(const SpvProgram& program, uint32_t typeIdx, SpvStorageCla
 }
 
 [[nodiscard]] auto getResources(const SpvProgram& program) -> std::vector<ShaderResource> {
-  static_assert(sizeof(uint32_t) == maxShaderBindings / 8);
-  std::array<uint32_t, maxShaderSets> usedSlots = {};
+  static_assert(sizeof(uint32_t) == g_maxShaderBindings / 8);
+  std::array<uint32_t, g_maxShaderSets> usedSlots = {};
 
   auto result = std::vector<ShaderResource>{};
   for (const auto& spvId : program.ids) {
@@ -299,10 +299,10 @@ getShaderResourceKind(const SpvProgram& program, uint32_t typeIdx, SpvStorageCla
       if (spvId.set == UINT32_MAX || spvId.binding == UINT32_MAX) {
         throw err::ShaderSpvErr{"Shader resource without set and binding found in SpirV"};
       }
-      if (spvId.set >= maxShaderSets) {
+      if (spvId.set >= g_maxShaderSets) {
         throw err::ShaderSpvErr{"Shader resource set exceeds maximum"};
       }
-      if (spvId.binding >= maxShaderBindings) {
+      if (spvId.binding >= g_maxShaderBindings) {
         throw err::ShaderSpvErr{"Shader resource binding exceeds maximum"};
       }
       if (usedSlots[spvId.set] & (1U << spvId.binding)) {

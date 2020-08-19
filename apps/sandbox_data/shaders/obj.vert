@@ -3,12 +3,12 @@
 #extension GL_GOOGLE_include_directive : enable
 #include "include/common.glsl"
 
-VERTEX_INPUT_BINDING(set = 0);
+VERTEX_INPUT_BINDING();
 
 struct InstanceData {
   mat4 mat;
 };
-INSTANCE_INPUT_BINDING(set = 1, InstanceData);
+INSTANCE_INPUT_BINDING(InstanceData);
 
 layout(location = 0) out vec3 outNrm;
 layout(location = 1) out vec2 outTexcoord;

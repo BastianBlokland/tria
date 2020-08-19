@@ -4,13 +4,6 @@
     "shaders/obj_nrm.frag.spv"
   ],
   "mesh": "assets/bunny.obj",
-  "samplers": [
-    {
-      "texture": "textures/checker.ppm",
-      "filter": "nearest",
-      "anisotropy": "none"
-    }
-  ],
   "blend": "none",
   "depthTest": "less"
 }

@@ -243,9 +243,9 @@ auto DescriptorGroup::free(DescriptorSet* set) noexcept -> void {
   assert(set);
   assert(set->m_group == this);
   assert(set->m_id >= 0);
-  assert((m_free & (1 << set->m_id)) == 0); // Check if its not freed before.
+  assert((m_free & (1U << set->m_id)) == 0); // Check if its not freed before.
 
-  m_free |= 1 << set->m_id; // Mark the set as free.
+  m_free |= 1U << set->m_id; // Mark the set as free.
   set->m_group = nullptr;
 }
 

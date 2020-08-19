@@ -19,7 +19,7 @@ public:
   ~AssetResource() = default;
 
   template <typename... Parameters>
-  [[nodiscard]] auto get(const AssetType* asset, Parameters&&... parameters) noexcept -> const T* {
+  [[nodiscard]] auto get(const AssetType* asset, Parameters&&... parameters) -> const T* {
     assert(asset);
 
     // If we already have a resource for the given asset then return that.
