@@ -12,12 +12,8 @@ namespace tria::scene {
 class Cam3d final {
 public:
   Cam3d() = delete;
-  Cam3d(math::Vec3f pos, math::Quatf orient, float fovDeg, float near, float far) :
-      m_pos{pos},
-      m_orient{orient},
-      m_fov{fovDeg * math::degToRad<float>},
-      m_near{near},
-      m_far{far} {}
+  Cam3d(math::Vec3f pos, math::Quatf orient, float fovDeg, float zNear) :
+      m_pos{pos}, m_orient{orient}, m_fov{fovDeg * math::degToRad<float>}, m_zNear{zNear} {}
 
   [[nodiscard]] auto pos() const noexcept -> const math::Vec3f& { return m_pos; }
   [[nodiscard]] auto pos() noexcept -> math::Vec3f& { return m_pos; }
@@ -55,7 +51,7 @@ public:
   /* Projection matrix, brings points from view space into screen space.
    */
   [[nodiscard]] auto getProjMat(float aspect) const noexcept {
-    return math::persProjVerMat4f(m_fov, aspect, m_near, m_far);
+    return math::persProjVerMat4f(m_fov, aspect, m_zNear);
   }
 
   /* View-projection matrix, brings points from world space to screen space.
@@ -68,8 +64,7 @@ private:
   math::Vec3f m_pos;
   math::Quatf m_orient;
   float m_fov;
-  float m_near;
-  float m_far;
+  float m_zNear;
 };
 
 } // namespace tria::scene

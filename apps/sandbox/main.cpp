@@ -62,11 +62,10 @@ auto runApp(pal::Platform& platform, asset::Database& db, gfx::Context& gfx) {
   };
 
   constexpr auto camVerFov         = 60.f;
-  constexpr auto camNear           = .1f;
-  constexpr auto camFar            = 1'000.f;
+  constexpr auto camZNear          = .1f;
   constexpr auto camMoveSpeed      = 10.f;
   constexpr auto camRotSensitivity = 3.f;
-  auto cam = scene::Cam3d({-1, 0, -10.f}, identityQuatf(), camVerFov, camNear, camFar);
+  auto cam = scene::Cam3d({-1, 0, -10.f}, identityQuatf(), camVerFov, camZNear);
 
   auto frameNum       = 0U;
   auto frameStartTime = high_resolution_clock::now();

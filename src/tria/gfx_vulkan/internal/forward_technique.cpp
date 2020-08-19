@@ -123,7 +123,8 @@ auto beginVkRenderPass(
 
   std::array<VkClearValue, 2> clearValues;
   clearCol.memcpy(clearValues[0].color.float32);
-  clearValues[1].depthStencil = {1.0f, 0U}; // Set depth to the 'back' (stencil is not used atm).
+  // Clear depth to zero, reason is we are using a reversed-z depthbuffer.
+  clearValues[1].depthStencil = {0.0f, 0U}; // Depth to zero (stencil is not used).
 
   VkRenderPassBeginInfo renderPassInfo    = {};
   renderPassInfo.sType                    = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;

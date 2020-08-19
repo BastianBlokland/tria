@@ -94,7 +94,8 @@ namespace {
   switch (depthTestMode) {
   case asset::DepthTestMode::Less:
     depthStencil.depthTestEnable = true;
-    depthStencil.depthCompareOp  = VK_COMPARE_OP_LESS;
+    // Use the 'greater' compare op, because we are using a reversed-z depthbuffer.
+    depthStencil.depthCompareOp = VK_COMPARE_OP_GREATER;
     break;
   case asset::DepthTestMode::Always:
     depthStencil.depthTestEnable = true;
@@ -306,8 +307,8 @@ Graphic::Graphic(
   for (const auto& binding : graphicBindings) {
     if (binding.second == DescriptorBindingKind::CombinedImageSampler) {
       if (m_textures.size() == textureIdx) {
-        throw err::GraphicErr{asset->getId(),
-                              "Graphic does not have enough samplers to satisfy shader inputs"};
+        throw err::GraphicErr{
+            asset->getId(), "Graphic does not have enough samplers to satisfy shader inputs"};
       }
       const auto& tex = m_textures[textureIdx++];
       m_descSet.attachImage(binding.first, tex.texture->getImage(), tex.sampler);

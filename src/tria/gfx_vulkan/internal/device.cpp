@@ -202,6 +202,7 @@ Device::Device(
     throw err::GfxErr{"Selected vulkan device is missing a presentation queue"};
   }
 
+  // Note: Pick a floating point depth buffer format as we are using a reversed-z depthbuffer.
   const auto foundDepthFormat = pickVkFormat<1>(
       vkPhysicalDevice, {VK_FORMAT_D32_SFLOAT}, VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT);
   if (foundDepthFormat) {
@@ -265,8 +266,8 @@ auto Device::queryVkSurfaceCapabilities() const -> VkSurfaceCapabilitiesKHR {
   return result;
 }
 
-auto Device::setDebugName(VkObjectType vkType, uint64_t vkHandle, std::string_view name) const
-    noexcept -> void {
+auto Device::setDebugName(
+    VkObjectType vkType, uint64_t vkHandle, std::string_view name) const noexcept -> void {
   m_context->setDebugName(m_vkDevice, vkType, vkHandle, name);
 }
 
