@@ -19,7 +19,7 @@ namespace {
  * instance' data like a transformation matrix.
  */
 [[nodiscard]] auto createPipelineLayout(
-    VkDevice vkDevice,
+    const Device* device,
     VkDescriptorSetLayout graphicDescriptor,
     VkDescriptorSetLayout instanceDescriptor) {
 
@@ -34,15 +34,17 @@ namespace {
   pipelineLayoutInfo.pSetLayouts                = descriptorLayouts.data();
 
   VkPipelineLayout result;
-  checkVkResult(vkCreatePipelineLayout(vkDevice, &pipelineLayoutInfo, nullptr, &result));
+  checkVkResult(
+      vkCreatePipelineLayout(device->getVkDevice(), &pipelineLayoutInfo, nullptr, &result));
   return result;
 }
 
 [[nodiscard]] auto createPipeline(
-    VkDevice vkDevice,
+    const Device* device,
     VkRenderPass vkRenderPass,
     VkPipelineLayout layout,
     const std::vector<const Shader*>& shaders,
+    asset::RasterizerMode rasterizerMode,
     asset::BlendMode blendMode,
     asset::DepthTestMode depthTestMode) {
 
@@ -79,9 +81,23 @@ namespace {
   VkPipelineRasterizationStateCreateInfo rasterizer = {};
   rasterizer.sType       = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
   rasterizer.polygonMode = VK_POLYGON_MODE_FILL;
-  rasterizer.lineWidth   = 1.0f;
-  rasterizer.cullMode    = VK_CULL_MODE_BACK_BIT;
-  rasterizer.frontFace   = VK_FRONT_FACE_CLOCKWISE;
+  if (device->getFeatures().fillModeNonSolid) {
+    switch (rasterizerMode) {
+    case asset::RasterizerMode::Fill:
+      rasterizer.polygonMode = VK_POLYGON_MODE_FILL;
+      break;
+    case asset::RasterizerMode::Lines:
+      rasterizer.polygonMode = VK_POLYGON_MODE_LINE;
+      break;
+    case asset::RasterizerMode::Points:
+      rasterizer.polygonMode = VK_POLYGON_MODE_POINT;
+      break;
+    }
+  }
+  rasterizer.lineWidth = 1.0f;
+  rasterizer.cullMode =
+      rasterizer.polygonMode == VK_POLYGON_MODE_FILL ? VK_CULL_MODE_BACK_BIT : VK_CULL_MODE_NONE;
+  rasterizer.frontFace = VK_FRONT_FACE_CLOCKWISE;
 
   // No multi-sampling is enabled at the moment.
   VkPipelineMultisampleStateCreateInfo multisampling = {};
@@ -183,7 +199,8 @@ namespace {
   pipelineInfo.subpass                      = 0;
 
   VkPipeline result;
-  checkVkResult(vkCreateGraphicsPipelines(vkDevice, nullptr, 1, &pipelineInfo, nullptr, &result));
+  checkVkResult(vkCreateGraphicsPipelines(
+      device->getVkDevice(), nullptr, 1, &pipelineInfo, nullptr, &result));
   return result;
 }
 
@@ -307,8 +324,8 @@ Graphic::Graphic(
   for (const auto& binding : graphicBindings) {
     if (binding.second == DescriptorBindingKind::CombinedImageSampler) {
       if (m_textures.size() == textureIdx) {
-        throw err::GraphicErr{
-            asset->getId(), "Graphic does not have enough samplers to satisfy shader inputs"};
+        throw err::GraphicErr{asset->getId(),
+                              "Graphic does not have enough samplers to satisfy shader inputs"};
       }
       const auto& tex = m_textures[textureIdx++];
       m_descSet.attachImage(binding.first, tex.texture->getImage(), tex.sampler);
@@ -333,13 +350,14 @@ auto Graphic::prepareResources(
 
   if (!m_vkPipeline) {
 
-    m_vkPipelineLayout = createPipelineLayout(
-        m_device->getVkDevice(), m_descSet.getVkLayout(), uni->getVkDescLayout());
+    m_vkPipelineLayout =
+        createPipelineLayout(m_device, m_descSet.getVkLayout(), uni->getVkDescLayout());
     m_vkPipeline = createPipeline(
-        m_device->getVkDevice(),
+        m_device,
         vkRenderPass,
         m_vkPipelineLayout,
         m_shaders,
+        m_asset->getRasterizerMode(),
         m_asset->getBlendMode(),
         m_asset->getDepthTestMode());
 

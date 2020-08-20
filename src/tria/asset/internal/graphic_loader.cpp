@@ -11,6 +11,16 @@ namespace tria::asset::internal {
 
 namespace {
 
+[[nodiscard]] auto getRasterizerMode(std::string_view str) -> std::optional<RasterizerMode> {
+  static const std::unordered_map<std::string_view, RasterizerMode> table = {
+      {"fill", RasterizerMode::Fill},
+      {"lines", RasterizerMode::Lines},
+      {"points", RasterizerMode::Points},
+  };
+  const auto search = table.find(str);
+  return search == table.end() ? std::nullopt : std::optional{search->second};
+}
+
 [[nodiscard]] auto getTextureFilterMode(std::string_view str) -> std::optional<FilterMode> {
   static const std::unordered_map<std::string_view, FilterMode> table = {
       {"nearest", FilterMode::Nearest},
@@ -135,6 +145,17 @@ auto loadGraphic(log::Logger* /*unused*/, DatabaseImpl* db, AssetId id, math::Ra
     }
   }
 
+  // Rasterizer mode (optional field).
+  auto rasterizerMode = RasterizerMode::Fill;
+  std::string_view rasterizerStr;
+  if (!obj.at("rasterizer").get(rasterizerStr)) {
+    auto rasterizerModeOpt = getRasterizerMode(rasterizerStr);
+    if (!rasterizerModeOpt) {
+      throw err::GraphicErr{"Unsupported rasterizer mode"};
+    }
+    rasterizerMode = *rasterizerModeOpt;
+  }
+
   // Blend mode (optional field).
   auto blendMode = BlendMode::None;
   std::string_view blendStr;
@@ -158,7 +179,13 @@ auto loadGraphic(log::Logger* /*unused*/, DatabaseImpl* db, AssetId id, math::Ra
   }
 
   return std::make_unique<Graphic>(
-      std::move(id), std::move(shaders), mesh, std::move(samplers), blendMode, depthTestMode);
+      std::move(id),
+      std::move(shaders),
+      mesh,
+      std::move(samplers),
+      rasterizerMode,
+      blendMode,
+      depthTestMode);
 }
 
 } // namespace tria::asset::internal

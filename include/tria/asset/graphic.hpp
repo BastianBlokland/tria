@@ -7,6 +7,14 @@
 
 namespace tria::asset {
 
+/* Mode that is used when rasterizing triangles.
+ */
+enum class RasterizerMode : uint8_t {
+  Fill   = 0, // Fill the triangles with pixels.
+  Lines  = 1, // Draw lines between the vertices.
+  Points = 2, // Draw points on the vertices.
+};
+
 /* Mode with which the fragment shader output color is blended with the framebuffer color.
  */
 enum class BlendMode : uint8_t {
@@ -72,12 +80,14 @@ public:
       std::vector<const Shader*> shaders,
       const Mesh* mesh,
       std::vector<TextureSampler> samplers,
+      RasterizerMode rasterizerMode,
       BlendMode blendMode,
       DepthTestMode depthTestMode) :
       Asset{std::move(id), getKind()},
       m_shaders{std::move(shaders)},
       m_mesh{mesh},
       m_samplers{std::move(samplers)},
+      m_rasterizerMode{rasterizerMode},
       m_blendMode{blendMode},
       m_depthTestMode{depthTestMode} {
     assert(m_mesh);
@@ -109,6 +119,7 @@ public:
     return m_samplers.data() + m_samplers.size();
   }
 
+  [[nodiscard]] auto getRasterizerMode() const noexcept { return m_rasterizerMode; }
   [[nodiscard]] auto getBlendMode() const noexcept { return m_blendMode; }
   [[nodiscard]] auto getDepthTestMode() const noexcept { return m_depthTestMode; }
 
@@ -116,6 +127,7 @@ private:
   std::vector<const Shader*> m_shaders;
   const Mesh* m_mesh;
   std::vector<TextureSampler> m_samplers;
+  RasterizerMode m_rasterizerMode;
   BlendMode m_blendMode;
   DepthTestMode m_depthTestMode;
 };
