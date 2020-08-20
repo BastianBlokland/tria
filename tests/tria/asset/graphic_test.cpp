@@ -45,7 +45,8 @@ TEST_CASE("[asset] - Graphic", "[asset]") {
           "\"mesh\": \"test.obj\","
           "\"rasterizer\": \"lines\","
           "\"blend\": \"alpha\","
-          "\"depthTest\": \"less\""
+          "\"depthTest\": \"less\","
+          "\"cull\": \"front\""
           "}");
 
       auto db   = Database{nullptr, dir};
@@ -57,6 +58,7 @@ TEST_CASE("[asset] - Graphic", "[asset]") {
       CHECK(gfx->getMesh()->getKind() == AssetKind::Mesh);
       CHECK(gfx->getBlendMode() == BlendMode::Alpha);
       CHECK(gfx->getDepthTestMode() == DepthTestMode::Less);
+      CHECK(gfx->getCullMode() == CullMode::Front);
     });
   }
 

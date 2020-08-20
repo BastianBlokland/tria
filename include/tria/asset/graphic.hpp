@@ -49,6 +49,14 @@ enum class DepthTestMode : uint8_t {
   Always = 2, // Always pass the depth-test.
 };
 
+/* Rasterizer cull mode.
+ */
+enum class CullMode : uint8_t {
+  None  = 0, // No culling.
+  Back  = 1, // Cull back-facing triangles.
+  Front = 2, // Cull front-facing triangles.
+};
+
 /*
  * Contains a reference to a texture and sample settings.
  */
@@ -83,7 +91,8 @@ public:
       RasterizerMode rasterizerMode,
       float lineWidth,
       BlendMode blendMode,
-      DepthTestMode depthTestMode) :
+      DepthTestMode depthTestMode,
+      CullMode cullMode) :
       Asset{std::move(id), getKind()},
       m_shaders{std::move(shaders)},
       m_mesh{mesh},
@@ -91,7 +100,8 @@ public:
       m_rasterizerMode{rasterizerMode},
       m_lineWidth{lineWidth},
       m_blendMode{blendMode},
-      m_depthTestMode{depthTestMode} {
+      m_depthTestMode{depthTestMode},
+      m_cullMode{cullMode} {
     assert(m_mesh);
   }
   Graphic(const Graphic& rhs) = delete;
@@ -131,6 +141,8 @@ public:
 
   [[nodiscard]] auto getDepthTestMode() const noexcept { return m_depthTestMode; }
 
+  [[nodiscard]] auto getCullMode() const noexcept { return m_cullMode; }
+
 private:
   std::vector<const Shader*> m_shaders;
   const Mesh* m_mesh;
@@ -139,6 +151,7 @@ private:
   float m_lineWidth;
   BlendMode m_blendMode;
   DepthTestMode m_depthTestMode;
+  CullMode m_cullMode;
 };
 
 } // namespace tria::asset

@@ -3,7 +3,8 @@
     "shaders/sky.vert.spv",
     "shaders/sky.frag.spv"
   ],
-  "mesh": "models/quad.obj",
+  "mesh": "models/quad_xy.obj",
   "blend": "none",
-  "depthTest": "always"
+  "depthTest": "always",
+  "cull": "none"
 }

@@ -47,7 +47,8 @@ namespace {
     asset::RasterizerMode rasterizerMode,
     float lineWidth,
     asset::BlendMode blendMode,
-    asset::DepthTestMode depthTestMode) {
+    asset::DepthTestMode depthTestMode,
+    asset::CullMode cullMode) {
 
   auto shaderStages = std::vector<VkPipelineShaderStageCreateInfo>();
   shaderStages.reserve(shaders.size());
@@ -99,10 +100,18 @@ namespace {
       ? std::clamp(
             lineWidth, device->getLimits().lineWidthRange[0], device->getLimits().lineWidthRange[1])
       : 1.f;
-  // TODO(bastian): This should probably be configurable, currently we assume that when rendering
-  // lines or points you want to see backfacing primitives also.
-  rasterizer.cullMode =
-      rasterizer.polygonMode == VK_POLYGON_MODE_FILL ? VK_CULL_MODE_BACK_BIT : VK_CULL_MODE_NONE;
+  rasterizer.cullMode = VK_CULL_MODE_NONE;
+  switch (cullMode) {
+  case asset::CullMode::None:
+    rasterizer.cullMode = VK_CULL_MODE_NONE;
+    break;
+  case asset::CullMode::Back:
+    rasterizer.cullMode = VK_CULL_MODE_BACK_BIT;
+    break;
+  case asset::CullMode::Front:
+    rasterizer.cullMode = VK_CULL_MODE_FRONT_BIT;
+    break;
+  }
   rasterizer.frontFace = VK_FRONT_FACE_CLOCKWISE;
 
   // No multi-sampling is enabled at the moment.
@@ -366,7 +375,8 @@ auto Graphic::prepareResources(
         m_asset->getRasterizerMode(),
         m_asset->getLineWidth(),
         m_asset->getBlendMode(),
-        m_asset->getDepthTestMode());
+        m_asset->getDepthTestMode(),
+        m_asset->getCullMode());
 
     DBG_PIPELINELAYOUT_NAME(m_device, m_vkPipelineLayout, m_asset->getId());
     DBG_PIPELINE_NAME(m_device, m_vkPipeline, m_asset->getId());

@@ -63,6 +63,16 @@ namespace {
   return search == table.end() ? std::nullopt : std::optional{search->second};
 }
 
+[[nodiscard]] auto getCullMode(std::string_view str) -> std::optional<CullMode> {
+  static const std::unordered_map<std::string_view, CullMode> table = {
+      {"none", CullMode::None},
+      {"back", CullMode::Back},
+      {"front", CullMode::Front},
+  };
+  const auto search = table.find(str);
+  return search == table.end() ? std::nullopt : std::optional{search->second};
+}
+
 } // namespace
 
 auto loadGraphic(log::Logger* /*unused*/, DatabaseImpl* db, AssetId id, math::RawData raw)
@@ -184,6 +194,17 @@ auto loadGraphic(log::Logger* /*unused*/, DatabaseImpl* db, AssetId id, math::Ra
     depthTestMode = *depthTestModeOpt;
   }
 
+  // Cull mode (optional field).
+  auto cullMode = CullMode::Back;
+  std::string_view cullModeStr;
+  if (!obj.at("cull").get(cullModeStr)) {
+    auto cullModeOpt = getCullMode(cullModeStr);
+    if (!cullModeOpt) {
+      throw err::GraphicErr{"Unsupported cull mode"};
+    }
+    cullMode = *cullModeOpt;
+  }
+
   return std::make_unique<Graphic>(
       std::move(id),
       std::move(shaders),
@@ -192,7 +213,8 @@ auto loadGraphic(log::Logger* /*unused*/, DatabaseImpl* db, AssetId id, math::Ra
       rasterizerMode,
       static_cast<float>(lineWidth),
       blendMode,
-      depthTestMode);
+      depthTestMode,
+      cullMode);
 }
 
 } // namespace tria::asset::internal
