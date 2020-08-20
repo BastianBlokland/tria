@@ -118,6 +118,9 @@ createVkDevice(VkPhysicalDevice vkPhysicalDevice, std::set<uint32_t> queueFamili
   if (supportedFeatures.fillModeNonSolid) {
     featuresToEnable.fillModeNonSolid = true;
   }
+  if (supportedFeatures.wideLines) {
+    featuresToEnable.wideLines = true;
+  }
 
   // Queues to create on the device.
   auto queueCreateInfos = std::vector<VkDeviceQueueCreateInfo>{};

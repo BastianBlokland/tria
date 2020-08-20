@@ -156,6 +156,12 @@ auto loadGraphic(log::Logger* /*unused*/, DatabaseImpl* db, AssetId id, math::Ra
     rasterizerMode = *rasterizerModeOpt;
   }
 
+  // Line width (optional field).
+  double lineWidth;
+  if (obj.at("lineWidth").get(lineWidth)) {
+    lineWidth = 1.; // Default to 1 pixel wide lines.
+  }
+
   // Blend mode (optional field).
   auto blendMode = BlendMode::None;
   std::string_view blendStr;
@@ -184,6 +190,7 @@ auto loadGraphic(log::Logger* /*unused*/, DatabaseImpl* db, AssetId id, math::Ra
       mesh,
       std::move(samplers),
       rasterizerMode,
+      static_cast<float>(lineWidth),
       blendMode,
       depthTestMode);
 }

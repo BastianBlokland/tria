@@ -45,6 +45,7 @@ namespace {
     VkPipelineLayout layout,
     const std::vector<const Shader*>& shaders,
     asset::RasterizerMode rasterizerMode,
+    float lineWidth,
     asset::BlendMode blendMode,
     asset::DepthTestMode depthTestMode) {
 
@@ -94,7 +95,12 @@ namespace {
       break;
     }
   }
-  rasterizer.lineWidth = 1.0f;
+  rasterizer.lineWidth = device->getFeatures().wideLines
+      ? std::clamp(
+            lineWidth, device->getLimits().lineWidthRange[0], device->getLimits().lineWidthRange[1])
+      : 1.f;
+  // TODO(bastian): This should probably be configurable, currently we assume that when rendering
+  // lines or points you want to see backfacing primitives also.
   rasterizer.cullMode =
       rasterizer.polygonMode == VK_POLYGON_MODE_FILL ? VK_CULL_MODE_BACK_BIT : VK_CULL_MODE_NONE;
   rasterizer.frontFace = VK_FRONT_FACE_CLOCKWISE;
@@ -358,6 +364,7 @@ auto Graphic::prepareResources(
         m_vkPipelineLayout,
         m_shaders,
         m_asset->getRasterizerMode(),
+        m_asset->getLineWidth(),
         m_asset->getBlendMode(),
         m_asset->getDepthTestMode());
 

@@ -81,6 +81,7 @@ public:
       const Mesh* mesh,
       std::vector<TextureSampler> samplers,
       RasterizerMode rasterizerMode,
+      float lineWidth,
       BlendMode blendMode,
       DepthTestMode depthTestMode) :
       Asset{std::move(id), getKind()},
@@ -88,6 +89,7 @@ public:
       m_mesh{mesh},
       m_samplers{std::move(samplers)},
       m_rasterizerMode{rasterizerMode},
+      m_lineWidth{lineWidth},
       m_blendMode{blendMode},
       m_depthTestMode{depthTestMode} {
     assert(m_mesh);
@@ -120,7 +122,13 @@ public:
   }
 
   [[nodiscard]] auto getRasterizerMode() const noexcept { return m_rasterizerMode; }
+
+  /* Width of the lines (in pixels) when the rasterizer mode is 'lines'.
+   */
+  [[nodiscard]] auto getLineWidth() const noexcept { return m_lineWidth; }
+
   [[nodiscard]] auto getBlendMode() const noexcept { return m_blendMode; }
+
   [[nodiscard]] auto getDepthTestMode() const noexcept { return m_depthTestMode; }
 
 private:
@@ -128,6 +136,7 @@ private:
   const Mesh* m_mesh;
   std::vector<TextureSampler> m_samplers;
   RasterizerMode m_rasterizerMode;
+  float m_lineWidth;
   BlendMode m_blendMode;
   DepthTestMode m_depthTestMode;
 };
