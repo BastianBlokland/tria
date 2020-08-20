@@ -115,6 +115,12 @@ createVkDevice(VkPhysicalDevice vkPhysicalDevice, std::set<uint32_t> queueFamili
   if (supportedFeatures.samplerAnisotropy) {
     featuresToEnable.samplerAnisotropy = true;
   }
+  if (supportedFeatures.fillModeNonSolid) {
+    featuresToEnable.fillModeNonSolid = true;
+  }
+  if (supportedFeatures.wideLines) {
+    featuresToEnable.wideLines = true;
+  }
 
   // Queues to create on the device.
   auto queueCreateInfos = std::vector<VkDeviceQueueCreateInfo>{};
@@ -266,8 +272,8 @@ auto Device::queryVkSurfaceCapabilities() const -> VkSurfaceCapabilitiesKHR {
   return result;
 }
 
-auto Device::setDebugName(
-    VkObjectType vkType, uint64_t vkHandle, std::string_view name) const noexcept -> void {
+auto Device::setDebugName(VkObjectType vkType, uint64_t vkHandle, std::string_view name) const
+    noexcept -> void {
   m_context->setDebugName(m_vkDevice, vkType, vkHandle, name);
 }
 

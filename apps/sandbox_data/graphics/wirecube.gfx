@@ -1,0 +1,11 @@
+{
+  "shaders": [
+    "shaders/obj.vert.spv",
+    "shaders/obj_nrm.frag.spv"
+  ],
+  "mesh": "models/cube.obj",
+  "rasterizer": "lines",
+  "lineWidth": 2,
+  "blend": "none",
+  "depthTest": "less"
+}
