@@ -11,6 +11,16 @@ namespace tria::asset::internal {
 
 namespace {
 
+[[nodiscard]] auto getVertexTopology(std::string_view str) -> std::optional<VertexTopology> {
+  static const std::unordered_map<std::string_view, VertexTopology> table = {
+      {"triangles", VertexTopology::Triangles},
+      {"lines", VertexTopology::Lines},
+      {"linestrip", VertexTopology::LineStrip},
+  };
+  const auto search = table.find(str);
+  return search == table.end() ? std::nullopt : std::optional{search->second};
+}
+
 [[nodiscard]] auto getRasterizerMode(std::string_view str) -> std::optional<RasterizerMode> {
   static const std::unordered_map<std::string_view, RasterizerMode> table = {
       {"fill", RasterizerMode::Fill},
@@ -108,12 +118,12 @@ auto loadGraphic(log::Logger* /*unused*/, DatabaseImpl* db, AssetId id, math::Ra
     throw err::GraphicErr{"Incorrect fragment shader count, expected 1"};
   }
 
-  // Mesh.
+  // Mesh  (optional field).
+  const Mesh* mesh = nullptr;
   std::string_view meshId;
-  if (obj.at("mesh").get(meshId)) {
-    throw err::GraphicErr{"No 'mesh' field found on graphic"};
+  if (!obj.at("mesh").get(meshId)) {
+    mesh = db->get(AssetId{meshId})->downcast<Mesh>();
   }
-  auto* mesh = db->get(AssetId{meshId})->downcast<Mesh>();
 
   // Samplers (optional field).
   auto samplers = std::vector<TextureSampler>{};
@@ -153,6 +163,17 @@ auto loadGraphic(log::Logger* /*unused*/, DatabaseImpl* db, AssetId id, math::Ra
 
       samplers.push_back(TextureSampler{texture, filterMode, anisoMode});
     }
+  }
+
+  // Vertex topology (optional field).
+  auto vertexTopology = VertexTopology::Triangles;
+  std::string_view topologyStr;
+  if (!obj.at("topology").get(topologyStr)) {
+    auto vertexTopologyOpt = getVertexTopology(topologyStr);
+    if (!vertexTopologyOpt) {
+      throw err::GraphicErr{"Unsupported vertex topology"};
+    }
+    vertexTopology = *vertexTopologyOpt;
   }
 
   // Rasterizer mode (optional field).
@@ -210,6 +231,7 @@ auto loadGraphic(log::Logger* /*unused*/, DatabaseImpl* db, AssetId id, math::Ra
       std::move(shaders),
       mesh,
       std::move(samplers),
+      vertexTopology,
       rasterizerMode,
       static_cast<float>(lineWidth),
       blendMode,

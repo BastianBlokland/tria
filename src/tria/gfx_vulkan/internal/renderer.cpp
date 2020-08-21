@@ -208,12 +208,15 @@ auto Renderer::drawBegin(
 auto Renderer::draw(
     const ForwardTechnique& technique,
     const Graphic* graphic,
+    uint32_t indexCount,
     const void* instData,
     const size_t instDataSize,
     uint32_t count) -> void {
 
-  // TODO(bastian): Is it worth it throwing an exception here?
-  assert(instDataSize <= m_uni->getMaxDataSize());
+  if (instDataSize > m_uni->getMaxDataSize()) {
+    LOG_W(m_logger, "Instance data size exceeds maximum", {"graphic", graphic->getId()});
+    return;
+  }
 
   DBG_CMD_BEGIN_LABEL(
       m_device, m_drawVkCommandBuffer, "Draw " + graphic->getId(), math::color::get(m_drawId));
@@ -224,11 +227,50 @@ auto Renderer::draw(
       m_drawVkCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphic->getVkPipeline());
 
   const auto* mesh = graphic->getMesh();
-  vkCmdBindIndexBuffer(
+  if (mesh) {
+    vkCmdBindIndexBuffer(
+        m_drawVkCommandBuffer,
+        mesh->getIndexBuffer().getVkBuffer(),
+        0U,
+        getVkIndexType<Mesh::IndexType>());
+    if (!indexCount) {
+      // Zero indexCount indicates we should draw all indices.
+      indexCount = mesh->getIndexCount();
+    } else {
+      // Otherwise draw up to the indexCount.
+      indexCount = std::min(static_cast<size_t>(indexCount), mesh->getIndexCount());
+    }
+  }
+
+  // Bind the descriptor set from the graphic itself (containing for example the mesh and textures).
+  const auto set = graphic->getVkDescriptorSet();
+  vkCmdBindDescriptorSets(
       m_drawVkCommandBuffer,
-      mesh->getIndexBuffer().getVkBuffer(),
+      VK_PIPELINE_BIND_POINT_GRAPHICS,
+      graphic->getVkPipelineLayout(),
+      g_shaderResourceGraphicSetId,
+      1U,
+      &set,
       0U,
-      getVkIndexType<Mesh::IndexType>());
+      nullptr);
+
+  if (!indexCount) {
+    DBG_CMD_END_LABEL(m_device, m_drawVkCommandBuffer);
+    LOG_W(
+        m_logger,
+        "IndexCount of zero is provided but graphic has no mesh",
+        {"graphic", graphic->getId()});
+    return;
+  }
+
+  if (graphic->getUsesInstanceData() && (!instData || instDataSize == 0U)) {
+    DBG_CMD_END_LABEL(m_device, m_drawVkCommandBuffer);
+    LOG_W(
+        m_logger,
+        "Graphic uses instance data but none was provided",
+        {"graphic", graphic->getId()});
+    return;
+  }
 
   // Submit the draws in batches.
   while (count > 0U) {
@@ -239,8 +281,25 @@ auto Renderer::draw(
             : std::min(count, m_uni->getMaxDataSize() / static_cast<uint32_t>(instDataSize)),
         g_maxInstanceCount);
 
-    bindGraphicDescriptors(graphic, instData, instDataSize * instanceCount);
-    vkCmdDrawIndexed(m_drawVkCommandBuffer, mesh->getIndexCount(), instanceCount, 0U, 0, 0U);
+    // Bind the instance uniform data.
+    if (graphic->getUsesInstanceData()) {
+      auto [uniDescSet, uniOffset] = m_uni->upload(instData, instDataSize * instanceCount);
+      vkCmdBindDescriptorSets(
+          m_drawVkCommandBuffer,
+          VK_PIPELINE_BIND_POINT_GRAPHICS,
+          graphic->getVkPipelineLayout(),
+          g_shaderResourceInstanceSetId,
+          1U,
+          &uniDescSet,
+          1U,
+          &uniOffset);
+    }
+
+    if (mesh) {
+      vkCmdDrawIndexed(m_drawVkCommandBuffer, indexCount, instanceCount, 0U, 0, 0U);
+    } else {
+      vkCmdDraw(m_drawVkCommandBuffer, indexCount, instanceCount, 0U, 0U);
+    }
 
     // Advance count and the uniform-data pointer to the next batch.
     count -= instanceCount;
@@ -274,35 +333,6 @@ auto Renderer::drawEnd() -> void {
       m_imgFinished,
       m_renderDone);
   m_hasSubmittedDrawOnce = true;
-}
-
-auto Renderer::bindGraphicDescriptors(const Graphic* graphic, const void* uniData, size_t uniSize)
-    -> void {
-
-  constexpr auto maxDescSets                        = 2U;
-  std::array<VkDescriptorSet, maxDescSets> descSets = {
-      graphic->getVkDescriptorSet(),
-  };
-  std::array<uint32_t, maxDescSets> descDynamicOffsets;
-  auto descSetsCount           = 1U;
-  auto descDynamicOffsetsCount = 0U;
-
-  // Bind the provided per-draw uniform data (if any).
-  if (uniData && uniSize > 0) {
-    auto [uniDescSet, uniOffset]                  = m_uni->upload(uniData, uniSize);
-    descSets[descSetsCount++]                     = uniDescSet;
-    descDynamicOffsets[descDynamicOffsetsCount++] = uniOffset;
-  }
-
-  vkCmdBindDescriptorSets(
-      m_drawVkCommandBuffer,
-      VK_PIPELINE_BIND_POINT_GRAPHICS,
-      graphic->getVkPipelineLayout(),
-      0U,
-      descSetsCount,
-      descSets.data(),
-      descDynamicOffsetsCount,
-      descDynamicOffsets.data());
 }
 
 auto Renderer::waitForDone() const -> void {

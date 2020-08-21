@@ -3,7 +3,7 @@
     "shaders/obj.vert.spv",
     "shaders/obj_tex.frag.spv"
   ],
-  "mesh": "models/cube.obj",
+  "mesh": "meshes/cube.obj",
   "samplers": [
     {
       "texture": "textures/checker.ppm",

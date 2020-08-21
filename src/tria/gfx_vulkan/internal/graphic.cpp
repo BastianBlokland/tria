@@ -5,7 +5,6 @@
 #include "shader.hpp"
 #include "texture.hpp"
 #include "tria/gfx/err/graphic_err.hpp"
-#include "tria/gfx/err/shader_err.hpp"
 #include "utils.hpp"
 #include <array>
 #include <cassert>
@@ -44,6 +43,7 @@ namespace {
     VkRenderPass vkRenderPass,
     VkPipelineLayout layout,
     const std::vector<const Shader*>& shaders,
+    asset::VertexTopology topology,
     asset::RasterizerMode rasterizerMode,
     float lineWidth,
     asset::BlendMode blendMode,
@@ -69,6 +69,17 @@ namespace {
   VkPipelineInputAssemblyStateCreateInfo inputAssembly = {};
   inputAssembly.sType    = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
   inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+  switch (topology) {
+  case asset::VertexTopology::Triangles:
+    inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+    break;
+  case asset::VertexTopology::Lines:
+    inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_LINE_LIST;
+    break;
+  case asset::VertexTopology::LineStrip:
+    inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_LINE_STRIP;
+    break;
+  }
 
   // Note: viewport and scissor are set dynamically at draw time.
   VkViewport viewport                             = {};
@@ -236,53 +247,30 @@ namespace {
   return DescriptorBindingKind::UniformBuffer;
 }
 
-/* Gather all 'per graphic' bindings that the shader exposes. Also it verifies if the 'per instance'
-   binding is correct. Throws if it encounters a invalid binding.
+/* Gather all bindings that the shader exposes in the given set.
  */
-[[nodiscard]] auto getGraphicDescBindings(const asset::Shader* shader) {
+[[nodiscard]] auto getDescSetBindings(uint32_t setId, const asset::Shader* shader) {
   auto bindings = DescriptorBindings{};
   for (auto* resItr = shader->getResourceBegin(); resItr != shader->getResourceEnd(); ++resItr) {
     const auto& resource = *resItr;
-    switch (resource.getSet()) {
-
-    // Per graphic resources.
-    case g_shaderResourceGraphicSetId:
+    if (resource.getSet() == setId) {
       bindings.emplace(resource.getBinding(), getDescBindingKind(resource.getKind()));
-      break;
-
-    // Per shader resources.
-    case g_shaderResourceInstanceSetId:
-      if (resource.getBinding() != 0U ||
-          resource.getKind() != asset::ShaderResourceKind::UniformBuffer) {
-        throw err::ShaderErr{
-            resource.getSet(),
-            resource.getBinding(),
-            shader->getId(),
-            "Unsupported per-instance binding, supported is a uniform buffer with binding 0"};
-      }
-      break;
-
-    // Unsupported  resources.
-    default:
-      throw err::ShaderErr{
-          resource.getSet(),
-          resource.getBinding(),
-          shader->getId(),
-          "Unsupported set, supported are 0 for per-graphic and 1 for per-instance data"};
     }
   }
   return bindings;
 }
 
-/* Gather all 'per graphic' bindings that the given shaders expose.
+/* Gather all bindings that the shaders expose in the given set.
  */
-[[nodiscard]] auto getGraphicDescBindings(
-    const asset::Shader* const* shaderBegin, const asset::Shader* const* shaderEnd) {
+[[nodiscard]] auto getDescSetBindings(
+    uint32_t setId,
+    const asset::Shader* const* shaderBegin,
+    const asset::Shader* const* shaderEnd) {
   auto bindings = DescriptorBindings{};
   for (auto* shaderItr = shaderBegin; shaderItr != shaderEnd; ++shaderItr) {
     // TODO(bastian): We should probably throw if multiple shaders define the same binding as a
     // different kind? Currently the earlier shader would win.
-    bindings.merge(getGraphicDescBindings(*shaderItr));
+    bindings.merge(getDescSetBindings(setId, *shaderItr));
   }
   return bindings;
 }
@@ -304,25 +292,29 @@ Graphic::Graphic(
   for (auto* shdItr = asset->getShaderBegin(); shdItr != asset->getShaderEnd(); ++shdItr) {
     m_shaders.push_back(shaders->get(*shdItr));
   }
-  m_mesh = meshes->get(m_asset->getMesh());
 
   // Create a descriptor for the 'per graphic' resources.
-  auto graphicBindings = getGraphicDescBindings(asset->getShaderBegin(), asset->getShaderEnd());
-  m_descSet            = device->getDescManager().allocate(graphicBindings);
+  auto graphicBindings = getDescSetBindings(
+      g_shaderResourceGraphicSetId, asset->getShaderBegin(), asset->getShaderEnd());
+  m_descSet = device->getDescManager().allocate(graphicBindings);
 
-  // Bind vertex data (mandatory at the moment).
-  if (graphicBindings.empty() || graphicBindings.begin()->first != 0U ||
-      graphicBindings.begin()->second != DescriptorBindingKind::StorageBuffer) {
-    throw err::GraphicErr{
-        asset->getId(),
-        "Shaders are required to bind to a storage buffer at binding 0 for receiving vertex data"};
+  // Create mesh resource (if any).
+  m_mesh = m_asset->getMesh() ? meshes->get(m_asset->getMesh()) : nullptr;
+
+  // Bind vertex data.
+  if (!graphicBindings.empty() &&
+      graphicBindings.begin()->second == DescriptorBindingKind::StorageBuffer) {
+    const auto binding = graphicBindings.begin()->first;
+    if (!m_mesh) {
+      throw err::GraphicErr{asset->getId(),
+                            "Shader takes a mesh input but the graphic doesn't have a mesh"};
+    }
+    m_descSet.attachBuffer(binding, m_mesh->getVertexBuffer(), m_mesh->getVertexBuffer().getSize());
   }
-  m_descSet.attachBuffer(0U, m_mesh->getVertexBuffer(), m_mesh->getVertexBuffer().getSize());
 
   // Create the texture resources.
   m_textures.reserve(m_asset->getSamplerCount());
   for (auto itr = m_asset->getSamplerBegin(); itr != m_asset->getSamplerEnd(); ++itr) {
-
     const auto* tex = textures->get(itr->getTexture());
 
     const auto filterMode = static_cast<SamplerFilterMode>(itr->getFilterMode());
@@ -346,6 +338,20 @@ Graphic::Graphic(
       m_descSet.attachImage(binding.first, tex.texture->getImage(), tex.sampler);
     }
   }
+
+  // Check if the shaders use a instance buffer.
+  auto instanceBindings = getDescSetBindings(
+      g_shaderResourceInstanceSetId, asset->getShaderBegin(), asset->getShaderEnd());
+  m_usesInstanceData = !instanceBindings.empty();
+
+  // Verify that the instance set contains a single binding of type uniform on slot 0.
+  if (m_usesInstanceData &&
+      (instanceBindings.size() != 1U || instanceBindings.begin()->first != 0U ||
+       instanceBindings.begin()->second != DescriptorBindingKind::UniformBufferDynamic)) {
+    throw err::GraphicErr{
+        m_asset->getId(),
+        "Unsupported per-instance binding, supported is a uniform buffer with binding 0"};
+  }
 }
 
 Graphic::~Graphic() {
@@ -358,7 +364,9 @@ Graphic::~Graphic() {
 auto Graphic::prepareResources(
     Transferer* transferer, UniformContainer* uni, VkRenderPass vkRenderPass) const -> void {
 
-  m_mesh->prepareResources(transferer);
+  if (m_mesh) {
+    m_mesh->prepareResources(transferer);
+  }
   for (const auto& texData : m_textures) {
     texData.texture->prepareResources(transferer);
   }
@@ -372,6 +380,7 @@ auto Graphic::prepareResources(
         vkRenderPass,
         m_vkPipelineLayout,
         m_shaders,
+        m_asset->getVertexTopology(),
         m_asset->getRasterizerMode(),
         m_asset->getLineWidth(),
         m_asset->getBlendMode(),

@@ -30,7 +30,7 @@ struct Vertex final {
 
 /*
  * Asset containing geometry data.
- * Contains a set of vertices and indices that form triangles from the vertices.
+ * Contains a set of vertices and indices that form primitives from the vertices.
  */
 class Mesh final : public Asset {
 public:

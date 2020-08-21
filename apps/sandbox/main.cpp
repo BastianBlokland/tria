@@ -40,7 +40,7 @@ auto runApp(pal::Platform& platform, asset::Database& db, gfx::Context& gfx) {
 
   auto objs = std::vector<Obj>{
       {db.get("graphics/head.gfx")->downcast<asset::Graphic>(),
-       Vec3f{-5, 0, 0},
+       Vec3f{-5, 1.5f, 0},
        identityQuatf(),
        4.f,
        1.f},
@@ -50,17 +50,17 @@ auto runApp(pal::Platform& platform, asset::Database& db, gfx::Context& gfx) {
        1.f,
        0.f},
       {db.get("graphics/cube.gfx")->downcast<asset::Graphic>(),
-       Vec3f{0, 0, 0},
+       Vec3f{0, .5f, 0},
        identityQuatf(),
        1.f,
        0.f},
       {db.get("graphics/wirecube.gfx")->downcast<asset::Graphic>(),
-       Vec3f{2, 0, 0},
+       Vec3f{2, .5f, 0},
        identityQuatf(),
        1.f,
        .5f},
       {db.get("graphics/dragon.gfx")->downcast<asset::Graphic>(),
-       Vec3f{5, 0, 0},
+       Vec3f{5, 1.1f, 0},
        identityQuatf(),
        4.f,
        1.f},
@@ -70,7 +70,7 @@ auto runApp(pal::Platform& platform, asset::Database& db, gfx::Context& gfx) {
   constexpr auto camZNear          = .1f;
   constexpr auto camMoveSpeed      = 10.f;
   constexpr auto camRotSensitivity = 3.f;
-  auto cam = scene::Cam3d({-1, 0, -10.f}, identityQuatf(), camVerFov, camZNear);
+  auto cam = scene::Cam3d({0, 2, -10.f}, identityQuatf(), camVerFov, camZNear);
 
   auto frameNum       = 0U;
   auto frameStartTime = high_resolution_clock::now();
@@ -131,11 +131,24 @@ auto runApp(pal::Platform& platform, asset::Database& db, gfx::Context& gfx) {
     if (canvas.drawBegin()) {
       auto vpMat = cam.getViewProjMat(win.getAspect());
 
+      // Draw sky (note also 'clears' the depth).
       canvas.draw(db.get("graphics/sky.gfx")->downcast<asset::Graphic>(), vpMat);
 
+      // Draw objects.
       for (const auto& obj : objs) {
         canvas.draw(obj.graphic, vpMat * trsMat4f(obj.pos, obj.orient, obj.scale));
       }
+
+      // Draw grid.
+      struct alignas(16) {
+        Mat4f viewProjMat;
+        Vec3f camPos;
+        int32_t segments;
+      } grid;
+      grid.viewProjMat = vpMat;
+      grid.camPos      = cam.pos();
+      grid.segments    = 250; // Times 4, 2 verts per line and 1 horizontal and 1 vertical line.
+      canvas.draw(db.get("graphics/grid.gfx")->downcast<asset::Graphic>(), grid.segments * 4, grid);
 
       canvas.drawEnd();
     } else {

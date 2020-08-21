@@ -47,6 +47,7 @@ public:
       -> void;
 
   [[nodiscard]] auto getMesh() const noexcept { return m_mesh; }
+  [[nodiscard]] auto getUsesInstanceData() const noexcept { return m_usesInstanceData; }
   [[nodiscard]] auto getVkPipeline() const noexcept { return m_vkPipeline; }
   [[nodiscard]] auto getVkPipelineLayout() const noexcept { return m_vkPipelineLayout; }
   [[nodiscard]] auto getVkDescriptorSet() const noexcept { return m_descSet.getVkDescSet(); }
@@ -64,6 +65,7 @@ private:
   const Device* m_device;
   const asset::Graphic* m_asset;
   std::vector<const Shader*> m_shaders;
+  bool m_usesInstanceData;
   const Mesh* m_mesh;
 
   DescriptorSet m_descSet;

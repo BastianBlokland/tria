@@ -1,0 +1,11 @@
+{
+  "shaders": [
+    "shaders/grid.vert.spv",
+    "shaders/grid.frag.spv"
+  ],
+  "topology": "lines",
+  "lineWidth": 2,
+  "blend": "alpha",
+  "depthTest": "less",
+  "cull": "none"
+}

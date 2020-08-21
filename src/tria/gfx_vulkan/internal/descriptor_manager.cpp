@@ -71,6 +71,13 @@ createVkDescriptorSetLayout(const Device* device, const DescriptorBindings& bind
     continue;
   }
 
+  if (sizes.empty()) {
+    // TODO(bastian): Vulkan spec does not allow for empty descriptor pools, however for code
+    // simplification we want to support descriptor sets without any bindings. Needs investigation
+    // to see if there is a better way.
+    sizes.push_back({VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1U});
+  }
+
   VkDescriptorPoolCreateInfo poolInfo = {};
   poolInfo.sType                      = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
   poolInfo.poolSizeCount              = sizes.size();
@@ -114,11 +121,11 @@ DescriptorSet::~DescriptorSet() noexcept {
 }
 
 auto DescriptorSet::getVkLayout() const noexcept -> VkDescriptorSetLayout {
-  return m_group ? m_group->getVkLayout() : nullptr;
+  return m_group->getVkLayout();
 }
 
 auto DescriptorSet::getVkDescSet() const noexcept -> VkDescriptorSet {
-  return m_group ? m_group->getVkDescSet(m_id) : nullptr;
+  return m_group->getVkDescSet(m_id);
 }
 
 auto DescriptorSet::attachBuffer(uint32_t binding, const Buffer& buffer, uint32_t size) -> void {
@@ -250,10 +257,6 @@ auto DescriptorGroup::free(DescriptorSet* set) noexcept -> void {
 }
 
 auto DescriptorManager::getVkLayout(const DescriptorBindings& bindings) -> VkDescriptorSetLayout {
-  if (bindings.empty()) {
-    return nullptr;
-  }
-
   // Attempt to get a layout from a existing group.
   for (auto& group : m_groups) {
     if (group.getBindings() == bindings) {
@@ -267,11 +270,6 @@ auto DescriptorManager::getVkLayout(const DescriptorBindings& bindings) -> VkDes
 }
 
 auto DescriptorManager::allocate(const DescriptorBindings& bindings) -> DescriptorSet {
-  // If no actual binding points are requested then we just return a dummy DescriptorSet.
-  if (bindings.empty()) {
-    return {};
-  }
-
   // Attempt to allocate from an existing group.
   for (auto& group : m_groups) {
     if (group.getBindings() == bindings) {

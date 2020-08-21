@@ -58,6 +58,7 @@ public:
   auto draw(
       const ForwardTechnique& technique,
       const Graphic* graphic,
+      uint32_t indexCount,
       const void* uniData,
       size_t uniSize,
       uint32_t count) -> void;
@@ -90,9 +91,6 @@ private:
   std::array<VkCommandBuffer, 2> m_gfxVkCommandBuffers;
   const VkCommandBuffer& m_transferVkCommandBuffer = m_gfxVkCommandBuffers[0];
   const VkCommandBuffer& m_drawVkCommandBuffer     = m_gfxVkCommandBuffers[1];
-
-  auto bindGraphicDescriptors(const Graphic* graphic, const void* instData, size_t instDataSize)
-      -> void;
 
   auto waitForDone() const -> void;
   auto markNotDone() -> void;

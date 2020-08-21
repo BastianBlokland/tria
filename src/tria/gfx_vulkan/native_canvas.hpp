@@ -49,8 +49,12 @@ public:
 
   /* Record a draw with the given asset.
    */
-  auto draw(const asset::Graphic* asset, const void* instData, size_t instDataSize, uint32_t size)
-      -> void;
+  auto draw(
+      const asset::Graphic* asset,
+      uint32_t indexCount,
+      const void* instData,
+      size_t instDataSize,
+      uint32_t size) -> void;
 
   /* Stop recording draw commands, execute the commands and present the result to the surface
    * (window).
