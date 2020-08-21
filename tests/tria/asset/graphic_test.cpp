@@ -43,6 +43,7 @@ TEST_CASE("[asset] - Graphic", "[asset]") {
           "{"
           "\"shaders\": [\"test.vert.spv\", \"test.frag.spv\"],"
           "\"mesh\": \"test.obj\","
+          "\"topology\": \"lines\","
           "\"rasterizer\": \"lines\","
           "\"blend\": \"alpha\","
           "\"depthTest\": \"less\","
@@ -54,6 +55,7 @@ TEST_CASE("[asset] - Graphic", "[asset]") {
       REQUIRE(gfx->getShaderCount() == 2);
       CHECK(gfx->getShaderBegin()[0]->getShaderKind() == ShaderKind::SpvVertex);
       CHECK(gfx->getShaderBegin()[1]->getShaderKind() == ShaderKind::SpvFragment);
+      CHECK(gfx->getVertexTopology() == VertexTopology::Lines);
       CHECK(gfx->getRasterizerMode() == RasterizerMode::Lines);
       CHECK(gfx->getMesh()->getKind() == AssetKind::Mesh);
       CHECK(gfx->getBlendMode() == BlendMode::Alpha);

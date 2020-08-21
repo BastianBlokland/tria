@@ -7,10 +7,18 @@
 
 namespace tria::asset {
 
-/* Mode that is used when rasterizing triangles.
+/* Mode that is used when constructing primitives from vertices.
+ */
+enum class VertexTopology : uint8_t {
+  Triangles = 0, // Separate triangles with 3 vertices.
+  Lines     = 1, // Separate lines with 2 vertices.
+  LineStrip = 2, // From lines between all vertices.
+};
+
+/* Mode that is used when rasterizing primitives.
  */
 enum class RasterizerMode : uint8_t {
-  Fill   = 0, // Fill the triangles with pixels.
+  Fill   = 0, // Fill the primitives with pixels.
   Lines  = 1, // Draw lines between the vertices.
   Points = 2, // Draw points on the vertices.
 };
@@ -53,8 +61,8 @@ enum class DepthTestMode : uint8_t {
  */
 enum class CullMode : uint8_t {
   None  = 0, // No culling.
-  Back  = 1, // Cull back-facing triangles.
-  Front = 2, // Cull front-facing triangles.
+  Back  = 1, // Cull back-facing primitives.
+  Front = 2, // Cull front-facing primitives.
 };
 
 /*
@@ -88,6 +96,7 @@ public:
       std::vector<const Shader*> shaders,
       const Mesh* mesh,
       std::vector<TextureSampler> samplers,
+      VertexTopology vertexTopology,
       RasterizerMode rasterizerMode,
       float lineWidth,
       BlendMode blendMode,
@@ -97,6 +106,7 @@ public:
       m_shaders{std::move(shaders)},
       m_mesh{mesh},
       m_samplers{std::move(samplers)},
+      m_vertexTopology{vertexTopology},
       m_rasterizerMode{rasterizerMode},
       m_lineWidth{lineWidth},
       m_blendMode{blendMode},
@@ -129,6 +139,8 @@ public:
     return m_samplers.data() + m_samplers.size();
   }
 
+  [[nodiscard]] auto getVertexTopology() const noexcept { return m_vertexTopology; }
+
   [[nodiscard]] auto getRasterizerMode() const noexcept { return m_rasterizerMode; }
 
   /* Width of the lines (in pixels) when the rasterizer mode is 'lines'.
@@ -145,6 +157,7 @@ private:
   std::vector<const Shader*> m_shaders;
   const Mesh* m_mesh;
   std::vector<TextureSampler> m_samplers;
+  VertexTopology m_vertexTopology;
   RasterizerMode m_rasterizerMode;
   float m_lineWidth;
   BlendMode m_blendMode;

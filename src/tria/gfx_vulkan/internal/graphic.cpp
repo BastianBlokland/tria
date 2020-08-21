@@ -43,6 +43,7 @@ namespace {
     VkRenderPass vkRenderPass,
     VkPipelineLayout layout,
     const std::vector<const Shader*>& shaders,
+    asset::VertexTopology topology,
     asset::RasterizerMode rasterizerMode,
     float lineWidth,
     asset::BlendMode blendMode,
@@ -68,6 +69,17 @@ namespace {
   VkPipelineInputAssemblyStateCreateInfo inputAssembly = {};
   inputAssembly.sType    = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
   inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+  switch (topology) {
+  case asset::VertexTopology::Triangles:
+    inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+    break;
+  case asset::VertexTopology::Lines:
+    inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_LINE_LIST;
+    break;
+  case asset::VertexTopology::LineStrip:
+    inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_LINE_STRIP;
+    break;
+  }
 
   // Note: viewport and scissor are set dynamically at draw time.
   VkViewport viewport                             = {};
@@ -368,6 +380,7 @@ auto Graphic::prepareResources(
         vkRenderPass,
         m_vkPipelineLayout,
         m_shaders,
+        m_asset->getVertexTopology(),
         m_asset->getRasterizerMode(),
         m_asset->getLineWidth(),
         m_asset->getBlendMode(),

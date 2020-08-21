@@ -213,8 +213,10 @@ auto Renderer::draw(
     const size_t instDataSize,
     uint32_t count) -> void {
 
-  // TODO(bastian): Is it worth it throwing an exception here?
-  assert(instDataSize <= m_uni->getMaxDataSize());
+  if (instDataSize > m_uni->getMaxDataSize()) {
+    LOG_W(m_logger, "Instance data size exceeds maximum", {"graphic", graphic->getId()});
+    return;
+  }
 
   DBG_CMD_BEGIN_LABEL(
       m_device, m_drawVkCommandBuffer, "Draw " + graphic->getId(), math::color::get(m_drawId));
