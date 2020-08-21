@@ -85,7 +85,9 @@ configure_shaders(sandbox_data ${CMAKE_CURRENT_SOURCE_DIR}/sandbox_data
   shaders/obj_nrm.frag
   shaders/obj_tex.frag
   shaders/sky.vert
-  shaders/sky.frag)
+  shaders/sky.frag
+  shaders/grid.vert
+  shaders/grid.frag)
 configure_data(sandbox_data ${CMAKE_CURRENT_SOURCE_DIR}/sandbox_data
   graphics
   models
