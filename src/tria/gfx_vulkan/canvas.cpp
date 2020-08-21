@@ -12,8 +12,12 @@ auto Canvas::getDrawStats() const noexcept -> DrawStats { return m_native->getDr
 auto Canvas::drawBegin(math::Color clearCol) -> bool { return m_native->drawBegin(clearCol); }
 
 auto Canvas::draw(
-    const asset::Graphic* asset, const void* instData, size_t instDatSize, uint32_t count) -> void {
-  m_native->draw(asset, instData, instDatSize, count);
+    const asset::Graphic* asset,
+    uint32_t indexCount,
+    const void* instData,
+    size_t instDatSize,
+    uint32_t count) -> void {
+  m_native->draw(asset, indexCount, instData, instDatSize, count);
 }
 
 auto Canvas::drawEnd() -> void { m_native->drawEnd(); }

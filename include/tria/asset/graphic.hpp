@@ -101,9 +101,7 @@ public:
       m_lineWidth{lineWidth},
       m_blendMode{blendMode},
       m_depthTestMode{depthTestMode},
-      m_cullMode{cullMode} {
-    assert(m_mesh);
-  }
+      m_cullMode{cullMode} {}
   Graphic(const Graphic& rhs) = delete;
   Graphic(Graphic&& rhs)      = delete;
   ~Graphic() noexcept         = default;

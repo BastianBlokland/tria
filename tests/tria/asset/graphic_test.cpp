@@ -130,21 +130,6 @@ TEST_CASE("[asset] - Graphic", "[asset]") {
     });
   }
 
-  SECTION("Loading a graphic without a mesh throws") {
-    withTempDir([](const fs::path& dir) {
-      writeFile(dir / "test.vert.spv", getTestVertShader());
-      writeFile(dir / "test.frag.spv", getTestFragShader());
-      writeFile(
-          dir / "test.gfx",
-          "{"
-          "\"shaders\": [\"test.vert.spv\",\"test.frag.spv\"]"
-          "}");
-
-      auto db = Database{nullptr, dir};
-      CHECK_THROWS_AS(db.get("test.gfx"), err::GraphicErr);
-    });
-  }
-
   SECTION("Loading a graphic with incorrect vertex shader type throws") {
     withTempDir([](const fs::path& dir) {
       writeFile(dir / "test.frag.spv", getTestFragShader());

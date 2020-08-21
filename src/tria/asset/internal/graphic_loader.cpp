@@ -108,12 +108,12 @@ auto loadGraphic(log::Logger* /*unused*/, DatabaseImpl* db, AssetId id, math::Ra
     throw err::GraphicErr{"Incorrect fragment shader count, expected 1"};
   }
 
-  // Mesh.
+  // Mesh  (optional field).
+  const Mesh* mesh = nullptr;
   std::string_view meshId;
-  if (obj.at("mesh").get(meshId)) {
-    throw err::GraphicErr{"No 'mesh' field found on graphic"};
+  if (!obj.at("mesh").get(meshId)) {
+    mesh = db->get(AssetId{meshId})->downcast<Mesh>();
   }
-  auto* mesh = db->get(AssetId{meshId})->downcast<Mesh>();
 
   // Samplers (optional field).
   auto samplers = std::vector<TextureSampler>{};
