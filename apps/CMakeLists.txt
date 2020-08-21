@@ -90,7 +90,7 @@ configure_shaders(sandbox_data ${CMAKE_CURRENT_SOURCE_DIR}/sandbox_data
   shaders/grid.frag)
 configure_data(sandbox_data ${CMAKE_CURRENT_SOURCE_DIR}/sandbox_data
   graphics
-  models
+  meshes
   textures)
 configure_assets(sandbox_data
   buddha.obj
