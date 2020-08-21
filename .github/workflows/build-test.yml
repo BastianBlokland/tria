@@ -46,7 +46,12 @@ jobs:
       CC: ${{matrix.config.cc}}
       CXX: ${{matrix.config.cxx}}
     steps:
-    - uses: actions/checkout@v1
+    - name: git-checkout
+      uses: actions/checkout@v2
+      with:
+        lfs: true
+    - name: git-lfs-checkout
+      run: git lfs checkout
 
     - name: install-ubuntu
       if: matrix.config.os == 'ubuntu'
