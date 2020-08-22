@@ -11,52 +11,91 @@ namespace tria::gfx::internal {
 
 namespace {
 
-[[nodiscard]] auto createVkRenderPass(const Device* device, DepthMode depth, ClearMask clear)
+constexpr auto g_maxAttachCnt = 3U;
+
+[[nodiscard]] auto createVkRenderPass(
+    const Device* device, VkSampleCount sampleCount, DepthMode depth, ClearMask clear)
     -> VkRenderPass {
   assert(device);
 
-  VkAttachmentDescription colorAttachment = {};
-  colorAttachment.format                  = device->getVkSurfaceFormat().format;
-  colorAttachment.samples                 = VK_SAMPLE_COUNT_1_BIT;
-  colorAttachment.loadOp = (clear & clearMask(Clear::Color)) ? VK_ATTACHMENT_LOAD_OP_CLEAR
-                                                             : VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-  colorAttachment.storeOp        = VK_ATTACHMENT_STORE_OP_STORE;
-  colorAttachment.stencilLoadOp  = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-  colorAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-  colorAttachment.initialLayout  = VK_IMAGE_LAYOUT_UNDEFINED;
-  colorAttachment.finalLayout    = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+  std::array<VkAttachmentDescription, g_maxAttachCnt> attachments;
+  auto attachCnt = 0U;
+  std::array<VkAttachmentReference, g_maxAttachCnt> colAttachRefs;
+  auto colAttachRefCnt = 0U;
+  VkAttachmentReference resolveAttachmentRef;
+  VkAttachmentReference depthAttachmentRef;
 
-  VkAttachmentDescription depthAttachment = {};
-  depthAttachment.format                  = device->getDepthVkFormat();
-  depthAttachment.samples                 = VK_SAMPLE_COUNT_1_BIT;
-  depthAttachment.loadOp = (clear & clearMask(Clear::Depth)) ? VK_ATTACHMENT_LOAD_OP_CLEAR
-                                                             : VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-  depthAttachment.storeOp        = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-  depthAttachment.stencilLoadOp  = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-  depthAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-  depthAttachment.initialLayout  = VK_IMAGE_LAYOUT_UNDEFINED;
-  depthAttachment.finalLayout    = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+  // Color target.
+  {
+    attachments[attachCnt]         = {};
+    attachments[attachCnt].format  = device->getSurfaceFormat();
+    attachments[attachCnt].samples = sampleCount;
+    attachments[attachCnt].loadOp  = (clear & clearMask(Clear::Color))
+        ? VK_ATTACHMENT_LOAD_OP_CLEAR
+        : VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+    attachments[attachCnt].storeOp        = VK_ATTACHMENT_STORE_OP_STORE;
+    attachments[attachCnt].stencilLoadOp  = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+    attachments[attachCnt].stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+    attachments[attachCnt].initialLayout  = VK_IMAGE_LAYOUT_UNDEFINED;
+    attachments[attachCnt].finalLayout    = sampleCount != VK_SAMPLE_COUNT_1_BIT
+        ? VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL
+        : VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
 
-  std::array<VkAttachmentDescription, 2> attachments = {
-      colorAttachment,
-      depthAttachment,
-  };
+    colAttachRefs[colAttachRefCnt]            = {};
+    colAttachRefs[colAttachRefCnt].attachment = attachCnt;
+    colAttachRefs[colAttachRefCnt].layout     = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
-  VkAttachmentReference colorAttachmentRef = {};
-  colorAttachmentRef.attachment            = 0;
-  colorAttachmentRef.layout                = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-
-  VkAttachmentReference depthAttachmentRef = {};
-  depthAttachmentRef.attachment            = 1;
-  depthAttachmentRef.layout                = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-
-  VkSubpassDescription subpass = {};
-  subpass.pipelineBindPoint    = VK_PIPELINE_BIND_POINT_GRAPHICS;
-  subpass.colorAttachmentCount = 1;
-  subpass.pColorAttachments    = &colorAttachmentRef;
-  if (depth == DepthMode::Enable) {
-    subpass.pDepthStencilAttachment = &depthAttachmentRef;
+    ++attachCnt;
+    ++colAttachRefCnt;
   }
+
+  // Resolve target (When using multiple samples the result is 'resolved' into this attachment).
+  if (sampleCount != VK_SAMPLE_COUNT_1_BIT) {
+    attachments[attachCnt]                = {};
+    attachments[attachCnt].format         = device->getSurfaceFormat();
+    attachments[attachCnt].samples        = VK_SAMPLE_COUNT_1_BIT;
+    attachments[attachCnt].loadOp         = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+    attachments[attachCnt].storeOp        = VK_ATTACHMENT_STORE_OP_STORE;
+    attachments[attachCnt].stencilLoadOp  = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+    attachments[attachCnt].stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+    attachments[attachCnt].initialLayout  = VK_IMAGE_LAYOUT_UNDEFINED;
+    attachments[attachCnt].finalLayout    = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+
+    resolveAttachmentRef            = {};
+    resolveAttachmentRef.attachment = attachCnt;
+    resolveAttachmentRef.layout     = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+    ++attachCnt;
+  }
+
+  // Depth target.
+  if (depth == DepthMode::Enable) {
+    attachments[attachCnt]         = {};
+    attachments[attachCnt].format  = device->getDepthFormat();
+    attachments[attachCnt].samples = sampleCount;
+    attachments[attachCnt].loadOp  = (clear & clearMask(Clear::Depth))
+        ? VK_ATTACHMENT_LOAD_OP_CLEAR
+        : VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+    attachments[attachCnt].storeOp        = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+    attachments[attachCnt].stencilLoadOp  = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+    attachments[attachCnt].stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+    attachments[attachCnt].initialLayout  = VK_IMAGE_LAYOUT_UNDEFINED;
+    attachments[attachCnt].finalLayout    = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+
+    depthAttachmentRef            = {};
+    depthAttachmentRef.attachment = attachCnt;
+    depthAttachmentRef.layout     = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+
+    ++attachCnt;
+  }
+
+  VkSubpassDescription subpass    = {};
+  subpass.pipelineBindPoint       = VK_PIPELINE_BIND_POINT_GRAPHICS;
+  subpass.colorAttachmentCount    = colAttachRefCnt;
+  subpass.pColorAttachments       = colAttachRefs.data();
+  subpass.pDepthStencilAttachment = depth == DepthMode::Enable ? &depthAttachmentRef : nullptr;
+  subpass.pResolveAttachments =
+      sampleCount != VK_SAMPLE_COUNT_1_BIT ? &resolveAttachmentRef : nullptr;
 
   VkSubpassDependency dependency = {};
   dependency.srcSubpass          = VK_SUBPASS_EXTERNAL;
@@ -72,39 +111,34 @@ namespace {
 
   VkRenderPassCreateInfo renderPassInfo = {};
   renderPassInfo.sType                  = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
-  renderPassInfo.attachmentCount =
-      depth == DepthMode::Enable ? attachments.size() : attachments.size() - 1;
-  renderPassInfo.pAttachments    = attachments.data();
-  renderPassInfo.subpassCount    = 1;
-  renderPassInfo.pSubpasses      = &subpass;
-  renderPassInfo.dependencyCount = dependencies.size();
-  renderPassInfo.pDependencies   = dependencies.data();
+  renderPassInfo.attachmentCount        = attachCnt;
+  renderPassInfo.pAttachments           = attachments.data();
+  renderPassInfo.subpassCount           = 1;
+  renderPassInfo.pSubpasses             = &subpass;
+  renderPassInfo.dependencyCount        = dependencies.size();
+  renderPassInfo.pDependencies          = dependencies.data();
 
   VkRenderPass result;
   checkVkResult(vkCreateRenderPass(device->getVkDevice(), &renderPassInfo, nullptr, &result));
   return result;
 }
 
-template <size_t AttachmentCount>
 [[nodiscard]] auto createVkFramebuffer(
     const Device* device,
     VkRenderPass vkRenderPass,
-    const std::array<const Image*, AttachmentCount>& attachments) {
+    SwapchainSize size,
+    const VkImageView* attachments,
+    size_t attachmentCount) {
   assert(device);
-  static_assert(AttachmentCount > 0);
-
-  std::array<VkImageView, AttachmentCount> imageViews;
-  for (auto i = 0U; i != AttachmentCount; ++i) {
-    imageViews[i] = attachments[i]->getVkImageView();
-  }
+  assert(attachmentCount > 0);
 
   VkFramebufferCreateInfo framebufferInfo = {};
   framebufferInfo.sType                   = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
   framebufferInfo.renderPass              = vkRenderPass;
-  framebufferInfo.attachmentCount         = imageViews.size();
-  framebufferInfo.pAttachments            = imageViews.data();
-  framebufferInfo.width                   = attachments[0]->getSize().x();
-  framebufferInfo.height                  = attachments[0]->getSize().y();
+  framebufferInfo.attachmentCount         = attachmentCount;
+  framebufferInfo.pAttachments            = attachments;
+  framebufferInfo.width                   = size.x();
+  framebufferInfo.height                  = size.y();
   framebufferInfo.layers                  = 1;
 
   VkFramebuffer result;
@@ -141,10 +175,11 @@ auto beginVkRenderPass(
 
 } // namespace
 
-ForwardTechnique::ForwardTechnique(Device* device, DepthMode depth, ClearMask clear) :
-    m_device{device}, m_depth{depth} {
+ForwardTechnique::ForwardTechnique(
+    Device* device, VkSampleCount sampleCount, DepthMode depth, ClearMask clear) :
+    m_device{device}, m_sampleCount{sampleCount}, m_depth{depth} {
   assert(device);
-  m_vkRenderPass = createVkRenderPass(m_device, depth, clear);
+  m_vkRenderPass = createVkRenderPass(m_device, sampleCount, depth, clear);
 }
 
 ForwardTechnique::~ForwardTechnique() {
@@ -161,8 +196,9 @@ auto ForwardTechnique::prepareResources(const Swapchain& swapchain) -> void {
   if (m_swapVersion != swapchain.getVersion() || m_vkFramebuffers.empty()) {
     assert(swapchain.getImageCount() > 0);
 
-    // Destroy the previous depth-image.
-    m_depthImage.~Image();
+    // Destroy the previous targets.
+    m_depthTarget.~Image();
+    m_colorTarget.~Image();
 
     // Destroy the previous framebuffers.
     for (const VkFramebuffer& vkFramebuffer : m_vkFramebuffers) {
@@ -170,38 +206,57 @@ auto ForwardTechnique::prepareResources(const Swapchain& swapchain) -> void {
     }
     m_vkFramebuffers.clear();
 
-    // Create a new depth-image.
+    m_size        = swapchain.getImageSize();
+    m_swapVersion = swapchain.getVersion();
+
+    // Create a new color target.
+    // When not using multi-sampling we just render into the swapchain directly.
+    if (m_sampleCount != VK_SAMPLE_COUNT_1_BIT) {
+      m_colorTarget = Image{m_device,
+                            swapchain.getImageSize(),
+                            m_device->getSurfaceFormat(),
+                            ImageType::ColorAttachment,
+                            m_sampleCount,
+                            ImageMipMode::None};
+      DBG_IMG_NAME(m_device, m_colorTarget.getVkImage(), "color");
+      DBG_IMGVIEW_NAME(m_device, m_colorTarget.getVkImageView(), "color");
+    }
+
+    // Create a new depth target.
     if (m_depth == DepthMode::Enable) {
-      m_depthImage = Image{
-          m_device,
-          swapchain.getImageSize(),
-          m_device->getDepthVkFormat(),
-          ImageType::DepthAttachment,
-          ImageMipMode::None};
-      DBG_IMG_NAME(m_device, m_depthImage.getVkImage(), "depth");
-      DBG_IMGVIEW_NAME(m_device, m_depthImage.getVkImageView(), "depth");
+      m_depthTarget = Image{m_device,
+                            swapchain.getImageSize(),
+                            m_device->getDepthFormat(),
+                            ImageType::DepthAttachment,
+                            m_sampleCount,
+                            ImageMipMode::None};
+      DBG_IMG_NAME(m_device, m_depthTarget.getVkImage(), "depth");
+      DBG_IMGVIEW_NAME(m_device, m_depthTarget.getVkImageView(), "depth");
     }
 
     // Create new framebuffers.
     for (auto i = 0U; i != swapchain.getImageCount(); ++i) {
       const auto& swapImg = swapchain.getImage(i);
-      if (m_depth == DepthMode::Enable) {
-        const auto attachments = std::array<const Image*, 2>{
-            &swapImg,
-            &m_depthImage,
-        };
-        m_vkFramebuffers.push_back(createVkFramebuffer(m_device, m_vkRenderPass, attachments));
+
+      std::array<VkImageView, g_maxAttachCnt> attachments;
+      auto attachCnt = 0U;
+
+      if (m_sampleCount == VK_SAMPLE_COUNT_1_BIT) {
+        // Render directly into the swapchain.
+        attachments[attachCnt++] = swapImg.getVkImageView();
       } else {
-        const auto attachments = std::array<const Image*, 1>{
-            &swapImg,
-        };
-        m_vkFramebuffers.push_back(createVkFramebuffer(m_device, m_vkRenderPass, attachments));
+        // Render with multiple samples into a separate target and then resolve into the swapchain.
+        attachments[attachCnt++] = m_colorTarget.getVkImageView();
+        attachments[attachCnt++] = swapImg.getVkImageView();
       }
+      if (m_depth == DepthMode::Enable) {
+        attachments[attachCnt++] = m_depthTarget.getVkImageView();
+      }
+
+      m_vkFramebuffers.push_back(
+          createVkFramebuffer(m_device, m_vkRenderPass, m_size, attachments.data(), attachCnt));
       DBG_FRAMEBUFFER_NAME(m_device, m_vkFramebuffers.back(), "forward" + std::to_string(i));
     }
-
-    m_size        = swapchain.getImageSize();
-    m_swapVersion = swapchain.getVersion();
   }
 }
 

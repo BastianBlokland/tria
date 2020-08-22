@@ -5,6 +5,7 @@
 
 #if defined(_MSC_VER)
 #pragma intrinsic(_BitScanForward)
+#pragma intrinsic(_BitScanReverse)
 #endif
 
 #endif
@@ -28,6 +29,18 @@ auto countTrailingZeroes(uint32_t mask) noexcept -> unsigned int {
   return static_cast<unsigned int>(result);
 #endif
   return __builtin_ctz(mask);
+}
+
+auto countLeadingZeroes(uint32_t mask) noexcept -> unsigned int {
+  if (mask == 0U) {
+    return 32U;
+  }
+#if defined(TRIA_WIN32)
+  unsigned long result;
+  _BitScanReverse(&result, mask);
+  return static_cast<unsigned int>(31U - result);
+#endif
+  return __builtin_clz(mask);
 }
 
 } // namespace tria::math

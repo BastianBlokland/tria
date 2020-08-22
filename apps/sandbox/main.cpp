@@ -34,9 +34,13 @@ struct Obj final {
 
 auto runApp(pal::Platform& platform, asset::Database& db, gfx::Context& gfx) {
 
-  auto win = platform.createWindow({1024, 1024});
-  auto canvas =
-      gfx.createCanvas(&win, gfx::VSyncMode::Disable, gfx::DepthMode::Enable, gfx::noneClearMask());
+  auto win    = platform.createWindow({1024, 1024});
+  auto canvas = gfx.createCanvas(
+      &win,
+      gfx::VSyncMode::Disable,
+      gfx::SampleCount::X2,
+      gfx::DepthMode::Enable,
+      gfx::noneClearMask());
 
   auto objs = std::vector<Obj>{
       {db.get("graphics/head.gfx")->downcast<asset::Graphic>(),

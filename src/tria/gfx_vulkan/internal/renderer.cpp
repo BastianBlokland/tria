@@ -222,7 +222,8 @@ auto Renderer::draw(
       m_device, m_drawVkCommandBuffer, "Draw " + graphic->getId(), math::color::get(m_drawId));
 
   // Prepare and bind per graphic resources (pipeline and index buffer).
-  graphic->prepareResources(m_transferer.get(), m_uni.get(), technique.getVkRenderPass());
+  graphic->prepareResources(
+      m_transferer.get(), m_uni.get(), technique.getVkRenderPass(), technique.getSampleCount());
   vkCmdBindPipeline(
       m_drawVkCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphic->getVkPipeline());
 

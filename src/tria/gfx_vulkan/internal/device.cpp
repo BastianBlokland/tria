@@ -183,7 +183,7 @@ Device::Device(
   try {
     const auto foundSurfaceFormat = pickSurfaceFormat(vkPhysicalDevice, m_vkSurface);
     if (foundSurfaceFormat) {
-      m_surfaceFormat = *foundSurfaceFormat;
+      m_surfaceFormatInfo = *foundSurfaceFormat;
     } else {
       throw err::GfxErr{"Selected vulkan device is missing a suitable surface format"};
     }
@@ -212,7 +212,7 @@ Device::Device(
   const auto foundDepthFormat = pickVkFormat<1>(
       vkPhysicalDevice, {VK_FORMAT_D32_SFLOAT}, VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT);
   if (foundDepthFormat) {
-    m_depthVkFormat = *foundDepthFormat;
+    m_depthFormat = *foundDepthFormat;
   } else {
     throw err::GfxErr{"Selected vulkan device does not support a suitable depth format"};
   }
@@ -244,9 +244,9 @@ Device::Device(
       {"deviceName", m_properties.deviceName},
       {"graphicsQueueIdx", m_graphicsQueueIdx},
       {"presentQueueIdx", m_presentQueueIdx},
-      {"surfaceFormat", getVkFormatString(m_surfaceFormat.format)},
-      {"surfaceColorSpace", getVkColorSpaceString(m_surfaceFormat.colorSpace)},
-      {"depthFormat", getVkFormatString(m_depthVkFormat)});
+      {"surfaceFormat", getVkFormatString(m_surfaceFormatInfo.format)},
+      {"surfaceColorSpace", getVkColorSpaceString(m_surfaceFormatInfo.colorSpace)},
+      {"depthFormat", getVkFormatString(m_depthFormat)});
 }
 
 Device::~Device() {
@@ -263,6 +263,22 @@ Device::~Device() {
   } catch (...) {
     LOG_E(m_logger, "Failed to cleanup vulkan device");
   }
+}
+
+auto Device::getSampleCount(uint8_t max) const noexcept -> VkSampleCountFlagBits {
+  if (max <= 1U) {
+    return VK_SAMPLE_COUNT_1_BIT;
+  }
+  auto supported =
+      (m_properties.limits.framebufferColorSampleCounts &
+       m_properties.limits.framebufferDepthSampleCounts);
+  auto bit = math::log2i(max);
+  for (; bit > 0U; --bit) {
+    if (supported & (1U << bit)) {
+      return static_cast<VkSampleCountFlagBits>(1U << bit);
+    }
+  }
+  return VK_SAMPLE_COUNT_1_BIT;
 }
 
 auto Device::queryVkSurfaceCapabilities() const -> VkSurfaceCapabilitiesKHR {

@@ -29,6 +29,7 @@ public:
       const NativeContext* context,
       const pal::Window* window,
       VSyncMode vSync,
+      SampleCount samples,
       DepthMode depth,
       ClearMask clear);
   NativeCanvas(const NativeCanvas& rhs)     = delete;
@@ -66,6 +67,7 @@ private:
   const NativeContext* m_context;
   const pal::Window* m_window;
   internal::DeviceUnique m_device;
+  internal::VkSampleCount m_sampleCount;
 
   internal::AssetResourceUnique<internal::Shader> m_shaders;
   internal::AssetResourceUnique<internal::Mesh> m_meshes;

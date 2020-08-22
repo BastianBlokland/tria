@@ -94,6 +94,32 @@ TEST_CASE("[math] - Utils", "[math]") {
     CHECK(countTrailingZeroes(0b1000'0000'0000'0000'0000'0000'0000'0000) == 31);
     CHECK(countTrailingZeroes(0b0000'0000'0000'0000'0000'0000'0000'0000) == 32);
   }
+
+  SECTION("Mask count leading zeroes") {
+    CHECK(countLeadingZeroes(0b1100'0100'0100'0100'0100'0100'1100'0100) == 0);
+    CHECK(countLeadingZeroes(0b0100'0100'0100'0100'0100'0100'1100'0101) == 1);
+    CHECK(countLeadingZeroes(0b0011'1100'0100'0100'0100'0100'1100'0100) == 2);
+    CHECK(countLeadingZeroes(0b0000'0010'0110'0100'0100'0100'1100'1100) == 6);
+    CHECK(countLeadingZeroes(0b0000'0001'1100'0100'0100'0100'1000'0011) == 7);
+    CHECK(countLeadingZeroes(0b0000'0000'0011'0100'0100'0100'0001'0000) == 10);
+    CHECK(countLeadingZeroes(0b0000'0000'0000'0000'0000'0000'0000'0001) == 31);
+    CHECK(countLeadingZeroes(0b0000'0000'0000'0000'0000'0000'0000'0000) == 32);
+  }
+
+  SECTION("Integer log2") {
+    CHECK(log2i(1) == 0);
+    CHECK(log2i(2) == 1);
+    CHECK(log2i(3) == 1);
+    CHECK(log2i(4) == 2);
+    CHECK(log2i(5) == 2);
+    CHECK(log2i(6) == 2);
+    CHECK(log2i(8) == 3);
+    CHECK(log2i(16) == 4);
+    CHECK(log2i(32) == 5);
+    CHECK(log2i(33) == 5);
+    CHECK(log2i(63) == 5);
+    CHECK(log2i(64) == 6);
+  }
 }
 
 } // namespace tria::math::tests

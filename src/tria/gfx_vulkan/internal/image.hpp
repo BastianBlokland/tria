@@ -6,7 +6,8 @@
 
 namespace tria::gfx::internal {
 
-using ImageSize = math::Vec<uint16_t, 2>;
+using ImageSize     = math::Vec<uint16_t, 2>;
+using VkSampleCount = VkSampleCountFlagBits;
 
 enum class ImageType {
   ColorSource,
@@ -26,7 +27,13 @@ enum class ImageMipMode {
 class Image final {
 public:
   Image() : m_vkImage{nullptr}, m_vkImageView{nullptr} {}
-  Image(Device* device, ImageSize size, VkFormat vkFormat, ImageType type, ImageMipMode mipMode);
+  Image(
+      Device* device,
+      ImageSize size,
+      VkFormat vkFormat,
+      ImageType type,
+      VkSampleCount sampleCount,
+      ImageMipMode mipMode);
   Image(const Device* device, VkImage vkImage, ImageSize size, VkFormat vkFormat, ImageType type);
   Image(const Image& rhs) = delete;
   Image(Image&& rhs) noexcept {

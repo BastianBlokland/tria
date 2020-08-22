@@ -222,6 +222,27 @@ auto getVkPresentModeString(VkPresentModeKHR mode) noexcept -> std::string_view 
 #undef PRESENTMODE_STR
 }
 
+auto getVkSampleCountString(VkSampleCountFlagBits count) noexcept -> std::string_view {
+  switch (count) {
+  case VK_SAMPLE_COUNT_1_BIT:
+    return "X1";
+  case VK_SAMPLE_COUNT_2_BIT:
+    return "X2";
+  case VK_SAMPLE_COUNT_4_BIT:
+    return "X4";
+  case VK_SAMPLE_COUNT_8_BIT:
+    return "X8";
+  case VK_SAMPLE_COUNT_16_BIT:
+    return "X16";
+  case VK_SAMPLE_COUNT_32_BIT:
+    return "X32";
+  case VK_SAMPLE_COUNT_64_BIT:
+    return "X64";
+  default:
+    return "unknown";
+  }
+}
+
 auto getVkFormatInfo(VkFormat format) noexcept -> VkFormatInfo {
 #define FORMAT_INFO(NAME, SIZE, CHANNEL_COUNT)                                                     \
   case VK_FORMAT_##NAME:                                                                           \

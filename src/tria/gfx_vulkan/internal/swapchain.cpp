@@ -76,8 +76,8 @@ namespace {
   createInfo.sType                    = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
   createInfo.surface                  = device->getVkSurface();
   createInfo.minImageCount            = imgCount;
-  createInfo.imageFormat              = device->getVkSurfaceFormat().format;
-  createInfo.imageColorSpace          = device->getVkSurfaceFormat().colorSpace;
+  createInfo.imageFormat              = device->getSurfaceFormat();
+  createInfo.imageColorSpace          = device->getSurfaceColorSpace();
   createInfo.imageExtent.width        = size.x();
   createInfo.imageExtent.height       = size.y();
   createInfo.imageArrayLayers         = 1U;
@@ -245,8 +245,8 @@ auto Swapchain::initSwapchain() -> bool {
 
   // Create images.
   for (auto i = 0U; i != vkImages.size(); ++i) {
-    auto img = Image{
-        m_device, vkImages[i], m_size, m_device->getVkSurfaceFormat().format, ImageType::Swapchain};
+    auto img =
+        Image{m_device, vkImages[i], m_size, m_device->getSurfaceFormat(), ImageType::Swapchain};
 
     DBG_IMG_NAME(m_device, img.getVkImage(), "swapchain_" + std::to_string(i));
     DBG_IMGVIEW_NAME(m_device, img.getVkImageView(), "swapchain_" + std::to_string(i));

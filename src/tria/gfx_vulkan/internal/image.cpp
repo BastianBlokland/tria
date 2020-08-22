@@ -25,6 +25,7 @@ namespace {
     ImageSize size,
     VkFormat vkFormat,
     VkImageUsageFlags imgUsages,
+    VkSampleCount sampleCount,
     uint32_t mipLevels) -> VkImage {
 
   VkImageCreateInfo imageInfo = {};
@@ -40,7 +41,7 @@ namespace {
   imageInfo.initialLayout     = VK_IMAGE_LAYOUT_UNDEFINED;
   imageInfo.usage             = imgUsages;
   imageInfo.sharingMode       = VK_SHARING_MODE_EXCLUSIVE;
-  imageInfo.samples           = VK_SAMPLE_COUNT_1_BIT;
+  imageInfo.samples           = sampleCount;
 
   VkImage result;
   checkVkResult(vkCreateImage(vkDevice, &imageInfo, nullptr, &result));
@@ -109,7 +110,12 @@ namespace {
 } // namespace
 
 Image::Image(
-    Device* device, ImageSize size, VkFormat vkFormat, ImageType type, ImageMipMode mipMode) :
+    Device* device,
+    ImageSize size,
+    VkFormat vkFormat,
+    ImageType type,
+    VkSampleCount sampleCount,
+    ImageMipMode mipMode) :
     m_device{device}, m_size{size}, m_vkFormat{vkFormat}, m_type{type}, m_mipMode{mipMode} {
 
   assert(m_device);
@@ -123,7 +129,8 @@ Image::Image(
   const auto imgUsages = getVkImageUsage(type, genMipMaps);
 
   // Create an image.
-  m_vkImage = createVkImage(device->getVkDevice(), size, vkFormat, imgUsages, m_mipLevels);
+  m_vkImage =
+      createVkImage(device->getVkDevice(), size, vkFormat, imgUsages, sampleCount, m_mipLevels);
 
   // Allocate device memory for it.
   auto memoryRequirements = getVkMemoryRequirements(device->getVkDevice(), m_vkImage);
