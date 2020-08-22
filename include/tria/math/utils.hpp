@@ -66,4 +66,14 @@ template <typename T>
  */
 [[nodiscard]] auto countTrailingZeroes(uint32_t mask) noexcept -> unsigned int;
 
+/* Returns the amount of leading zeroes in a mask.
+ * Note: returns 32 for a mask with 0 set bits.
+ */
+[[nodiscard]] auto countLeadingZeroes(uint32_t mask) noexcept -> unsigned int;
+
+/* Integer version of log base 2.
+ * Undefined for val == 0.
+ */
+[[nodiscard]] inline auto log2i(uint32_t val) noexcept { return 31U - countLeadingZeroes(val); }
+
 } // namespace tria::math
