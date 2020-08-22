@@ -5,6 +5,11 @@
 
 namespace tria::gfx::internal {
 
+enum class SamplerWrapMode : uint8_t {
+  Repeat = 0,
+  Clamp  = 1,
+};
+
 enum class SamplerFilterMode : uint8_t {
   Nearest = 0,
   Linear  = 1,
@@ -26,6 +31,7 @@ public:
   Sampler() = default;
   Sampler(
       const Device* device,
+      SamplerWrapMode wrapMode,
       SamplerFilterMode filterMode,
       SamplerAnisotropyMode anisoMode,
       uint32_t mipLevels);

@@ -6,6 +6,7 @@ namespace {
 
 [[nodiscard]] auto createVkSampler(
     const Device* device,
+    SamplerWrapMode wrapMode,
     SamplerFilterMode filterMode,
     SamplerAnisotropyMode anisoMode,
     uint32_t mipLevels) -> VkSampler {
@@ -22,9 +23,18 @@ namespace {
     samplerInfo.minFilter = VK_FILTER_LINEAR;
     break;
   }
-  samplerInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-  samplerInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-  samplerInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+  switch (wrapMode) {
+  case SamplerWrapMode::Repeat:
+    samplerInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+    samplerInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+    samplerInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+    break;
+  case SamplerWrapMode::Clamp:
+    samplerInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+    samplerInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+    samplerInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+    break;
+  }
   if (device->getFeatures().samplerAnisotropy) {
     samplerInfo.anisotropyEnable = anisoMode != SamplerAnisotropyMode::None;
     switch (anisoMode) {
@@ -67,11 +77,12 @@ namespace {
 
 Sampler::Sampler(
     const Device* device,
+    SamplerWrapMode wrapMode,
     SamplerFilterMode filterMode,
     SamplerAnisotropyMode anisoMode,
     uint32_t mipLevels) :
     m_device{device} {
-  m_vkSampler = createVkSampler(device, filterMode, anisoMode, mipLevels);
+  m_vkSampler = createVkSampler(device, wrapMode, filterMode, anisoMode, mipLevels);
 }
 
 Sampler::~Sampler() {

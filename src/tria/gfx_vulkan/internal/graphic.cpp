@@ -306,8 +306,8 @@ Graphic::Graphic(
       graphicBindings.begin()->second == DescriptorBindingKind::StorageBuffer) {
     const auto binding = graphicBindings.begin()->first;
     if (!m_mesh) {
-      throw err::GraphicErr{asset->getId(),
-                            "Shader takes a mesh input but the graphic doesn't have a mesh"};
+      throw err::GraphicErr{
+          asset->getId(), "Shader takes a mesh input but the graphic doesn't have a mesh"};
     }
     m_descSet.attachBuffer(binding, m_mesh->getVertexBuffer(), m_mesh->getVertexBuffer().getSize());
   }
@@ -317,10 +317,11 @@ Graphic::Graphic(
   for (auto itr = m_asset->getSamplerBegin(); itr != m_asset->getSamplerEnd(); ++itr) {
     const auto* tex = textures->get(itr->getTexture());
 
+    const auto wrapMode   = static_cast<SamplerWrapMode>(itr->getWrapMode());
     const auto filterMode = static_cast<SamplerFilterMode>(itr->getFilterMode());
     const auto anisoMode  = static_cast<SamplerAnisotropyMode>(itr->getAnisoMode());
 
-    auto sampler = Sampler{device, filterMode, anisoMode, tex->getImage().getMipLevels()};
+    auto sampler = Sampler{device, wrapMode, filterMode, anisoMode, tex->getImage().getMipLevels()};
     DBG_SAMPLER_NAME(m_device, sampler.getVkSampler(), m_asset->getId());
 
     m_textures.push_back({tex, std::move(sampler)});
@@ -331,8 +332,8 @@ Graphic::Graphic(
   for (const auto& binding : graphicBindings) {
     if (binding.second == DescriptorBindingKind::CombinedImageSampler) {
       if (m_textures.size() == textureIdx) {
-        throw err::GraphicErr{asset->getId(),
-                              "Graphic does not have enough samplers to satisfy shader inputs"};
+        throw err::GraphicErr{
+            asset->getId(), "Graphic does not have enough samplers to satisfy shader inputs"};
       }
       const auto& tex = m_textures[textureIdx++];
       m_descSet.attachImage(binding.first, tex.texture->getImage(), tex.sampler);

@@ -31,6 +31,15 @@ namespace {
   return search == table.end() ? std::nullopt : std::optional{search->second};
 }
 
+[[nodiscard]] auto getTextureWrapMode(std::string_view str) -> std::optional<WrapMode> {
+  static const std::unordered_map<std::string_view, WrapMode> table = {
+      {"repeat", WrapMode::Repeat},
+      {"clamp", WrapMode::Clamp},
+  };
+  const auto search = table.find(str);
+  return search == table.end() ? std::nullopt : std::optional{search->second};
+}
+
 [[nodiscard]] auto getTextureFilterMode(std::string_view str) -> std::optional<FilterMode> {
   static const std::unordered_map<std::string_view, FilterMode> table = {
       {"nearest", FilterMode::Nearest},
@@ -139,6 +148,17 @@ auto loadGraphic(log::Logger* /*unused*/, DatabaseImpl* db, AssetId id, math::Ra
       }
       const auto* texture = db->get(AssetId{textureId})->downcast<Texture>();
 
+      // Wrap mode (optional field).
+      auto wrapMode = WrapMode::Repeat;
+      std::string_view wrapStr;
+      if (!elem.at("wrap").get(wrapStr)) {
+        auto wrapModeOpt = getTextureWrapMode(wrapStr);
+        if (!wrapModeOpt) {
+          throw err::GraphicErr{"Unsupported wrap mode"};
+        }
+        wrapMode = *wrapModeOpt;
+      }
+
       // Filter mode (optional field).
       auto filterMode = FilterMode::Linear;
       std::string_view filterStr;
@@ -161,7 +181,7 @@ auto loadGraphic(log::Logger* /*unused*/, DatabaseImpl* db, AssetId id, math::Ra
         anisoMode = *anisoModeOpt;
       }
 
-      samplers.push_back(TextureSampler{texture, filterMode, anisoMode});
+      samplers.push_back(TextureSampler{texture, wrapMode, filterMode, anisoMode});
     }
   }
 

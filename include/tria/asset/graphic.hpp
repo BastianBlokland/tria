@@ -32,6 +32,13 @@ enum class BlendMode : uint8_t {
   AlphaAdditive = 3, // Multiply the rgb values by the alpha and add them to the framebuffer.
 };
 
+/* Mode that is used when sampling outside of the texture.
+ */
+enum class WrapMode : uint8_t {
+  Repeat = 0, // Repeat the texture when sampling outside.
+  Clamp  = 1, // Use the edge pixel when sampling outside.
+};
+
 /* Mode that is used when oversampling the texture.
  */
 enum class FilterMode : uint8_t {
@@ -71,17 +78,20 @@ enum class CullMode : uint8_t {
 class TextureSampler final {
 public:
   TextureSampler() = delete;
-  TextureSampler(const Texture* texture, FilterMode filterMode, AnisotropyMode anisoMode) :
-      m_texture{texture}, m_filterMode{filterMode}, m_anisoMode{anisoMode} {
+  TextureSampler(
+      const Texture* texture, WrapMode wrap, FilterMode filterMode, AnisotropyMode anisoMode) :
+      m_texture{texture}, m_wrapMode{wrap}, m_filterMode{filterMode}, m_anisoMode{anisoMode} {
     assert(texture);
   }
 
   [[nodiscard]] auto getTexture() const noexcept { return m_texture; }
+  [[nodiscard]] auto getWrapMode() const noexcept { return m_wrapMode; }
   [[nodiscard]] auto getFilterMode() const noexcept { return m_filterMode; }
   [[nodiscard]] auto getAnisoMode() const noexcept { return m_anisoMode; }
 
 private:
   const Texture* m_texture;
+  WrapMode m_wrapMode;
   FilterMode m_filterMode;
   AnisotropyMode m_anisoMode;
 };

@@ -75,14 +75,19 @@ TEST_CASE("[asset] - Graphic", "[asset]") {
           "{"
           "\"shaders\": [\"test.vert.spv\", \"test.frag.spv\"],"
           "\"mesh\": \"test.obj\","
-          "\"samplers\": [{ \"texture\": \"test.ppm\", \"filter\": \"nearest\", \"anisotropy\": "
-          "\"x4\"}]"
+          "\"samplers\": [{ "
+          "  \"texture\": \"test.ppm\","
+          "  \"wrap\": \"clamp\","
+          "  \"filter\": \"nearest\","
+          "  \"anisotropy\": \"x4\""
+          "}]"
           "}");
 
       auto db   = Database{nullptr, dir};
       auto* gfx = db.get("test.gfx")->downcast<Graphic>();
       REQUIRE(gfx->getSamplerCount() == 1);
       CHECK(*gfx->getSamplerBegin()->getTexture()->getPixelBegin() == Pixel{1, 42, 137, 255});
+      CHECK(gfx->getSamplerBegin()->getWrapMode() == WrapMode::Clamp);
       CHECK(gfx->getSamplerBegin()->getFilterMode() == FilterMode::Nearest);
       CHECK(gfx->getSamplerBegin()->getAnisoMode() == AnisotropyMode::X4);
     });
