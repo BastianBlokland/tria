@@ -1,6 +1,6 @@
 #version 450
 #extension GL_GOOGLE_include_directive : enable
-#include "include/common.glsl"
+#include "include/input.glsl"
 
 layout(set = graphicSet, binding = 1) uniform sampler2D texSampler;
 

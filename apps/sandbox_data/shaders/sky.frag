@@ -1,6 +1,6 @@
 #version 450
 #extension GL_GOOGLE_include_directive : enable
-#include "include/common.glsl"
+#include "include/input.glsl"
 
 /* 3 color gradient based on the y component of the world direction. */
 const vec4 topColor    = vec4(0.4, 0.5, 0.8, 1);

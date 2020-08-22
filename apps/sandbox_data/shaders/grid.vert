@@ -1,6 +1,6 @@
 #version 450
 #extension GL_GOOGLE_include_directive : enable
-#include "include/common.glsl"
+#include "include/input.glsl"
 
 const uint highlightInterval = 5;
 const vec4 normalColor       = vec4(.1, .1, .1, .4);
