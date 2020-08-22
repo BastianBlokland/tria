@@ -40,6 +40,7 @@ constexpr bool falseValue = false;
 [[nodiscard]] auto getVkVendorString(uint32_t vendorId) noexcept -> std::string_view;
 [[nodiscard]] auto getVkColorSpaceString(VkColorSpaceKHR colorSpace) noexcept -> std::string_view;
 [[nodiscard]] auto getVkPresentModeString(VkPresentModeKHR mode) noexcept -> std::string_view;
+[[nodiscard]] auto getVkSampleCountString(VkSampleCountFlagBits count) noexcept -> std::string_view;
 
 struct VkFormatInfo final {
   std::string_view name;

@@ -15,6 +15,7 @@ NativeCanvas::NativeCanvas(
     const NativeContext* context,
     const pal::Window* window,
     VSyncMode vSync,
+    SampleCount samples,
     DepthMode depth,
     ClearMask clear) :
     m_logger{logger},
@@ -29,13 +30,14 @@ NativeCanvas::NativeCanvas(
   if (!m_device) {
     throw err::GfxErr{"No device found with vulkan support"};
   }
+  m_sampleCount = m_device->getSampleCount(static_cast<uint8_t>(samples));
 
   m_shaders  = std::make_unique<AssetResource<Shader>>(m_logger, m_device.get());
   m_meshes   = std::make_unique<AssetResource<Mesh>>(m_logger, m_device.get());
   m_textures = std::make_unique<AssetResource<Texture>>(m_logger, m_device.get());
   m_graphics = std::make_unique<AssetResource<Graphic>>(m_logger, m_device.get());
 
-  m_fwdTechnique = std::make_unique<ForwardTechnique>(m_device.get(), depth, clear);
+  m_fwdTechnique = std::make_unique<ForwardTechnique>(m_device.get(), m_sampleCount, depth, clear);
 
   m_swapchain = std::make_unique<Swapchain>(logger, m_device.get(), vSync);
 

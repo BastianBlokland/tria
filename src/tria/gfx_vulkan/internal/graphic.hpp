@@ -42,9 +42,11 @@ public:
 
   /* Note: Call this before accessing any resources from this graphic.
    */
-  auto
-  prepareResources(Transferer* transferer, UniformContainer* uni, VkRenderPass vkRenderPass) const
-      -> void;
+  auto prepareResources(
+      Transferer* transferer,
+      UniformContainer* uni,
+      VkRenderPass vkRenderPass,
+      VkSampleCount sampleCount) const -> void;
 
   [[nodiscard]] auto getMesh() const noexcept { return m_mesh; }
   [[nodiscard]] auto getUsesInstanceData() const noexcept { return m_usesInstanceData; }
@@ -56,9 +58,6 @@ private:
   struct TextureData final {
     const Texture* texture;
     Sampler sampler;
-
-    TextureData(const Texture* texture, Sampler sampler) :
-        texture{texture}, sampler{std::move(sampler)} {}
   };
 
   log::Logger* m_logger;

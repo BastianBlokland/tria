@@ -17,6 +17,18 @@ enum class DepthMode {
   Disable, // No depth testing.
 };
 
+/* How many times to sample each fragment for multi-sample anti-aliasing.
+ * Depending on hardware support a lower sample count might be used instead.
+ */
+enum class SampleCount : uint8_t {
+  X1  = 1,  // 1 sample per fragment, no anti-aliasing.
+  X2  = 2,  // 2 samples per fragment.
+  X4  = 4,  // 4 samples per fragment.
+  X8  = 8,  // 8 samples per fragment.
+  X16 = 16, // 16 samples per fragment.
+  X32 = 32, // 32 samples per fragment.
+};
+
 using ClearMask = uint8_t;
 
 enum class Clear : uint8_t {
@@ -41,9 +53,12 @@ public:
 
   /* Create a canvas to render into that outputs to the given window.
    */
-  [[nodiscard]] auto
-  createCanvas(const pal::Window* window, VSyncMode vSync, DepthMode depth, ClearMask clear)
-      -> Canvas;
+  [[nodiscard]] auto createCanvas(
+      const pal::Window* window,
+      VSyncMode vSync,
+      SampleCount samples,
+      DepthMode depth,
+      ClearMask clear) -> Canvas;
 
 private:
   std::unique_ptr<NativeContext> m_native;

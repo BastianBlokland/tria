@@ -134,9 +134,12 @@ NativeContext::~NativeContext() {
 }
 
 auto NativeContext::createCanvas(
-    const pal::Window* window, VSyncMode vSync, DepthMode depth, ClearMask clear)
-    -> std::unique_ptr<NativeCanvas> {
-  return std::make_unique<NativeCanvas>(m_logger, this, window, vSync, depth, clear);
+    const pal::Window* window,
+    VSyncMode vSync,
+    SampleCount samples,
+    DepthMode depth,
+    ClearMask clear) -> std::unique_ptr<NativeCanvas> {
+  return std::make_unique<NativeCanvas>(m_logger, this, window, vSync, samples, depth, clear);
 }
 
 auto NativeContext::setDebugName(

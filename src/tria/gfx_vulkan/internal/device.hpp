@@ -40,8 +40,11 @@ public:
   [[nodiscard]] auto getVkPhysicalDevice() const noexcept { return m_vkPhysicalDevice; }
   [[nodiscard]] auto getVkDevice() const noexcept { return m_vkDevice; }
   [[nodiscard]] auto getVkSurface() const noexcept { return m_vkSurface; }
-  [[nodiscard]] auto getVkSurfaceFormat() const noexcept { return m_surfaceFormat; }
-  [[nodiscard]] auto getDepthVkFormat() const noexcept { return m_depthVkFormat; }
+  [[nodiscard]] auto getSurfaceColorSpace() const noexcept {
+    return m_surfaceFormatInfo.colorSpace;
+  }
+  [[nodiscard]] auto getSurfaceFormat() const noexcept { return m_surfaceFormatInfo.format; }
+  [[nodiscard]] auto getDepthFormat() const noexcept { return m_depthFormat; }
   [[nodiscard]] auto getLimits() const noexcept -> const VkPhysicalDeviceLimits& {
     return m_properties.limits;
   }
@@ -51,6 +54,10 @@ public:
   [[nodiscard]] auto getMemProperties() const noexcept -> const VkPhysicalDeviceMemoryProperties& {
     return m_memProperties;
   }
+
+  /* Get the maximum supported sample count for multi-sample anti-aliasing.
+   */
+  [[nodiscard]] auto getSampleCount(uint8_t max) const noexcept -> VkSampleCountFlagBits;
 
   [[nodiscard]] auto getVkGraphicsQueue() const noexcept { return m_graphicsQueue; }
   [[nodiscard]] auto getVkGraphicsQueueIdx() const noexcept { return m_graphicsQueueIdx; }
@@ -77,8 +84,8 @@ private:
   VkPhysicalDeviceMemoryProperties m_memProperties;
 
   VkSurfaceKHR m_vkSurface;
-  VkSurfaceFormatKHR m_surfaceFormat;
-  VkFormat m_depthVkFormat;
+  VkSurfaceFormatKHR m_surfaceFormatInfo;
+  VkFormat m_depthFormat;
 
   VkDevice m_vkDevice;
   VkQueue m_graphicsQueue;

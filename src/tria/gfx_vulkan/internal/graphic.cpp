@@ -41,6 +41,7 @@ namespace {
 [[nodiscard]] auto createPipeline(
     const Device* device,
     VkRenderPass vkRenderPass,
+    VkSampleCount sampleCount,
     VkPipelineLayout layout,
     const std::vector<const Shader*>& shaders,
     asset::VertexTopology topology,
@@ -125,11 +126,10 @@ namespace {
   }
   rasterizer.frontFace = VK_FRONT_FACE_CLOCKWISE;
 
-  // No multi-sampling is enabled at the moment.
   VkPipelineMultisampleStateCreateInfo multisampling = {};
   multisampling.sType                = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
   multisampling.sampleShadingEnable  = false;
-  multisampling.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
+  multisampling.rasterizationSamples = sampleCount;
 
   VkPipelineDepthStencilStateCreateInfo depthStencil = {};
   depthStencil.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
@@ -323,7 +323,7 @@ Graphic::Graphic(
     auto sampler = Sampler{device, filterMode, anisoMode, tex->getImage().getMipLevels()};
     DBG_SAMPLER_NAME(m_device, sampler.getVkSampler(), m_asset->getId());
 
-    m_textures.emplace_back(tex, std::move(sampler));
+    m_textures.push_back({tex, std::move(sampler)});
   }
 
   // Bind the texture resources to our descriptor.
@@ -362,7 +362,10 @@ Graphic::~Graphic() {
 }
 
 auto Graphic::prepareResources(
-    Transferer* transferer, UniformContainer* uni, VkRenderPass vkRenderPass) const -> void {
+    Transferer* transferer,
+    UniformContainer* uni,
+    VkRenderPass vkRenderPass,
+    VkSampleCount sampleCount) const -> void {
 
   if (m_mesh) {
     m_mesh->prepareResources(transferer);
@@ -378,6 +381,7 @@ auto Graphic::prepareResources(
     m_vkPipeline = createPipeline(
         m_device,
         vkRenderPass,
+        sampleCount,
         m_vkPipelineLayout,
         m_shaders,
         m_asset->getVertexTopology(),
