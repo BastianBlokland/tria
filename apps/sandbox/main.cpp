@@ -169,7 +169,9 @@ auto main(int /*unused*/, char* * /*unused*/) -> int {
   pal::setThreadName("tria_main_thread");
   pal::setupInterruptHandler();
 
-  auto logger = log::Logger{log::makeConsolePrettySink(), log::makeFileJsonSink("sandbox.log")};
+  auto logger = log::Logger{
+      log::makeConsolePrettySink(),
+      log::makeFileJsonSink(pal::getCurExecutablePath().replace_extension("log"))};
 
   int ret;
   try {
