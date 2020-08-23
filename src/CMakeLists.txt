@@ -37,6 +37,7 @@ add_library(tria_gfx STATIC
   tria/gfx_vulkan/internal/image.cpp
   tria/gfx_vulkan/internal/memory_pool.cpp
   tria/gfx_vulkan/internal/mesh.cpp
+  tria/gfx_vulkan/internal/pipeline_cache.cpp
   tria/gfx_vulkan/internal/renderer.cpp
   tria/gfx_vulkan/internal/sampler.cpp
   tria/gfx_vulkan/internal/shader.cpp

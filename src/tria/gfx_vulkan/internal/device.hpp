@@ -65,6 +65,7 @@ public:
   [[nodiscard]] auto getVkPresentQueue() const noexcept { return m_presentQueue; }
   [[nodiscard]] auto getVkPresentQueueIdx() const noexcept { return m_presentQueueIdx; }
 
+  [[nodiscard]] auto getVkPipelineCache() const noexcept { return m_vkPipelineCache; }
   [[nodiscard]] auto getGraphicsVkCommandPool() const noexcept { return m_graphicsVkCommandPool; }
 
   [[nodiscard]] auto getMemory() noexcept -> MemoryPool& { return *m_memory; }
@@ -93,6 +94,7 @@ private:
   VkQueue m_presentQueue;
   uint32_t m_presentQueueIdx;
 
+  VkPipelineCache m_vkPipelineCache;
   VkCommandPool m_graphicsVkCommandPool;
 
   internal::MemoryPoolUnique m_memory;

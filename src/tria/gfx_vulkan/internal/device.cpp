@@ -1,6 +1,7 @@
 #include "device.hpp"
 #include "../native_context.hpp"
 #include "debug_utils.hpp"
+#include "pipeline_cache.hpp"
 #include "tria/gfx/err/gfx_err.hpp"
 #include "tria/pal/native.hpp"
 #include "utils.hpp"
@@ -222,6 +223,9 @@ Device::Device(
   vkGetDeviceQueue(m_vkDevice, *foundGfxQueueIdx, 0U, &m_graphicsQueue);
   vkGetDeviceQueue(m_vkDevice, *foundPresentQueueIdx, 0U, &m_presentQueue);
 
+  // Load or create a cache of previously created pipeline state objects.
+  m_vkPipelineCache = loadVkPipelineCache(m_logger, m_vkDevice, m_properties);
+
   // Create a command-pool to create graphics command-buffers from.
   m_graphicsVkCommandPool = createVkCommandPool(m_vkDevice, m_graphicsQueueIdx);
 
@@ -254,9 +258,13 @@ Device::~Device() {
     // Wait for all rendering to be done before destroying the device.
     checkVkResult(vkDeviceWaitIdle(m_vkDevice));
 
+    // Save the pipeline cache to disk to speed up the pipeline creation in a future run.
+    saveVkPipelineCache(m_logger, m_vkDevice, m_vkPipelineCache);
+
     m_memory      = nullptr;
     m_descManager = nullptr;
     vkDestroyCommandPool(m_vkDevice, m_graphicsVkCommandPool, nullptr);
+    vkDestroyPipelineCache(m_vkDevice, m_vkPipelineCache, nullptr);
     vkDestroyDevice(m_vkDevice, nullptr);
     vkDestroySurfaceKHR(m_context->getVkInstance(), m_vkSurface, nullptr);
 
