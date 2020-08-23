@@ -226,7 +226,7 @@ namespace {
 
   VkPipeline result;
   checkVkResult(vkCreateGraphicsPipelines(
-      device->getVkDevice(), nullptr, 1, &pipelineInfo, nullptr, &result));
+      device->getVkDevice(), device->getVkPipelineCache(), 1, &pipelineInfo, nullptr, &result));
   return result;
 }
 
