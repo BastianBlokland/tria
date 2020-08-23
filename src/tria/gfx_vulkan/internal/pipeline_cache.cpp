@@ -109,14 +109,11 @@ loadVkPipelineCache(log::Logger* logger, VkDevice vkDevice, const VkPhysicalDevi
     const auto headerOpt = readCacheHeader(*optFile);
     if (headerOpt && verifyCacheHeader(*headerOpt, props)) {
       LOG_I(
-          logger,
-          "Loaded pipeline cache",
-          {"path", path.string()},
-          {"size", log::MemSize{optFile->size()}});
+          logger, "Loaded pipeline cache", {"path", path}, {"size", log::MemSize{optFile->size()}});
       return createVkPipelineCache(vkDevice, &optFile.value());
     }
 
-    LOG_W(logger, "Invalid pipeline cache", {"path", path.string()});
+    LOG_W(logger, "Invalid pipeline cache", {"path", path});
   }
 
   LOG_I(logger, "Create new pipline cache");
@@ -142,15 +139,11 @@ auto saveVkPipelineCache(log::Logger* logger, VkDevice vkDevice, VkPipelineCache
     file.write(reinterpret_cast<const char*>(buffer.data()), buffer.size());
     file.close();
 
-    LOG_I(logger, "Saved pipeline cache", {"path", path.string()}, {"size", log::MemSize{size}});
+    LOG_I(logger, "Saved pipeline cache", {"path", path}, {"size", log::MemSize{size}});
     return;
   }
 
-  LOG_W(
-      logger,
-      "Failed to save pipeline cache",
-      {"path", path.string()},
-      {"size", log::MemSize{size}});
+  LOG_W(logger, "Failed to save pipeline cache", {"path", path}, {"size", log::MemSize{size}});
 }
 
 } // namespace tria::gfx::internal

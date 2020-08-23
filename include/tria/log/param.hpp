@@ -1,4 +1,5 @@
 #pragma once
+#include "tria/fs.hpp"
 #include <chrono>
 #include <string>
 #include <string_view>
@@ -72,7 +73,9 @@ public:
 
   Value(std::string_view value) noexcept : Value(std::string(value)) {}
 
-  Value(std::string value) noexcept;
+  Value(std::string value) noexcept : m_val{std::move(value)} {}
+
+  Value(fs::path value) noexcept : m_val{std::move(value)} {}
 
   Value(Duration value) noexcept : m_val{value} {}
 
@@ -92,8 +95,8 @@ public:
   auto write(std::string* tgtStr, ParamWriteMode mode) const noexcept -> void;
 
 private:
-  using ValueType =
-      std::variant<int64_t, uint64_t, double, bool, std::string, Duration, TimePoint, MemSize>;
+  using ValueType = std::
+      variant<int64_t, uint64_t, double, bool, std::string, fs::path, Duration, TimePoint, MemSize>;
 
   ValueType m_val;
 };

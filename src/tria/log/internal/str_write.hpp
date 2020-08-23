@@ -1,4 +1,5 @@
 #pragma once
+#include "tria/fs.hpp"
 #include "tria/log/level.hpp"
 #include <array>
 #include <chrono>
@@ -152,6 +153,56 @@ inline auto writePrettyMemSize(std::string* str, const size_t size) noexcept {
     writeDouble(str, sizeD, "%.1f");
   }
   str->append(units[unitIdx]);
+}
+
+inline auto writeStrEscaped(std::string* str, std::string_view input) noexcept {
+  for (auto* ptr = input.data();; ++ptr) {
+    switch (*ptr) {
+    case '"':
+      str->append("\\\"");
+      break;
+    case '\\':
+      str->append("\\\\");
+      break;
+    case '\r':
+      str->append("\\r");
+      break;
+    case '\n':
+      str->append("\\n");
+      break;
+    case '\t':
+      str->append("\\t");
+      break;
+    case '\b':
+      str->append("\\b");
+      break;
+    case '\f':
+      str->append("\\f");
+      break;
+    default:
+      (*str) += *ptr;
+      break;
+    case '\0':
+      return;
+    }
+  }
+}
+
+template <typename CharType>
+inline auto writePathNormalized(std::string* str, const CharType* path) noexcept {
+  // TODO(bastian): Do we need to escape any other characters in paths?
+  for (auto* ptr = path;; ++ptr) {
+    switch (*ptr) {
+    case '\\':
+      str->append("/");
+      break;
+    default:
+      (*str) += *ptr;
+      break;
+    case '\0':
+      return;
+    }
+  }
 }
 
 } // namespace tria::log::internal

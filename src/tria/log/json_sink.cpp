@@ -34,7 +34,8 @@ public:
 
     // File.
     m_buffer.append(" \"file\": \"");
-    m_buffer.append(msg.getMeta()->getFile());
+    // TODO(bastian): We could probably normalize the file path at compile time.
+    internal::writePathNormalized(&m_buffer, msg.getMeta()->getFile().data());
     m_buffer.append("\",");
 
     // Function.

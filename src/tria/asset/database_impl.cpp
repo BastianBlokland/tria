@@ -75,7 +75,7 @@ auto DatabaseImpl::get(const AssetId& id) -> const Asset* {
         m_logger,
         "Asset loaded",
         {"id", id},
-        {"path", path.string()},
+        {"path", path},
         {"kind", getName(asset->getKind())},
         {"size", log::MemSize{dataSize}},
         {"duration", Clock::now() - loadBeginTime});
@@ -86,10 +86,10 @@ auto DatabaseImpl::get(const AssetId& id) -> const Asset* {
         "Failed to load asset",
         {"id", id},
         {"reason", std::string{e.what()}},
-        {"path", path.string()});
+        {"path", path});
     throw;
   } catch (...) {
-    LOG_W(m_logger, "Failed to load asset", {"id", id}, {"path", path.string()});
+    LOG_W(m_logger, "Failed to load asset", {"id", id}, {"path", path});
     throw;
   }
 

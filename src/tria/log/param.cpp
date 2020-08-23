@@ -4,39 +4,8 @@
 
 namespace tria::log {
 
-namespace {
-
-auto escape(std::string&& str) -> std::string {
-  for (auto i = 0U;; ++i) {
-    switch (str[i]) {
-    case '\r':
-      str.replace(i, 1, "\\r");
-      ++i;
-      break;
-    case '\n':
-      str.replace(i, 1, "\\n");
-      ++i;
-      break;
-    case '\t':
-      str.replace(i, 1, "\\t");
-      ++i;
-      break;
-    case '\0':
-      goto End;
-    default:
-      break;
-    }
-  }
-End:
-  return std::move(str);
-}
-
-} // namespace
-
 template <typename>
 constexpr bool falseValue = false;
-
-Value::Value(std::string value) noexcept : m_val{escape(std::move(value))} {}
 
 auto Value::operator==(const Value& rhs) const noexcept -> bool { return m_val == rhs.m_val; }
 
@@ -64,7 +33,17 @@ auto Value::write(std::string* tgtStr, ParamWriteMode mode) const noexcept -> vo
           if (mode == ParamWriteMode::Json) {
             tgtStr->append("\"");
           }
-          tgtStr->append(arg);
+          internal::writeStrEscaped(tgtStr, arg);
+          if (mode == ParamWriteMode::Json) {
+            tgtStr->append("\"");
+          }
+        }
+        // NOLINTNEXTLINE(bugprone-branch-clone)
+        else if constexpr (std::is_same_v<T, fs::path>) {
+          if (mode == ParamWriteMode::Json) {
+            tgtStr->append("\"");
+          }
+          internal::writePathNormalized(tgtStr, arg.c_str());
           if (mode == ParamWriteMode::Json) {
             tgtStr->append("\"");
           }
