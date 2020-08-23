@@ -344,10 +344,9 @@ TEST_CASE("[math] - Vec", "[math]") {
   }
 
   SECTION("rndOnUnitSphere returns unit vectors") {
-    auto maxDev = std::numeric_limits<float>::epsilon() * 2;
-    auto rng    = RngXorWow{42};
+    auto rng = RngXorWow{42};
     for (auto i = 0U; i != 1'000; ++i) {
-      REQUIRE(approx(rndOnUnitSphere3f(rng).getSqrMag(), 1.f, maxDev));
+      REQUIRE(approx(rndOnUnitSphere3f(rng).getSqrMag(), 1.f, .000001f));
     }
   }
 

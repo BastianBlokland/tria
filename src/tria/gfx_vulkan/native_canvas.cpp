@@ -99,6 +99,13 @@ auto NativeCanvas::drawBegin(math::Color clearCol) -> bool {
   return true;
 }
 
+auto NativeCanvas::bindGlobalData(const void* data, size_t dataSize) -> void {
+  if (!m_curSwapchainImgIdx) {
+    throw err::SyncErr{"Unable to bind global-data: no draw active"};
+  }
+  getCurRenderer().bindGlobalData(data, dataSize);
+}
+
 auto NativeCanvas::draw(
     const asset::Graphic* asset,
     uint32_t indexCount,

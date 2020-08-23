@@ -14,8 +14,9 @@ class Mesh;
 class Texture;
 class Shader;
 
-constexpr auto g_shaderResourceGraphicSetId  = 0U; // Per graphic resources.
-constexpr auto g_shaderResourceInstanceSetId = 1U; // Per instance resources.
+constexpr auto g_shaderResourceGlobalSetId   = 0U; // Global resources.
+constexpr auto g_shaderResourceGraphicSetId  = 1U; // Per graphic resources.
+constexpr auto g_shaderResourceInstanceSetId = 2U; // Per instance resources.
 
 /* Graphic resource.
  * Holding a vulkan pipeline and dependencies.
@@ -49,6 +50,7 @@ public:
       VkSampleCount sampleCount) const -> void;
 
   [[nodiscard]] auto getMesh() const noexcept { return m_mesh; }
+  [[nodiscard]] auto getUsesGlobalData() const noexcept { return m_usesGlobalData; }
   [[nodiscard]] auto getUsesInstanceData() const noexcept { return m_usesInstanceData; }
   [[nodiscard]] auto getVkPipeline() const noexcept { return m_vkPipeline; }
   [[nodiscard]] auto getVkPipelineLayout() const noexcept { return m_vkPipelineLayout; }
@@ -64,6 +66,7 @@ private:
   const Device* m_device;
   const asset::Graphic* m_asset;
   std::vector<const Shader*> m_shaders;
+  bool m_usesGlobalData;
   bool m_usesInstanceData;
   const Mesh* m_mesh;
 

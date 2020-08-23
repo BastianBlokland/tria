@@ -16,6 +16,24 @@ namespace {
  */
 constexpr auto g_maxInstanceCount = 2048U;
 
+/* Create a pipeline layout with a single global descriptor-set 0, all pipeline layouts have to be
+ * compatible with this layout. This allows us to share the global data binding between different
+ * pipelines.
+ */
+[[nodiscard]] auto
+createGlobalPipelineLayout(const Device* device, VkDescriptorSetLayout globalDescriptor) {
+
+  VkPipelineLayoutCreateInfo pipelineLayoutInfo = {};
+  pipelineLayoutInfo.sType                      = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+  pipelineLayoutInfo.setLayoutCount             = 1U;
+  pipelineLayoutInfo.pSetLayouts                = &globalDescriptor;
+
+  VkPipelineLayout result;
+  checkVkResult(
+      vkCreatePipelineLayout(device->getVkDevice(), &pipelineLayoutInfo, nullptr, &result));
+  return result;
+}
+
 template <unsigned int Count>
 [[nodiscard]] auto createGfxVkCommandBuffers(const Device* device)
     -> std::array<VkCommandBuffer, Count> {
@@ -125,6 +143,8 @@ Renderer::Renderer(log::Logger* logger, Device* device) :
   m_statRecorder        = std::make_unique<StatRecorder>(logger, device);
   m_gfxVkCommandBuffers = createGfxVkCommandBuffers<2>(device);
 
+  m_globalPipelineLayout = createGlobalPipelineLayout(device, m_uni->getVkDescLayout());
+
   DBG_COMMANDBUFFER_NAME(m_device, m_transferVkCommandBuffer, "transfer");
   DBG_COMMANDBUFFER_NAME(m_device, m_drawVkCommandBuffer, "draw");
 }
@@ -134,6 +154,7 @@ Renderer::~Renderer() {
     // Wait for this renderer to be done executing on the gpu.
     waitForDone();
 
+    vkDestroyPipelineLayout(m_device->getVkDevice(), m_globalPipelineLayout, nullptr);
     vkFreeCommandBuffers(
         m_device->getVkDevice(),
         m_device->getGraphicsVkCommandPool(),
@@ -185,7 +206,8 @@ auto Renderer::drawBegin(
   // Clear any resources from the last execution.
   m_transferer->reset();
   m_uni->reset();
-  m_drawId = 0U;
+  m_drawId             = 0U;
+  m_hasBoundGlobalData = false;
 
   beginCommandBuffer(m_drawVkCommandBuffer);
   m_stopwatch->reset(m_drawVkCommandBuffer);
@@ -205,6 +227,33 @@ auto Renderer::drawBegin(
   m_statRecorder->beginCapture(m_drawVkCommandBuffer);
 }
 
+auto Renderer::bindGlobalData(const void* data, size_t dataSize) -> void {
+  if (!data || !dataSize) {
+    LOG_W(m_logger, "Attempting to bind 0 data");
+    return;
+  }
+  if (dataSize > m_uni->getMaxDataSize()) {
+    LOG_W(
+        m_logger,
+        "Global data size exceeds maximum",
+        {"size", log::MemSize{dataSize}},
+        {"maxSize", log::MemSize{m_uni->getMaxDataSize()}});
+    return;
+  }
+
+  auto [uniDescSet, uniOffset] = m_uni->upload(data, dataSize);
+  vkCmdBindDescriptorSets(
+      m_drawVkCommandBuffer,
+      VK_PIPELINE_BIND_POINT_GRAPHICS,
+      m_globalPipelineLayout,
+      g_shaderResourceGlobalSetId,
+      1U,
+      &uniDescSet,
+      1U,
+      &uniOffset);
+  m_hasBoundGlobalData = true;
+}
+
 auto Renderer::draw(
     const ForwardTechnique& technique,
     const Graphic* graphic,
@@ -214,7 +263,16 @@ auto Renderer::draw(
     uint32_t count) -> void {
 
   if (instDataSize > m_uni->getMaxDataSize()) {
-    LOG_W(m_logger, "Instance data size exceeds maximum", {"graphic", graphic->getId()});
+    LOG_W(
+        m_logger,
+        "Instance data size exceeds maximum",
+        {"size", log::MemSize{instDataSize}},
+        {"maxSize", log::MemSize{m_uni->getMaxDataSize()}},
+        {"graphic", graphic->getId()});
+    return;
+  }
+  if (graphic->getUsesGlobalData() && !m_hasBoundGlobalData) {
+    LOG_W(m_logger, "Graphic uses global data but none is bound", {"graphic", graphic->getId()});
     return;
   }
 

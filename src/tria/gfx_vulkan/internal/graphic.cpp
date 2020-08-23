@@ -13,16 +13,19 @@ namespace tria::gfx::internal {
 
 namespace {
 
-/* Graphic pipelines get two descriptors bound to them, the 'graphicDescriptor' containing 'per
- * graphic' resources like vertices and textures. And a 'instanceDescriptor' containing the 'per
- * instance' data like a transformation matrix.
+/* Graphic pipelines get three descriptors bound to them:
+ * - 'globalDescriptor' (shared between pipelines).
+ * - 'graphicDescriptor' (per graphic data like mesh and textures).
+ * - 'instanceDescriptor' (per instance data like a transformation matrix).
  */
 [[nodiscard]] auto createPipelineLayout(
     const Device* device,
+    VkDescriptorSetLayout globalDescriptor,
     VkDescriptorSetLayout graphicDescriptor,
     VkDescriptorSetLayout instanceDescriptor) {
 
-  std::array<VkDescriptorSetLayout, 2U> descriptorLayouts = {
+  std::array<VkDescriptorSetLayout, 3U> descriptorLayouts = {
+      globalDescriptor,
       graphicDescriptor,
       instanceDescriptor,
   };
@@ -306,8 +309,8 @@ Graphic::Graphic(
       graphicBindings.begin()->second == DescriptorBindingKind::StorageBuffer) {
     const auto binding = graphicBindings.begin()->first;
     if (!m_mesh) {
-      throw err::GraphicErr{
-          asset->getId(), "Shader takes a mesh input but the graphic doesn't have a mesh"};
+      throw err::GraphicErr{asset->getId(),
+                            "Shader takes a mesh input but the graphic doesn't have a mesh"};
     }
     m_descSet.attachBuffer(binding, m_mesh->getVertexBuffer(), m_mesh->getVertexBuffer().getSize());
   }
@@ -332,26 +335,34 @@ Graphic::Graphic(
   for (const auto& binding : graphicBindings) {
     if (binding.second == DescriptorBindingKind::CombinedImageSampler) {
       if (m_textures.size() == textureIdx) {
-        throw err::GraphicErr{
-            asset->getId(), "Graphic does not have enough samplers to satisfy shader inputs"};
+        throw err::GraphicErr{asset->getId(),
+                              "Graphic does not have enough samplers to satisfy shader inputs"};
       }
       const auto& tex = m_textures[textureIdx++];
       m_descSet.attachImage(binding.first, tex.texture->getImage(), tex.sampler);
     }
   }
 
-  // Check if the shaders use a instance buffer.
+  // Check if the shaders uses global data.
+  auto globalBindings = getDescSetBindings(
+      g_shaderResourceGlobalSetId, asset->getShaderBegin(), asset->getShaderEnd());
+  m_usesGlobalData = !globalBindings.empty();
+  if (m_usesGlobalData) {
+    const auto& binding = *globalBindings.begin();
+    if (binding.first != 0U || binding.second != DescriptorBindingKind::UniformBufferDynamic) {
+      throw err::GraphicErr{m_asset->getId(), "Invalid global binding"};
+    }
+  }
+
+  // Check if the shaders uses instance data.
   auto instanceBindings = getDescSetBindings(
       g_shaderResourceInstanceSetId, asset->getShaderBegin(), asset->getShaderEnd());
   m_usesInstanceData = !instanceBindings.empty();
-
-  // Verify that the instance set contains a single binding of type uniform on slot 0.
-  if (m_usesInstanceData &&
-      (instanceBindings.size() != 1U || instanceBindings.begin()->first != 0U ||
-       instanceBindings.begin()->second != DescriptorBindingKind::UniformBufferDynamic)) {
-    throw err::GraphicErr{
-        m_asset->getId(),
-        "Unsupported per-instance binding, supported is a uniform buffer with binding 0"};
+  if (m_usesInstanceData) {
+    const auto& binding = *instanceBindings.begin();
+    if (binding.first != 0U || binding.second != DescriptorBindingKind::UniformBufferDynamic) {
+      throw err::GraphicErr{m_asset->getId(), "Invalid global binding"};
+    }
   }
 }
 
@@ -377,8 +388,9 @@ auto Graphic::prepareResources(
 
   if (!m_vkPipeline) {
 
-    m_vkPipelineLayout =
-        createPipelineLayout(m_device, m_descSet.getVkLayout(), uni->getVkDescLayout());
+    // Data for both the global and instance descriptors come from the uniform container.
+    m_vkPipelineLayout = createPipelineLayout(
+        m_device, uni->getVkDescLayout(), m_descSet.getVkLayout(), uni->getVkDescLayout());
     m_vkPipeline = createPipeline(
         m_device,
         vkRenderPass,

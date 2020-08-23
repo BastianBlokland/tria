@@ -1,5 +1,15 @@
-const uint graphicSet  = 0; // 'Per graphic' resources, like the mesh and textures.
-const uint instanceSet = 1; // 'Per instance' resources, like a transformation matrix.
+const uint globalSet   = 0; // 'Global' resources, like a projection matrix.
+const uint graphicSet  = 1; // 'Per graphic' resources, like the mesh and textures.
+const uint instanceSet = 2; // 'Per instance' resources, like a transformation matrix.
+
+/*
+ * Utilities for defining and retreiving global data.
+ */
+
+#define GLOBAL_INPUT_BINDING(DATA)                                                                 \
+  layout(set = globalSet, binding = 0) readonly uniform GlobalBuffer { DATA globalData; }
+
+#define GET_GLOBAL() globalData
 
 /*
  * Utilities for defining and retreiving vertex data.

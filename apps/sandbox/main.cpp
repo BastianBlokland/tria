@@ -133,25 +133,23 @@ auto runApp(pal::Platform& platform, asset::Database& db, gfx::Context& gfx) {
     }
 
     if (canvas.drawBegin()) {
-      auto vpMat = cam.getViewProjMat(win.getAspect());
+      canvas.bindGlobalData(cam.getViewProjMat(win.getAspect()));
 
       // Draw sky (note also 'clears' the depth).
-      canvas.draw(db.get("graphics/sky.gfx")->downcast<asset::Graphic>(), vpMat);
+      canvas.draw(db.get("graphics/sky.gfx")->downcast<asset::Graphic>());
 
       // Draw objects.
       for (const auto& obj : objs) {
-        canvas.draw(obj.graphic, vpMat * trsMat4f(obj.pos, obj.orient, obj.scale));
+        canvas.draw(obj.graphic, trsMat4f(obj.pos, obj.orient, obj.scale));
       }
 
       // Draw grid.
       struct alignas(16) {
-        Mat4f viewProjMat;
         Vec3f camPos;
         int32_t segments;
       } grid;
-      grid.viewProjMat = vpMat;
-      grid.camPos      = cam.pos();
-      grid.segments    = 250; // Times 4, 2 verts per line and 1 horizontal and 1 vertical line.
+      grid.camPos   = cam.pos();
+      grid.segments = 250; // Times 4, 2 verts per line and 1 horizontal and 1 vertical line.
       canvas.draw(db.get("graphics/grid.gfx")->downcast<asset::Graphic>(), grid.segments * 4, grid);
 
       canvas.drawEnd();
@@ -169,9 +167,9 @@ auto main(int /*unused*/, char* * /*unused*/) -> int {
   pal::setThreadName("tria_main_thread");
   pal::setupInterruptHandler();
 
-  auto logger = log::Logger{
-      log::makeConsolePrettySink(),
-      log::makeFileJsonSink(pal::getCurExecutablePath().replace_extension("log"))};
+  auto logger =
+      log::Logger{log::makeConsolePrettySink(),
+                  log::makeFileJsonSink(pal::getCurExecutablePath().replace_extension("log"))};
 
   int ret;
   try {

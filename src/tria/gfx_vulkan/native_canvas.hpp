@@ -48,6 +48,8 @@ public:
    */
   [[nodiscard]] auto drawBegin(math::Color clearCol) -> bool;
 
+  auto bindGlobalData(const void* data, size_t dataSize) -> void;
+
   /* Record a draw with the given asset.
    */
   auto draw(

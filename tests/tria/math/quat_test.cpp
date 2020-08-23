@@ -113,9 +113,12 @@ TEST_CASE("[math] - Quat", "[math]") {
 
   SECTION("Rotating a vector by 42 degrees results in a vector that is 42 degrees away") {
     auto rot = angleAxisQuatf(dir3d::up(), 42.f * math::degToRad<float>);
-    CHECK(approx(angle(dir3d::forward(), rot * dir3d::forward()) * math::radToDeg<float>, 42.f));
     CHECK(approx(
-        angle(dir3d::forward(), rot.getInv() * dir3d::forward()) * math::radToDeg<float>, 42.f));
+        angle(dir3d::forward(), rot * dir3d::forward()) * math::radToDeg<float>, 42.f, .000001f));
+    CHECK(approx(
+        angle(dir3d::forward(), rot.getInv() * dir3d::forward()) * math::radToDeg<float>,
+        42.f,
+        .000001f));
   }
 
   SECTION("Quaternion angle axis over right axis provides the same results as x-rotation matrix") {
@@ -124,7 +127,7 @@ TEST_CASE("[math] - Quat", "[math]") {
 
     auto vec1 = rotMat * Vec4f{.42, 13.37, -42, 0.f};
     auto vec2 = rotQuat * Vec3f{.42, 13.37, -42};
-    CHECK(approx(Vec3f{vec1.x(), vec1.y(), vec1.z()}, vec2, .000001f));
+    CHECK(approx(Vec3f{vec1.x(), vec1.y(), vec1.z()}, vec2, .00001f));
   }
 
   SECTION("Quaternion angle axis over up axis provides the same results as y-rotation matrix") {
@@ -133,7 +136,7 @@ TEST_CASE("[math] - Quat", "[math]") {
 
     auto vec1 = rotMat * Vec4f{.42, 13.37, -42, 0.f};
     auto vec2 = rotQuat * Vec3f{.42, 13.37, -42};
-    CHECK(approx(Vec3f{vec1.x(), vec1.y(), vec1.z()}, vec2, .000001f));
+    CHECK(approx(Vec3f{vec1.x(), vec1.y(), vec1.z()}, vec2, .00001f));
   }
 
   SECTION(
@@ -143,7 +146,7 @@ TEST_CASE("[math] - Quat", "[math]") {
 
     auto vec1 = rotMat * Vec4f{.42, 13.37, -42, 0.f};
     auto vec2 = rotQuat * Vec3f{.42, 13.37, -42};
-    CHECK(approx(Vec3f{vec1.x(), vec1.y(), vec1.z()}, vec2, .000001f));
+    CHECK(approx(Vec3f{vec1.x(), vec1.y(), vec1.z()}, vec2, .00001f));
   }
 
   SECTION(
@@ -187,7 +190,7 @@ TEST_CASE("[math] - Quat", "[math]") {
     auto rotQuat1 = angleAxisQuatf(dir3d::up(), 42.f) * angleAxisQuatf(dir3d::right(), 13.f);
     auto rotQuat2 = quatFromMat(rotMat3f(rotQuat1));
     auto vec      = Vec3f{.42, 13.37, -42};
-    CHECK(approx(rotQuat1 * vec, rotQuat2 * vec, .000001f));
+    CHECK(approx(rotQuat1 * vec, rotQuat2 * vec, .00001f));
   }
 
   SECTION("Quaternion created from orthogonal rotation matrix is normalized") {
