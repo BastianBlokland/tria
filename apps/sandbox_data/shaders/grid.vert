@@ -6,8 +6,12 @@ const uint highlightInterval = 5;
 const vec4 normalColor       = vec4(.1, .1, .1, .4);
 const vec4 highlightColor    = vec4(.1, .1, .1, .9);
 
-struct InstanceData {
+struct GlobalData {
   mat4 viewProjMat;
+};
+GLOBAL_INPUT_BINDING(GlobalData);
+
+struct InstanceData {
   vec3 cameraPos;
   int segments;
 };
@@ -40,5 +44,5 @@ void main() {
 
   float x     = centerX + (isHor ? b : a);
   float z     = centerZ + (isHor ? a : b);
-  gl_Position = GET_INST().viewProjMat * vec4(x, isHighlight ? .01 : 0, z, 1);
+  gl_Position = GET_GLOBAL().viewProjMat * vec4(x, isHighlight ? .01 : 0, z, 1);
 }

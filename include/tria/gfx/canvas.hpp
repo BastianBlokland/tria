@@ -48,6 +48,22 @@ public:
    */
   [[nodiscard]] auto drawBegin(math::Color clearCol = math::color::soothingPurple()) -> bool;
 
+  /* Bind global data to be used in draws.
+   * Note: Only a single global data binding is active, and does not persist after 'drawEnd'.
+   */
+  template <typename GlobalDataType>
+  auto bindGlobalData(const GlobalDataType& instData) -> void {
+    static_assert(
+        std::is_trivially_copyable_v<GlobalDataType>,
+        "Global data type has to be trivially copyable");
+    bindGlobalData(&instData, sizeof(GlobalDataType));
+  }
+
+  /* Bind global data to be used in draws.
+   * Note: Only a single global data binding is active, and does not persist after 'drawEnd'.
+   */
+  auto bindGlobalData(const void* data, size_t dataSize) -> void;
+
   /* Draw a single instance of a graphic without instance data.
    */
   auto draw(const asset::Graphic* asset) -> void { draw(asset, 0U, nullptr, 0U, 1U); }

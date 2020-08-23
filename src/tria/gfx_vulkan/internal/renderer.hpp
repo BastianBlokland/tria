@@ -53,6 +53,8 @@ public:
   auto drawBegin(const ForwardTechnique& technique, SwapchainIdx swapIdx, math::Color clearCol)
       -> void;
 
+  auto bindGlobalData(const void* data, size_t dataSize) -> void;
+
   /* Record a draw of the given graphic.
    */
   auto draw(
@@ -77,7 +79,10 @@ private:
   UniformContainerUnique m_uni;
   StopwatchUnique m_stopwatch;
   StatRecorderUnique m_statRecorder;
+  VkPipelineLayout m_globalPipelineLayout;
+
   bool m_hasSubmittedDrawOnce; // Indicates if the renderer has ever submitted a draw.
+  bool m_hasBoundGlobalData;
   uint32_t m_drawId;
 
   TimestampRecord m_drawStart;
