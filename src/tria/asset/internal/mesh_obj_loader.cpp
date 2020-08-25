@@ -372,6 +372,9 @@ auto loadMeshObj(log::Logger* /*unused*/, DatabaseImpl* /*unused*/, AssetId id, 
       throw err::MeshErr{"A obj face needs to consist of atleast 3 vertices"};
     }
 
+    // Lazily calculated when needed, faces are assumed to be planar.
+    math::Vec3f faceNrm = {};
+
     // Create a triangle fan for each face.
     const auto& vertA        = objData.vertices[face.vertexIndex]; // Pivot point.
     const auto vertAPos      = resolveIndex(objData.positions, vertA.positionIndex);
@@ -389,12 +392,14 @@ auto loadMeshObj(log::Logger* /*unused*/, DatabaseImpl* /*unused*/, AssetId id, 
       const auto vertCTexcoord = resolveIndex(objData.texcoords, vertC.texcoordIndex);
       auto vertCNorm           = resolveIndex(objData.normals, vertC.normalIndex);
 
-      // If no vertex normals are defined then use the triangle surface normal.
+      // If no vertex normals are defined then use the face surface normal.
       if (vertANorm == math::Vec3f{} || vertBNorm == math::Vec3f{} || vertCNorm == math::Vec3f{}) {
-        const auto surfNrm = getTriSurfaceNrm(vertAPos, vertBPos, vertCPos);
-        vertANorm          = surfNrm;
-        vertBNorm          = surfNrm;
-        vertCNorm          = surfNrm;
+        if (faceNrm == math::Vec3f{}) {
+          faceNrm = getTriSurfaceNrm(vertAPos, vertBPos, vertCPos);
+        }
+        vertANorm = faceNrm;
+        vertBNorm = faceNrm;
+        vertCNorm = faceNrm;
       }
 
       meshBuilder.pushVertex(Vertex{vertAPos, vertANorm, vertATexcoord});
