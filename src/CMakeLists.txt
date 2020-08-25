@@ -19,9 +19,7 @@ add_library(tria_asset STATIC
 target_include_directories(tria_asset PRIVATE ${Vulkan_INCLUDE_DIRS})
 target_compile_features(tria_asset PRIVATE cxx_std_17)
 target_include_directories(tria_asset PUBLIC ${PROJECT_SOURCE_DIR}/include)
-target_include_directories(tria_asset PRIVATE ${tinyobjloader_INCLUDE_DIRS})
 target_link_libraries(tria_asset PRIVATE simdjson)
-target_link_libraries(tria_asset PRIVATE tinyobjloader)
 target_link_libraries(tria_asset PRIVATE tria_log)
 target_link_libraries(tria_asset PRIVATE Threads::Threads)
 
@@ -88,7 +86,6 @@ add_library(tria_math STATIC
   tria/math/utils.cpp)
 target_compile_features(tria_math PRIVATE cxx_std_17)
 target_include_directories(tria_math PUBLIC ${PROJECT_SOURCE_DIR}/include)
-target_include_directories(tria_math PRIVATE ${tinyobjloader_INCLUDE_DIRS})
 
 # Pal (Platform abstraction layer).
 if(${TRIA_PLATFORM} STREQUAL "linux_xcb")

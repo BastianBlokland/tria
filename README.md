@@ -21,4 +21,3 @@ Cross-platform game engine / playground.
 
 * [catch2](https://github.com/catchorg/Catch2)
 * [simdjson](https://github.com/simdjson/simdjson)
-* [tinyobjloader](https://github.com/tinyobjloader/tinyobjloader)
