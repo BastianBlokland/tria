@@ -65,9 +65,9 @@ public:
    */
   auto consumeInt() noexcept -> int {
     if (consumeChar('-')) {
-      return -consumeUInt();
+      return -static_cast<int>(consumeUInt());
     }
-    return consumeUInt();
+    return static_cast<int>(consumeUInt());
   }
 
   /* Read a single float.
@@ -100,6 +100,8 @@ public:
         break;
       case 'e':
       case 'E': {
+        // Obj saids nothing about supporting scientific notation, but there are files in the wild
+        // that use it.
         consumeChar();
         divider /= std::pow(10.f, consumeInt());
         goto End;
@@ -130,6 +132,8 @@ public:
     }
   }
 
+  /* Consume the rest of the line including the newline character.
+   */
   auto consumeRestOfLine() {
     while (true) {
       switch (*m_cur) {
@@ -175,6 +179,9 @@ struct ObjData final {
   math::PodVector<ObjFace> faces;
 };
 
+/* Read x and y floats seperated by whitespace.
+ * The y component is inverted.
+ */
 auto readVec2InvertY(Reader& reader) -> math::Vec2f {
   math::Vec2f result;
   result.x() = reader.consumeFloat();
@@ -183,6 +190,8 @@ auto readVec2InvertY(Reader& reader) -> math::Vec2f {
   return result;
 }
 
+/* Read x, y and z floats seperated by whitespace.
+ */
 auto readVec3(Reader& reader) -> math::Vec3f {
   math::Vec3f result;
   result.x() = reader.consumeFloat();
@@ -193,6 +202,9 @@ auto readVec3(Reader& reader) -> math::Vec3f {
   return result;
 }
 
+/* Read a obj vertex definition.
+ * position index / texcoord index / normal index.
+ */
 auto readObjVertex(Reader& reader) -> ObjVertex {
   ObjVertex result = {};
 
@@ -217,6 +229,12 @@ auto readObjVertex(Reader& reader) -> ObjVertex {
   return result;
 }
 
+/* Read obj data.
+ * - vertex positions.
+ * - vertex texcoords.
+ * - vertex normals.
+ * - faces.
+ */
 [[nodiscard]] auto readObjData(Reader& reader) -> ObjData {
   ObjData result = {};
   while (true) {
@@ -251,18 +269,17 @@ auto readObjVertex(Reader& reader) -> ObjVertex {
         reader.consumeChar();
         reader.consumeWhitespace();
         const auto normal = readVec3(reader);
-        if (approxZero(normal)) {
+        if (normal == math::Vec3f{}) {
           // Not sure how to handle this, but there are certainly obj files that have a normal of
           // 'vn 0 0 0' defined.
           result.normals.push_back(math::dir3d::forward());
         } else {
-          // Normalize here because the obj spec does not require normals to be unit vectors.
           result.normals.push_back(normal.getNorm());
         }
         reader.consumeRestOfLine();
       } break;
       default:
-        // Unknown data.
+        // Ignore unknown data.
         reader.consumeRestOfLine();
         break;
       }
@@ -301,10 +318,13 @@ ObjDataEnd:
 }
 
 /* Resolve obj indices, indices start from 1 and negative indices start from the end of the data.
- * Note: index 0 is not allowed.
+ * Index 0 indicates the value is not used and the default will be returned.
  */
 template <typename T>
 [[nodiscard]] auto resolveIndex(const math::PodVector<T>& vec, int index) {
+  if (index == 0) {
+    return T{};
+  }
   if (index < 0) {
     if (index < -static_cast<int>(vec.size())) {
       throw err::MeshErr{"Index out of bounds"};
@@ -317,24 +337,13 @@ template <typename T>
   return vec[index - 1]; // Obj indices are 1 based.
 }
 
-[[nodiscard]] auto getMeshVertex(const ObjData& objData, const ObjVertex& objVert) {
-  if (objVert.positionIndex == 0) {
-    throw err::MeshErr{"Face vertex does not define a position index"};
+[[nodiscard]] auto getTriSurfaceNrm(math::Vec3f posA, math::Vec3f posB, math::Vec3f posC) {
+  const auto surfaceNorm = math::cross(posB - posA, posC - posA);
+  if (approxZero(surfaceNorm)) {
+    // Triangle with zero area has technically no normal.
+    return math::dir3d::forward();
   }
-  Vertex result;
-  result.position = resolveIndex(objData.positions, objVert.positionIndex);
-  if (objVert.normalIndex != 0) {
-    result.normal = resolveIndex(objData.normals, objVert.normalIndex);
-  } else {
-    // TODO(bastian): Use the surface normal of the triangle.
-    result.normal = math::dir3d::forward();
-  }
-  if (objVert.texcoordIndex != 0) {
-    result.texcoord = resolveIndex(objData.texcoords, objVert.texcoordIndex);
-  } else {
-    result.texcoord = {};
-  }
-  return result;
+  return surfaceNorm.getNorm();
 }
 
 } // namespace
@@ -357,20 +366,40 @@ auto loadMeshObj(log::Logger* /*unused*/, DatabaseImpl* /*unused*/, AssetId id, 
     throw err::MeshErr{"No faces found in obj"};
   }
 
+  // Triangulate all faces and push them to the meshbuilder.
   for (const auto& face : objData.faces) {
     if (face.vertexCount < 3U) {
       throw err::MeshErr{"A obj face needs to consist of atleast 3 vertices"};
     }
 
     // Create a triangle fan for each face.
-    const auto& vertA = objData.vertices[face.vertexIndex]; // Pivot point.
-    for (auto i = 2U; i < face.vertexCount; ++i) {
-      const auto& vertB = objData.vertices[face.vertexIndex + i - 1];
-      const auto& vertC = objData.vertices[face.vertexIndex + i];
+    const auto& vertA        = objData.vertices[face.vertexIndex]; // Pivot point.
+    const auto vertAPos      = resolveIndex(objData.positions, vertA.positionIndex);
+    const auto vertATexcoord = resolveIndex(objData.texcoords, vertA.texcoordIndex);
+    auto vertANorm           = resolveIndex(objData.normals, vertA.normalIndex);
 
-      meshBuilder.pushVertex(getMeshVertex(objData, vertA));
-      meshBuilder.pushVertex(getMeshVertex(objData, vertB));
-      meshBuilder.pushVertex(getMeshVertex(objData, vertC));
+    for (auto i = 2U; i < face.vertexCount; ++i) {
+      const auto& vertB        = objData.vertices[face.vertexIndex + i - 1];
+      const auto vertBPos      = resolveIndex(objData.positions, vertB.positionIndex);
+      const auto vertBTexcoord = resolveIndex(objData.texcoords, vertB.texcoordIndex);
+      auto vertBNorm           = resolveIndex(objData.normals, vertB.normalIndex);
+
+      const auto& vertC        = objData.vertices[face.vertexIndex + i];
+      const auto vertCPos      = resolveIndex(objData.positions, vertC.positionIndex);
+      const auto vertCTexcoord = resolveIndex(objData.texcoords, vertC.texcoordIndex);
+      auto vertCNorm           = resolveIndex(objData.normals, vertC.normalIndex);
+
+      // If no vertex normals are defined then use the triangle surface normal.
+      if (vertANorm == math::Vec3f{} || vertBNorm == math::Vec3f{} || vertCNorm == math::Vec3f{}) {
+        const auto surfNrm = getTriSurfaceNrm(vertAPos, vertBPos, vertCPos);
+        vertANorm          = surfNrm;
+        vertBNorm          = surfNrm;
+        vertCNorm          = surfNrm;
+      }
+
+      meshBuilder.pushVertex(Vertex{vertAPos, vertANorm, vertATexcoord});
+      meshBuilder.pushVertex(Vertex{vertBPos, vertBNorm, vertBTexcoord});
+      meshBuilder.pushVertex(Vertex{vertCPos, vertCNorm, vertCTexcoord});
     }
   }
 
