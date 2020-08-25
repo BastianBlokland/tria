@@ -1,4 +1,5 @@
 #pragma once
+#include <cassert>
 #include <cmath>
 #include <cstdint>
 #include <limits>
@@ -74,6 +75,18 @@ template <typename T>
 /* Integer version of log base 2.
  * Undefined for val == 0.
  */
-[[nodiscard]] inline auto log2i(uint32_t val) noexcept { return 31U - countLeadingZeroes(val); }
+[[nodiscard]] inline auto log2i(uint32_t val) noexcept {
+  assert(val != 0U);
+  return 31U - countLeadingZeroes(val);
+}
+
+/* Return the next power of two greater or equal to val.
+ * Undefined for val < 2 and val > 2147483648
+ */
+[[nodiscard]] inline auto nextPow2(uint32_t val) noexcept {
+  assert(val >= 2U);
+  assert(val <= 2147483648U);
+  return 1U << (32U - countLeadingZeroes(val - 1U));
+}
 
 } // namespace tria::math

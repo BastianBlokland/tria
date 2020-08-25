@@ -107,6 +107,7 @@ TEST_CASE("[math] - Utils", "[math]") {
   }
 
   SECTION("Integer log2") {
+    // Undefined for val == 0.
     CHECK(log2i(1) == 0);
     CHECK(log2i(2) == 1);
     CHECK(log2i(3) == 1);
@@ -119,6 +120,29 @@ TEST_CASE("[math] - Utils", "[math]") {
     CHECK(log2i(33) == 5);
     CHECK(log2i(63) == 5);
     CHECK(log2i(64) == 6);
+  }
+
+  SECTION("Next power of two") {
+    // Undefined for val == 0.
+    // Undefined for val == 1.
+    CHECK(nextPow2(2) == 2);
+    CHECK(nextPow2(3) == 4);
+    CHECK(nextPow2(4) == 4);
+    CHECK(nextPow2(5) == 8);
+    CHECK(nextPow2(6) == 8);
+    CHECK(nextPow2(7) == 8);
+    CHECK(nextPow2(8) == 8);
+    CHECK(nextPow2(9) == 16);
+    CHECK(nextPow2(16) == 16);
+    CHECK(nextPow2(32) == 32);
+    CHECK(nextPow2(63) == 64);
+    CHECK(nextPow2(128) == 128);
+    CHECK(nextPow2(255) == 256);
+    CHECK(nextPow2(257) == 512);
+    CHECK(nextPow2(4096) == 4096);
+    CHECK(nextPow2(2147483647) == 2147483648);
+    CHECK(nextPow2(2147483648) == 2147483648);
+    // Undefined for val > 2147483648.
   }
 }
 
