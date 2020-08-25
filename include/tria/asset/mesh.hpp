@@ -60,6 +60,17 @@ private:
   math::PodVector<IndexType> m_indices;
 };
 
+/* Check if two vertices are approximately equal.
+ */
+[[nodiscard]] constexpr auto approx(
+    const Vertex& x,
+    const Vertex& y,
+    float maxDelta = std::numeric_limits<float>::epsilon()) noexcept {
+  return (
+      approx(x.position, y.position, maxDelta) && approx(x.normal, y.normal, maxDelta) &&
+      approx(x.texcoord, y.texcoord, maxDelta));
+}
+
 } // namespace tria::asset
 
 namespace std {

@@ -2,31 +2,35 @@
 #include "mesh_builder.hpp"
 #include "tria/asset/mesh.hpp"
 #include "tria/math/vec.hpp"
+#include <limits>
 
 namespace tria::asset::internal {
 
 /* Wavefront Obj.
+ * Only polygonal faces are supported (no curves or lines), materials are also ignored at this time.
  * Format specification: http://www.martinreddy.net/gfx/3d/OBJ.spec
  * Faces are assumed to be contex and a triangulated using a simple triangle fan.
  */
 
 namespace {
 
+constexpr auto g_unusedVertexElementSentinel = std::numeric_limits<int>::max();
+
 class Reader final {
 public:
   Reader(const uint8_t* current) : m_cur{current} {}
 
-  [[nodiscard]] auto getCur() -> const uint8_t*& { return m_cur; }
+  [[nodiscard]] auto getCur() noexcept -> const uint8_t*& { return m_cur; }
 
   /* Read a single character.
    * Last character is guaranteed to be a null-terminator, reading beyond the null-terminator is
    * undefined behaviour.
    */
-  auto consumeChar() -> char { return *m_cur++; }
+  auto consumeChar() noexcept -> char { return *m_cur++; }
 
   /* Read a character if it matches the given character.
    */
-  auto consumeChar(char c) -> bool {
+  auto consumeChar(char c) noexcept -> bool {
     if (*m_cur == c) {
       ++m_cur;
       return true;
@@ -116,7 +120,7 @@ public:
 
   /* Does NOT consume newlines.
    */
-  auto consumeWhitespace() {
+  auto consumeWhitespace() noexcept {
     while (true) {
       switch (*m_cur) {
       case ' ':
@@ -134,7 +138,7 @@ public:
 
   /* Consume the rest of the line including the newline character.
    */
-  auto consumeRestOfLine() {
+  auto consumeRestOfLine() noexcept {
     while (true) {
       switch (*m_cur) {
       case '\n':
@@ -153,9 +157,9 @@ private:
   const uint8_t* m_cur;
 };
 
-/* Indices for a single face vertex starting from 1.
- * Negative indices start from the end of the buffer.
- * Normal and texcoord are optional, 0 means unused.
+/* Indices for a single face vertex.
+ * These are already bounds checked and converted to absolute indices starting from 0.
+ * Normal and texcoord are optional, 'g_unusedVertexElementSentinel' means unused.
  */
 struct ObjVertex final {
   int positionIndex;
@@ -169,6 +173,8 @@ struct ObjVertex final {
 struct ObjFace final {
   unsigned int vertexIndex;
   unsigned int vertexCount;
+  bool useFaceNormal; // Indicates that surface normal should be used instead of per vertex, happens
+                      // if not all vertices define a vertex normal.
 };
 
 struct ObjData final {
@@ -182,7 +188,7 @@ struct ObjData final {
 /* Read x and y floats seperated by whitespace.
  * The y component is inverted.
  */
-auto readVec2InvertY(Reader& reader) -> math::Vec2f {
+auto readVec2InvertY(Reader& reader) noexcept -> math::Vec2f {
   math::Vec2f result;
   result.x() = reader.consumeFloat();
   reader.consumeWhitespace();
@@ -192,7 +198,7 @@ auto readVec2InvertY(Reader& reader) -> math::Vec2f {
 
 /* Read x, y and z floats seperated by whitespace.
  */
-auto readVec3(Reader& reader) -> math::Vec3f {
+auto readVec3(Reader& reader) noexcept -> math::Vec3f {
   math::Vec3f result;
   result.x() = reader.consumeFloat();
   reader.consumeWhitespace();
@@ -204,29 +210,45 @@ auto readVec3(Reader& reader) -> math::Vec3f {
 
 /* Read a obj vertex definition.
  * position index / texcoord index / normal index.
+ * Obj indices are 1 based, we convert them to be zero based.
+ * Negative indices can be used to index relative to the end of the current data.
  */
-auto readObjVertex(Reader& reader) -> ObjVertex {
-  ObjVertex result = {};
+auto readObjVertex(Reader& reader, const ObjData& d) -> ObjVertex {
+  ObjVertex res;
+  res.texcoordIndex = g_unusedVertexElementSentinel; // Optional element.
+  res.normalIndex   = g_unusedVertexElementSentinel; // Optional element.
 
   // Position index (optionally prefixed by 'v').
   reader.consumeChar('v');
-  result.positionIndex = reader.consumeInt();
+  res.positionIndex = reader.consumeChar('-') ? (d.positions.size() - reader.consumeUInt())
+                                              : reader.consumeUInt() - 1;
+  if (res.positionIndex < 0 || res.positionIndex >= static_cast<int>(d.positions.size())) {
+    throw err::MeshErr("Position index out of bounds");
+  }
 
   if (reader.consumeChar('/')) {
     if (*reader.getCur() != '/') {
       // Texcoord index (optionally prefixed by 'vt').
       reader.consumeChar('v');
       reader.consumeChar('t');
-      result.texcoordIndex = reader.consumeInt();
+      res.texcoordIndex = reader.consumeChar('-') ? (d.texcoords.size() - reader.consumeUInt())
+                                                  : reader.consumeUInt() - 1;
+      if (res.texcoordIndex < 0 || res.texcoordIndex >= static_cast<int>(d.texcoords.size())) {
+        throw err::MeshErr("Texcoord index out of bounds");
+      }
     }
     if (reader.consumeChar('/')) {
       // Normal index (optionally prefixed by 'vn').
       reader.consumeChar('v');
       reader.consumeChar('n');
-      result.normalIndex = reader.consumeInt();
+      res.normalIndex = reader.consumeChar('-') ? (d.normals.size() - reader.consumeUInt())
+                                                : reader.consumeUInt() - 1;
+      if (res.normalIndex < 0 || res.normalIndex >= static_cast<int>(d.normals.size())) {
+        throw err::MeshErr("Normal index out of bounds");
+      }
     }
   }
-  return result;
+  return res;
 }
 
 /* Read obj data.
@@ -252,6 +274,7 @@ auto readObjVertex(Reader& reader) -> ObjVertex {
       reader.consumeChar();
       switch (*reader.getCur()) {
       case ' ':
+      case '\t':
         // 'v': Vertex position.
         reader.consumeWhitespace();
         result.positions.push_back(readVec3(reader));
@@ -286,7 +309,7 @@ auto readObjVertex(Reader& reader) -> ObjVertex {
       break;
     case 'f': {
       reader.consumeChar();
-      auto face = ObjFace{static_cast<unsigned int>(result.vertices.size()), 0U};
+      auto face = ObjFace{static_cast<unsigned int>(result.vertices.size()), 0U, false};
       while (true) {
         reader.consumeWhitespace();
         switch (*reader.getCur()) {
@@ -295,7 +318,9 @@ auto readObjVertex(Reader& reader) -> ObjVertex {
         case '\0':
           goto FaceEnd;
         default:
-          result.vertices.push_back(readObjVertex(reader));
+          const auto v = readObjVertex(reader, result);
+          result.vertices.push_back(v);
+          face.useFaceNormal |= v.normalIndex == g_unusedVertexElementSentinel;
           ++face.vertexCount;
           break;
         }
@@ -317,30 +342,17 @@ ObjDataEnd:
   return result;
 }
 
-/* Resolve obj indices, indices start from 1 and negative indices start from the end of the data.
- * Index 0 indicates the value is not used and the default will be returned.
- */
-template <typename T>
-[[nodiscard]] auto resolveIndex(const math::PodVector<T>& vec, int index) {
-  if (index == 0) {
-    return T{};
+[[nodiscard]] auto lookupTexcoord(const ObjData& d, const ObjVertex& v) noexcept {
+  if (v.texcoordIndex == g_unusedVertexElementSentinel) {
+    return math::Vec2f{};
   }
-  if (index < 0) {
-    if (index < -static_cast<int>(vec.size())) {
-      throw err::MeshErr{"Index out of bounds"};
-    }
-    return vec[vec.size() + index];
-  }
-  if (index > static_cast<int>(vec.size())) {
-    throw err::MeshErr{"Index out of bounds"};
-  }
-  return vec[index - 1]; // Obj indices are 1 based.
+  return d.texcoords[v.texcoordIndex];
 }
 
-[[nodiscard]] auto getTriSurfaceNrm(math::Vec3f posA, math::Vec3f posB, math::Vec3f posC) {
+[[nodiscard]] auto getTriSurfaceNrm(math::Vec3f posA, math::Vec3f posB, math::Vec3f posC) noexcept {
   const auto surfaceNorm = math::cross(posB - posA, posC - posA);
   if (approxZero(surfaceNorm)) {
-    // Triangle with zero area has technically no normal.
+    // Triangle with zero area has technically no normal, but does ocur in the wild.
     return math::dir3d::forward();
   }
   return surfaceNorm.getNorm();
@@ -352,7 +364,7 @@ auto loadMeshObj(log::Logger* /*unused*/, DatabaseImpl* /*unused*/, AssetId id, 
     -> AssetUnique {
 
   // Assert that the raw buffer is null-terminated which allow us to skip bounds checks, the
-  // database implementation guarantees that.
+  // database implementation currently guarantees that.
   assert(raw.capacity() > raw.size());
   assert(*raw.end() == '\0');
 
@@ -372,35 +384,30 @@ auto loadMeshObj(log::Logger* /*unused*/, DatabaseImpl* /*unused*/, AssetId id, 
       throw err::MeshErr{"A obj face needs to consist of atleast 3 vertices"};
     }
 
-    // Lazily calculated when needed, faces are assumed to be planar.
-    math::Vec3f faceNrm = {};
+    math::Vec3f faceNrm;
+    if (face.useFaceNormal) {
+      faceNrm = getTriSurfaceNrm(
+          objData.positions[objData.vertices[face.vertexIndex].positionIndex],
+          objData.positions[objData.vertices[face.vertexIndex + 1U].positionIndex],
+          objData.positions[objData.vertices[face.vertexIndex + 2U].positionIndex]);
+    }
 
-    // Create a triangle fan for each face.
-    const auto& vertA        = objData.vertices[face.vertexIndex]; // Pivot point.
-    const auto vertAPos      = resolveIndex(objData.positions, vertA.positionIndex);
-    const auto vertATexcoord = resolveIndex(objData.texcoords, vertA.texcoordIndex);
-    auto vertANorm           = resolveIndex(objData.normals, vertA.normalIndex);
+    // Create a triangle fan around the first vertex.
+    const auto& vertA        = objData.vertices[face.vertexIndex];
+    const auto vertAPos      = objData.positions[vertA.positionIndex];
+    const auto vertATexcoord = lookupTexcoord(objData, vertA);
+    const auto vertANorm     = face.useFaceNormal ? faceNrm : objData.normals[vertA.normalIndex];
 
     for (auto i = 2U; i < face.vertexCount; ++i) {
       const auto& vertB        = objData.vertices[face.vertexIndex + i - 1];
-      const auto vertBPos      = resolveIndex(objData.positions, vertB.positionIndex);
-      const auto vertBTexcoord = resolveIndex(objData.texcoords, vertB.texcoordIndex);
-      auto vertBNorm           = resolveIndex(objData.normals, vertB.normalIndex);
+      const auto vertBPos      = objData.positions[vertB.positionIndex];
+      const auto vertBTexcoord = lookupTexcoord(objData, vertB);
+      const auto vertBNorm     = face.useFaceNormal ? faceNrm : objData.normals[vertB.normalIndex];
 
       const auto& vertC        = objData.vertices[face.vertexIndex + i];
-      const auto vertCPos      = resolveIndex(objData.positions, vertC.positionIndex);
-      const auto vertCTexcoord = resolveIndex(objData.texcoords, vertC.texcoordIndex);
-      auto vertCNorm           = resolveIndex(objData.normals, vertC.normalIndex);
-
-      // If no vertex normals are defined then use the face surface normal.
-      if (vertANorm == math::Vec3f{} || vertBNorm == math::Vec3f{} || vertCNorm == math::Vec3f{}) {
-        if (faceNrm == math::Vec3f{}) {
-          faceNrm = getTriSurfaceNrm(vertAPos, vertBPos, vertCPos);
-        }
-        vertANorm = faceNrm;
-        vertBNorm = faceNrm;
-        vertCNorm = faceNrm;
-      }
+      const auto vertCPos      = objData.positions[vertC.positionIndex];
+      const auto vertCTexcoord = lookupTexcoord(objData, vertC);
+      const auto vertCNorm     = face.useFaceNormal ? faceNrm : objData.normals[vertC.normalIndex];
 
       meshBuilder.pushVertex(Vertex{vertAPos, vertANorm, vertATexcoord});
       meshBuilder.pushVertex(Vertex{vertBPos, vertBNorm, vertBTexcoord});

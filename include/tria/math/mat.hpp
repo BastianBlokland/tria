@@ -325,8 +325,10 @@ template <typename T>
 /* Check if all columns of two matrices are approximately equal.
  */
 template <typename T, size_t Size>
-[[nodiscard]] constexpr auto
-approx(Mat<T, Size> x, Mat<T, Size> y, T maxDelta = std::numeric_limits<T>::epsilon()) noexcept {
+[[nodiscard]] constexpr auto approx(
+    const Mat<T, Size>& x,
+    const Mat<T, Size>& y,
+    T maxDelta = std::numeric_limits<T>::epsilon()) noexcept {
   for (auto i = 0U; i != Size; ++i) {
     if (!approx(x[i], y[i], maxDelta)) {
       return false;
