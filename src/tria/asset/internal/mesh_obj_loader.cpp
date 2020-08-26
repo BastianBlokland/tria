@@ -183,6 +183,7 @@ struct ObjData final {
   math::PodVector<math::Vec3f> normals;
   math::PodVector<ObjVertex> vertices;
   math::PodVector<ObjFace> faces;
+  int totalTris;
 };
 
 /* Read x and y floats seperated by whitespace.
@@ -328,6 +329,8 @@ auto readObjVertex(Reader& reader, const ObjData& d) -> ObjVertex {
     FaceEnd:
       reader.consumeRestOfLine();
       result.faces.push_back(face);
+      // 3 vertices is the minimum (and is enforced later on).
+      result.totalTris += face.vertexCount - 2;
     } break;
     case '\0':
       goto ObjDataEnd;
@@ -368,15 +371,21 @@ auto loadMeshObj(log::Logger* /*unused*/, DatabaseImpl* /*unused*/, AssetId id, 
   assert(raw.capacity() > raw.size());
   assert(*raw.end() == '\0');
 
-  auto vertices    = math::PodVector<Vertex>{};
-  auto indices     = math::PodVector<IndexType>{};
-  auto meshBuilder = MeshBuilder{&vertices, &indices};
-
   auto reader        = Reader{raw.begin()};
   const auto objData = readObjData(reader);
   if (objData.faces.empty()) {
     throw err::MeshErr{"No faces found in obj"};
   }
+
+  const auto numMeshVertices =
+      objData.totalTris > 0 ? static_cast<unsigned int>(objData.totalTris) * 3U : 0U;
+  auto vertices = math::PodVector<Vertex>{};
+  vertices.reserve(numMeshVertices);
+
+  auto indices = math::PodVector<IndexType>{};
+  indices.reserve(numMeshVertices);
+
+  auto meshBuilder = MeshBuilder{&vertices, &indices, numMeshVertices};
 
   // Triangulate all faces and push them to the meshbuilder.
   for (const auto& face : objData.faces) {
@@ -415,6 +424,8 @@ auto loadMeshObj(log::Logger* /*unused*/, DatabaseImpl* /*unused*/, AssetId id, 
     }
   }
 
+  assert(vertices.size() <= numMeshVertices);
+  assert(indices.size() == numMeshVertices);
   return std::make_unique<Mesh>(std::move(id), std::move(vertices), std::move(indices));
 }
 

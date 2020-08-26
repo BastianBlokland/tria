@@ -80,13 +80,55 @@ template <typename T>
   return 31U - countLeadingZeroes(val);
 }
 
+/* Check if the given value is a power of two.
+ * Undefined for val == 0.
+ */
+[[nodiscard]] constexpr auto isPow2(uint32_t val) noexcept {
+  assert(val != 0U);
+  // Ref: https://graphics.stanford.edu/~seander/bithacks.html#DetermineIfPowerOf2.
+  return (val & (val - 1U)) == 0;
+}
+
 /* Return the next power of two greater or equal to val.
- * Undefined for val < 2 and val > 2147483648
+ * Undefined for val == 0 and val > 2147483648
  */
 [[nodiscard]] inline auto nextPow2(uint32_t val) noexcept {
-  assert(val >= 2U);
+  assert(val != 0U);
   assert(val <= 2147483648U);
   return 1U << (32U - countLeadingZeroes(val - 1U));
+}
+
+/* Create a (non cryptographic) hash of the input data.
+ */
+[[nodiscard]] constexpr auto hash(const void* data, size_t dataSize) noexcept -> uint32_t {
+  /* Fowler–Noll–Vo hash function.
+   * Ref: http://www.isthe.com/chongo/tech/comp/fnv/index.html
+   * Ref: https://en.wikipedia.org/wiki/Fowler%E2%80%93Noll%E2%80%93Vo_hash_function
+   *
+   * FNV-1a.
+   * 32-bit
+   * prime: 2^24 + 2^8 + 0x93 = 16777619
+   * offset: 2166136261
+   */
+
+  const auto* dataPtr = static_cast<const uint8_t*>(data);
+  const auto* dataEnd = dataPtr + dataSize;
+
+  constexpr auto prime = 16777619U;
+  uint32_t hash        = 2166136261U;
+
+  for (; dataPtr != dataEnd; ++dataPtr) {
+    hash ^= *dataPtr;
+    hash *= prime;
+  }
+
+  // Finalize the hash (aka 'mixing').
+  hash += hash << 13U;
+  hash ^= hash >> 7U;
+  hash += hash << 3U;
+  hash ^= hash >> 17U;
+  hash += hash << 5U;
+  return hash;
 }
 
 } // namespace tria::math

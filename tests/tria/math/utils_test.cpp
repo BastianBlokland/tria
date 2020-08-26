@@ -122,9 +122,28 @@ TEST_CASE("[math] - Utils", "[math]") {
     CHECK(log2i(64) == 6);
   }
 
+  SECTION("Is power of two") {
+    // Undefined for val == 0.
+    CHECK(isPow2(1));
+    CHECK(isPow2(2));
+    CHECK(!isPow2(3));
+    CHECK(isPow2(4));
+    CHECK(!isPow2(5));
+    CHECK(!isPow2(6));
+    CHECK(!isPow2(7));
+    CHECK(isPow2(8));
+    CHECK(!isPow2(9));
+    CHECK(isPow2(16));
+    CHECK(isPow2(32));
+    CHECK(!isPow2(63));
+    CHECK(isPow2(128));
+    CHECK(!isPow2(2147483647));
+    CHECK(isPow2(2147483648));
+  }
+
   SECTION("Next power of two") {
     // Undefined for val == 0.
-    // Undefined for val == 1.
+    CHECK(nextPow2(1) == 1);
     CHECK(nextPow2(2) == 2);
     CHECK(nextPow2(3) == 4);
     CHECK(nextPow2(4) == 4);

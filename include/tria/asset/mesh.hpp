@@ -72,18 +72,3 @@ private:
 }
 
 } // namespace tria::asset
-
-namespace std {
-
-/* Specialize std::hash to be able to use vertices as hash-map keys.
- */
-template <>
-struct hash<tria::asset::Vertex> final {
-  auto operator()(const tria::asset::Vertex vert) const noexcept -> size_t {
-    const auto posHash = std::hash<tria::math::Vec3f>{}(vert.position);
-    const auto nrmHash = std::hash<tria::math::Vec3f>{}(vert.normal);
-    return posHash ^ (nrmHash << 1);
-  }
-};
-
-} // namespace std
