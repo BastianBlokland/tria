@@ -299,7 +299,7 @@ private:
 /* Dot product of two vectors.
  */
 template <typename T, size_t Size>
-[[nodiscard]] constexpr auto dot(Vec<T, Size> x, Vec<T, Size> y) noexcept -> T {
+[[nodiscard]] constexpr auto dot(const Vec<T, Size>& x, const Vec<T, Size>& y) noexcept -> T {
   T res = {};
   for (auto i = 0U; i != Size; ++i) {
     res += x[i] * y[i];
@@ -310,17 +310,16 @@ template <typename T, size_t Size>
 /* Cross product of two 3d vectors.
  */
 template <typename T>
-[[nodiscard]] constexpr auto cross(Vec<T, 3> x, Vec<T, 3> y) noexcept -> Vec<T, 3> {
-  return {
-      (x.y() * y.z() - x.z() * y.y()),
-      (x.z() * y.x() - x.x() * y.z()),
-      (x.x() * y.y() - x.y() * y.x())};
+[[nodiscard]] constexpr auto cross(const Vec<T, 3>& x, const Vec<T, 3>& y) noexcept -> Vec<T, 3> {
+  return {(x.y() * y.z() - x.z() * y.y()),
+          (x.z() * y.x() - x.x() * y.z()),
+          (x.x() * y.y() - x.y() * y.x())};
 }
 
 /* Calculate the shortest angle in radians between the given vectors.
  */
 template <typename T, size_t Size>
-[[nodiscard]] constexpr auto angle(Vec<T, Size> from, Vec<T, Size> to) noexcept -> T {
+[[nodiscard]] constexpr auto angle(const Vec<T, Size>& from, const Vec<T, Size>& to) noexcept -> T {
   const auto denom = std::sqrt(from.getSqrMag() * to.getSqrMag());
   if (denom <= std::numeric_limits<T>::epsilon()) {
     return {};
@@ -331,7 +330,8 @@ template <typename T, size_t Size>
 /* Project a vector onto another vector.
  */
 template <typename T, size_t Size>
-[[nodiscard]] constexpr auto project(Vec<T, Size> vec, Vec<T, Size> nrm) noexcept -> Vec<T, Size> {
+[[nodiscard]] constexpr auto project(const Vec<T, Size>& vec, const Vec<T, Size>& nrm) noexcept
+    -> Vec<T, Size> {
   const auto nrmSqrMag = nrm.getSqrMag();
   if (nrmSqrMag <= std::numeric_limits<T>::epsilon()) {
     return {};
@@ -342,7 +342,8 @@ template <typename T, size_t Size>
 /* Reflect a vector off a normal.
  */
 template <typename T, size_t Size>
-[[nodiscard]] constexpr auto reflect(Vec<T, Size> vec, Vec<T, Size> nrm) noexcept -> Vec<T, Size> {
+[[nodiscard]] constexpr auto reflect(const Vec<T, Size>& vec, const Vec<T, Size>& nrm) noexcept
+    -> Vec<T, Size> {
   return vec - nrm * dot(vec, nrm) * 2;
 }
 
@@ -350,7 +351,7 @@ template <typename T, size_t Size>
  * Note: Does not clamp t (so can extrapolate too).
  */
 template <typename T, size_t Size>
-[[nodiscard]] constexpr auto lerp(Vec<T, Size> x, Vec<T, Size> y, float t) noexcept
+[[nodiscard]] constexpr auto lerp(const Vec<T, Size>& x, const Vec<T, Size>& y, float t) noexcept
     -> Vec<T, Size> {
   Vec<T, Size> res;
   for (auto i = 0U; i != Size; ++i) {
@@ -362,7 +363,7 @@ template <typename T, size_t Size>
 /* Perspective divide: divide the vector by its w component.
  */
 template <typename T>
-[[nodiscard]] constexpr auto persDivide(Vec<T, 4> vec) noexcept -> Vec<T, 3> {
+[[nodiscard]] constexpr auto persDivide(const Vec<T, 4>& vec) noexcept -> Vec<T, 3> {
   return Vec<T, 3>(vec.x(), vec.y(), vec.z()) / vec.w();
 }
 
@@ -370,8 +371,10 @@ template <typename T>
  * Note: Should not be used to compare to zero, use 'approxZero' instead.
  */
 template <typename T, size_t Size>
-[[nodiscard]] constexpr auto
-approx(Vec<T, Size> x, Vec<T, Size> y, T maxDelta = std::numeric_limits<T>::epsilon()) noexcept {
+[[nodiscard]] constexpr auto approx(
+    const Vec<T, Size>& x,
+    const Vec<T, Size>& y,
+    T maxDelta = std::numeric_limits<T>::epsilon()) noexcept {
   for (auto i = 0U; i != Size; ++i) {
     if (!approx(x[i], y[i], maxDelta)) {
       return false;
@@ -384,7 +387,7 @@ approx(Vec<T, Size> x, Vec<T, Size> y, T maxDelta = std::numeric_limits<T>::epsi
  */
 template <typename T, size_t Size>
 [[nodiscard]] constexpr auto
-approxZero(Vec<T, Size> x, T maxDelta = std::numeric_limits<T>::epsilon()) noexcept {
+approxZero(const Vec<T, Size>& x, T maxDelta = std::numeric_limits<T>::epsilon()) noexcept {
   for (auto i = 0U; i != Size; ++i) {
     if (!approxZero(x[i], maxDelta)) {
       return false;

@@ -60,19 +60,15 @@ private:
   math::PodVector<IndexType> m_indices;
 };
 
-} // namespace tria::asset
-
-namespace std {
-
-/* Specialize std::hash to be able to use vertices as hash-map keys.
+/* Check if two vertices are approximately equal.
  */
-template <>
-struct hash<tria::asset::Vertex> final {
-  auto operator()(const tria::asset::Vertex vert) const noexcept -> size_t {
-    const auto posHash = std::hash<tria::math::Vec3f>{}(vert.position);
-    const auto nrmHash = std::hash<tria::math::Vec3f>{}(vert.normal);
-    return posHash ^ (nrmHash << 1);
-  }
-};
+[[nodiscard]] constexpr auto approx(
+    const Vertex& x,
+    const Vertex& y,
+    float maxDelta = std::numeric_limits<float>::epsilon()) noexcept {
+  return (
+      approx(x.position, y.position, maxDelta) && approx(x.normal, y.normal, maxDelta) &&
+      approx(x.texcoord, y.texcoord, maxDelta));
+}
 
-} // namespace std
+} // namespace tria::asset

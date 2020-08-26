@@ -96,15 +96,6 @@ set(SIMDJSON_BUILD_STATIC ON CACHE INTERNAL "")
 set(SIMDJSON_COMPETITION OFF CACHE INTERNAL "")
 FetchContent_MakeAvailable(simdjson)
 
-# External: 'tinyobjloader' wavefront obj loader.
-message(STATUS "Fetching dependency: tinyobjloader")
-FetchContent_Declare(
-  tinyobjloader
-  GIT_REPOSITORY https://github.com/tinyobjloader/tinyobjloader.git
-  GIT_TAG v2.0.0rc6
-  GIT_SHALLOW TRUE)
-FetchContent_MakeAvailable(tinyobjloader)
-
 if(BUILD_TESTING)
   # Enable 'CTest' testing.
   message(STATUS "Enable CTest dependency")
