@@ -86,6 +86,16 @@ jobs:
         echo "g++.exe --version:"
         g++.exe --version
 
+    - name: cache-configuration
+      uses: actions/cache@v2
+      env:
+        CI_CACHE_NAME: ${{matrix.config.image}}-${{matrix.config.arch}}-${{matrix.config.compiler}}
+      with:
+        path: ./build
+        key: ${{env.CI_CACHE_NAME}}-${{github.sha}}
+        restore-keys: |
+          ${{env.CI_CACHE_NAME}}-
+
     - name: configure-unix
       if: matrix.config.os != 'windows'
       run: ./scripts/configure.sh --type Release --tests --lint
