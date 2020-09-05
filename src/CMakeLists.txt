@@ -9,6 +9,7 @@ add_library(tria_asset STATIC
   tria/asset/internal/json.cpp
   tria/asset/internal/loader.cpp
   tria/asset/internal/mesh_obj_loader.cpp
+  tria/asset/internal/mesh_utils.cpp
   tria/asset/internal/raw_asset_loader.cpp
   tria/asset/internal/shader_spv_loader.cpp
   tria/asset/internal/texture_ppm_loader.cpp

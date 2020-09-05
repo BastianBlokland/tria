@@ -45,6 +45,7 @@ auto Mesh::prepareResources(Transferer* transferer) const -> void {
       // TODO(bastian): We could pack the normal data using 8 bit per channel.
       devItr->nrm       = itr->normal;
       devItr->texcoordY = itr->texcoord.y();
+      devItr->tan       = itr->tangent;
     }
     transferer->queueTransfer(deviceVertexData.begin(), m_vertexBuffer, 0U, m_vertexDataSize);
 

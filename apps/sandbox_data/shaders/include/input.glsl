@@ -7,7 +7,7 @@ const uint instanceSet = 2; // 'Per instance' resources, like a transformation m
  */
 
 #define GLOBAL_INPUT_BINDING(DATA)                                                                 \
-  layout(set = globalSet, binding = 0) readonly uniform GlobalBuffer { DATA globalData; }
+  layout(set = globalSet, binding = 0, std140) readonly uniform GlobalBuffer { DATA globalData; }
 
 #define GET_GLOBAL() globalData
 
@@ -18,16 +18,21 @@ const uint instanceSet = 2; // 'Per instance' resources, like a transformation m
 struct VertexData {
   vec4 posAndU;
   vec4 nrmAndV;
+  vec4 tan;
 };
 
 #define VERTEX_INPUT_BINDING()                                                                     \
-  layout(set = graphicSet, binding = 0) readonly buffer VertexBuffer { VertexData[] vertices; }
+  layout(set = graphicSet, binding = 0, std140) readonly buffer VertexBuffer {                     \
+    VertexData[] vertices;                                                                         \
+  }
 
 #define GET_VERT() vertices[gl_VertexIndex]
 
 #define GET_VERT_POS() GET_VERT().posAndU.xyz
 
 #define GET_VERT_NRM() GET_VERT().nrmAndV.xyz
+
+#define GET_VERT_TAN() GET_VERT().tan
 
 #define GET_VERT_TEXCOORD() vec2(GET_VERT().posAndU.w, GET_VERT().nrmAndV.w)
 
@@ -38,7 +43,7 @@ struct VertexData {
 const uint maxInstances = 2048;
 
 #define INSTANCE_INPUT_BINDING(DATA)                                                               \
-  layout(set = instanceSet, binding = 0) readonly uniform InstanceBuffer {                         \
+  layout(set = instanceSet, binding = 0, std140) readonly uniform InstanceBuffer {                 \
     DATA[maxInstances] instances;                                                                  \
   }
 
