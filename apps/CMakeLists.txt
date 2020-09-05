@@ -84,6 +84,7 @@ configure_shaders(sandbox_data ${CMAKE_CURRENT_SOURCE_DIR}/sandbox_data
   shaders/obj.vert
   shaders/obj_nrm.frag
   shaders/obj_tex.frag
+  shaders/obj_tex_nrm.frag
   shaders/sky.vert
   shaders/sky.frag
   shaders/grid.vert
@@ -93,9 +94,10 @@ configure_data(sandbox_data ${CMAKE_CURRENT_SOURCE_DIR}/sandbox_data
   meshes
   textures)
 configure_assets(sandbox_data
-  buddha.obj
-  dragon.obj
   bunny.obj
   head/head.obj
-  head/lambertian.tga)
+  head/lambertian.tga
+  corset/corset.obj
+  corset/corset_diff.tga
+  corset/corset_nrm.tga)
 add_dependencies(sandbox sandbox_data)

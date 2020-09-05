@@ -1,9 +1,0 @@
-{
-  "shaders": [
-    "shaders/obj.vert.spv",
-    "shaders/obj_nrm.frag.spv"
-  ],
-  "mesh": "assets/dragon.obj",
-  "blend": "none",
-  "depthTest": "less"
-}

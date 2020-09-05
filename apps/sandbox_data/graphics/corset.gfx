@@ -1,0 +1,23 @@
+{
+  "shaders": [
+    "shaders/obj.vert.spv",
+    "shaders/obj_tex_nrm.frag.spv"
+  ],
+  "mesh": "assets/corset/corset.obj",
+  "samplers": [
+    {
+      "texture": "assets/corset/corset_diff.tga",
+      "wrap": "clamp",
+      "filter": "linear",
+      "anisotropy": "x8"
+    },
+    {
+      "texture": "assets/corset/corset_nrm.tga",
+      "wrap": "clamp",
+      "filter": "linear",
+      "anisotropy": "x8"
+    }
+  ],
+  "blend": "none",
+  "depthTest": "less"
+}
