@@ -1,5 +1,6 @@
 #include "loader.hpp"
 #include "mesh_builder.hpp"
+#include "mesh_utils.hpp"
 #include "tria/asset/mesh.hpp"
 #include "tria/math/vec.hpp"
 #include <limits>
@@ -418,11 +419,14 @@ auto loadMeshObj(log::Logger* /*unused*/, DatabaseImpl* /*unused*/, AssetId id, 
       const auto vertCTexcoord = lookupTexcoord(objData, vertC);
       const auto vertCNorm     = face.useFaceNormal ? faceNrm : objData.normals[vertC.normalIndex];
 
-      meshBuilder.pushVertex(Vertex{vertAPos, vertANorm, vertATexcoord});
-      meshBuilder.pushVertex(Vertex{vertBPos, vertBNorm, vertBTexcoord});
-      meshBuilder.pushVertex(Vertex{vertCPos, vertCNorm, vertCTexcoord});
+      meshBuilder.pushVertex(Vertex{vertAPos, vertANorm, {}, vertATexcoord});
+      meshBuilder.pushVertex(Vertex{vertBPos, vertBNorm, {}, vertBTexcoord});
+      meshBuilder.pushVertex(Vertex{vertCPos, vertCNorm, {}, vertCTexcoord});
     }
   }
+
+  // Compute smooth tangents based on the positions and the texcoords.
+  computeTangents(vertices, indices);
 
   assert(vertices.size() <= numMeshVertices);
   assert(indices.size() == numMeshVertices);

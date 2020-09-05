@@ -14,11 +14,13 @@ struct InstanceData {
 };
 INSTANCE_INPUT_BINDING(InstanceData);
 
-layout(location = 0) out vec3 outNrm;
-layout(location = 1) out vec2 outTexcoord;
+layout(location = 0) out vec3 outWorldNrm;
+layout(location = 1) out vec4 outWorldTan;
+layout(location = 2) out vec2 outTexcoord;
 
 void main() {
   gl_Position = GET_GLOBAL().viewProjMat * GET_INST().mat * vec4(GET_VERT_POS(), 1.0);
-  outNrm      = GET_VERT_NRM();
+  outWorldNrm = mat3(GET_INST().mat) * GET_VERT_NRM();
+  outWorldTan = vec4(mat3(GET_INST().mat) * GET_VERT_TAN().xyz, GET_VERT_TAN().w);
   outTexcoord = GET_VERT_TEXCOORD();
 }

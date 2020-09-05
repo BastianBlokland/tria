@@ -13,14 +13,18 @@ using IndexType = uint32_t;
 struct Vertex final {
   math::Vec3f position;
   math::Vec3f normal;
+  math::Vec4f tangent; // 'w' indicates the handedness, '1' or '-1'.
   math::Vec2f texcoord;
 
   constexpr Vertex() noexcept = default;
-  constexpr Vertex(math::Vec3f position, math::Vec3f normal, math::Vec2f texcoord) :
-      position{position}, normal{normal}, texcoord{texcoord} {}
+  constexpr Vertex(
+      math::Vec3f position, math::Vec3f normal, math::Vec4f tangent, math::Vec2f texcoord) :
+      position{position}, normal{normal}, tangent{tangent}, texcoord{texcoord} {}
 
   [[nodiscard]] constexpr auto operator==(const Vertex& rhs) const noexcept -> bool {
-    return position == rhs.position && normal == rhs.normal && texcoord == rhs.texcoord;
+    return (
+        position == rhs.position && normal == rhs.normal && rhs.tangent == rhs.tangent &&
+        texcoord == rhs.texcoord);
   }
 
   [[nodiscard]] constexpr auto operator!=(const Vertex& rhs) const noexcept -> bool {

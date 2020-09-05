@@ -11,7 +11,7 @@ Texture::Texture(log::Logger* logger, Device* device, const asset::Texture* asse
   assert(device);
   assert(m_asset);
 
-  const auto vkFormat = VK_FORMAT_R8G8B8A8_SRGB;
+  const auto vkFormat = VK_FORMAT_R8G8B8A8_UNORM;
   assert(getVkFormatSize(vkFormat) == sizeof(asset::Pixel));
   assert(getVkFormatChannelCount(vkFormat) == 4U);
   m_image = Image{device,

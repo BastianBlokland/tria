@@ -72,15 +72,14 @@ constexpr std::array<const char*, 1> g_requiredDeviceExtensions = {
 
   const auto availableFormats = getVkSurfaceFormats(vkPhysicalDevice, vkSurface);
 
-  // Prefer SRGB.
+  // Prefer srgb, so the gpu can itself perform the linear to srgb conversion.
   for (const auto& format : availableFormats) {
-    if (format.format == VK_FORMAT_B8G8R8A8_SRGB &&
-        format.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR) {
+    if (format.format == VK_FORMAT_B8G8R8A8_SRGB) {
       return format;
     }
   }
   // If thats not availble then pick whatever is available.
-  // Note: In the future we could consider add some scoring algorithm here.
+  // Note: In the future we could consider adding some scoring algorithm here.
   return availableFormats.empty() ? std::nullopt : std::optional(*availableFormats.begin());
 }
 

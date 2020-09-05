@@ -17,7 +17,7 @@ struct InstanceData {
 };
 INSTANCE_INPUT_BINDING(InstanceData);
 
-layout(location = 0) out vec4 outLineColor;
+layout(location = 0) out flat vec4 outLineColor;
 
 void main() {
   // TODO(bastian): Currently the grid is centered on the camera pos, but checking the frustum

@@ -66,9 +66,10 @@ TEST_CASE("[asset] - Mesh Wavefront Obj", "[asset]") {
       auto vertices = std::vector<Vertex>(mesh->getVertexBegin(), mesh->getVertexEnd());
       CHECK_THAT(
           vertices,
-          VertexMatcher({{{1.0, 4.0, 7.0}, {0.f, 0.f, 1.f}, {}},
-                         {{2.0, 5.0, 8.0}, {0.f, 0.f, 1.f}, {}},
-                         {{3.0, 6.0, 9.0}, {0.f, 0.f, 1.f}, {}}}));
+          VertexMatcher(
+              {{{1.0, 4.0, 7.0}, {0.f, 0.f, 1.f}, {1., 0., 0., 1.}, {}},
+               {{2.0, 5.0, 8.0}, {0.f, 0.f, 1.f}, {1., 0., 0., 1.}, {}},
+               {{3.0, 6.0, 9.0}, {0.f, 0.f, 1.f}, {1., 0., 0., 1.}, {}}}));
     });
   }
 
@@ -89,9 +90,10 @@ TEST_CASE("[asset] - Mesh Wavefront Obj", "[asset]") {
       auto vertices = std::vector<Vertex>(mesh->getVertexBegin(), mesh->getVertexEnd());
       CHECK_THAT(
           vertices,
-          VertexMatcher({{{1.0, 4.0, 7.0}, {1.f, 0.f, 0.f}, {}},
-                         {{2.0, 5.0, 8.0}, {0.f, 1.f, 0.f}, {}},
-                         {{3.0, 6.0, 9.0}, {0.f, 0.f, 1.f}, {}}}));
+          VertexMatcher(
+              {{{1.0, 4.0, 7.0}, {1.f, 0.f, 0.f}, {1., 0., 0., 1.}, {}},
+               {{2.0, 5.0, 8.0}, {0.f, 1.f, 0.f}, {1., 0., 0., 1.}, {}},
+               {{3.0, 6.0, 9.0}, {0.f, 0.f, 1.f}, {1., 0., 0., 1.}, {}}}));
     });
   }
 
@@ -115,9 +117,10 @@ TEST_CASE("[asset] - Mesh Wavefront Obj", "[asset]") {
       auto vertices = std::vector<Vertex>(mesh->getVertexBegin(), mesh->getVertexEnd());
       CHECK_THAT(
           vertices,
-          VertexMatcher({{{1.0, 4.0, 7.0}, {1.f, 0.f, 0.f}, {0.1, 0.5}},
-                         {{2.0, 5.0, 8.0}, {0.f, 1.f, 0.f}, {0.3, 0.5}},
-                         {{3.0, 6.0, 9.0}, {0.f, 0.f, 1.f}, {0.5, 0.5}}}));
+          VertexMatcher(
+              {{{1.0, 4.0, 7.0}, {1.f, 0.f, 0.f}, {1., 0., 0., 1.}, {0.1, 0.5}},
+               {{2.0, 5.0, 8.0}, {0.f, 1.f, 0.f}, {1., 0., 0., 1.}, {0.3, 0.5}},
+               {{3.0, 6.0, 9.0}, {0.f, 0.f, 1.f}, {1., 0., 0., 1.}, {0.5, 0.5}}}));
     });
   }
 
@@ -138,9 +141,10 @@ TEST_CASE("[asset] - Mesh Wavefront Obj", "[asset]") {
       auto vertices = std::vector<Vertex>(mesh->getVertexBegin(), mesh->getVertexEnd());
       CHECK_THAT(
           vertices,
-          VertexMatcher({{{1.0, 4.0, 7.0}, {0.f, 0.f, 1.f}, {0.1, 0.5}},
-                         {{2.0, 5.0, 8.0}, {0.f, 0.f, 1.f}, {0.3, 0.5}},
-                         {{3.0, 6.0, 9.0}, {0.f, 0.f, 1.f}, {0.5, 0.5}}}));
+          VertexMatcher(
+              {{{1.0, 4.0, 7.0}, {0.f, 0.f, 1.f}, {1., 0., 0., 1.}, {0.1, 0.5}},
+               {{2.0, 5.0, 8.0}, {0.f, 0.f, 1.f}, {1., 0., 0., 1.}, {0.3, 0.5}},
+               {{3.0, 6.0, 9.0}, {0.f, 0.f, 1.f}, {1., 0., 0., 1.}, {0.5, 0.5}}}));
     });
   }
 
@@ -159,9 +163,10 @@ TEST_CASE("[asset] - Mesh Wavefront Obj", "[asset]") {
       auto vertices = std::vector<Vertex>(mesh->getVertexBegin(), mesh->getVertexEnd());
       CHECK_THAT(
           vertices,
-          VertexMatcher({{{1.0, 4.0, 7.0}, {0.f, 0.f, 1.f}, {0.5, 0.5}},
-                         {{2.0, 5.0, 8.0}, {0.f, 0.f, 1.f}, {0.5, 0.5}},
-                         {{3.0, 6.0, 9.0}, {0.f, 0.f, 1.f}, {0.5, 0.5}}}));
+          VertexMatcher(
+              {{{1.0, 4.0, 7.0}, {0.f, 0.f, 1.f}, {1., 0., 0., 1.}, {0.5, 0.5}},
+               {{2.0, 5.0, 8.0}, {0.f, 0.f, 1.f}, {1., 0., 0., 1.}, {0.5, 0.5}},
+               {{3.0, 6.0, 9.0}, {0.f, 0.f, 1.f}, {1., 0., 0., 1.}, {0.5, 0.5}}}));
     });
   }
 
@@ -197,10 +202,11 @@ TEST_CASE("[asset] - Mesh Wavefront Obj", "[asset]") {
       auto indices  = std::vector<IndexType>(mesh->getIndexBegin(), mesh->getIndexEnd());
       CHECK_THAT(
           vertices,
-          VertexMatcher({{{-0.5, -0.5, 0.0}, {0.f, 0.f, 1.f}, {}},
-                         {{+0.5, -0.5, 0.0}, {0.f, 0.f, 1.f}, {}},
-                         {{-0.5, +0.5, 0.0}, {0.f, 0.f, 1.f}, {}},
-                         {{+0.5, +0.5, 0.0}, {0.f, 0.f, 1.f}, {}}}));
+          VertexMatcher(
+              {{{-0.5, -0.5, 0.0}, {0.f, 0.f, 1.f}, {1., 0., 0., 1.}, {}},
+               {{+0.5, -0.5, 0.0}, {0.f, 0.f, 1.f}, {1., 0., 0., 1.}, {}},
+               {{-0.5, +0.5, 0.0}, {0.f, 0.f, 1.f}, {1., 0., 0., 1.}, {}},
+               {{+0.5, +0.5, 0.0}, {0.f, 0.f, 1.f}, {1., 0., 0., 1.}, {}}}));
       CHECK(indices == std::vector<IndexType>{0, 1, 2, 0, 2, 3});
     });
   }
@@ -223,12 +229,13 @@ TEST_CASE("[asset] - Mesh Wavefront Obj", "[asset]") {
       auto vertices = std::vector<Vertex>(mesh->getVertexBegin(), mesh->getVertexEnd());
       CHECK_THAT(
           vertices,
-          VertexMatcher({{{1.0, 2.0, 3.0}, {0.f, 0.f, 1.f}, {}},
-                         {{4.0, 5.0, 6.0}, {0.f, 0.f, 1.f}, {}},
-                         {{7.0, 8.0, 9.0}, {0.f, 0.f, 1.f}, {}},
-                         {{16.0, 17.0, 18.0}, {0.f, 0.f, 1.f}, {}},
-                         {{13.0, 14.0, 15.0}, {0.f, 0.f, 1.f}, {}},
-                         {{10.0, 11.0, 12.0}, {0.f, 0.f, 1.f}, {}}}));
+          VertexMatcher(
+              {{{1.0, 2.0, 3.0}, {0.f, 0.f, 1.f}, {1., 0., 0., 1.}, {}},
+               {{4.0, 5.0, 6.0}, {0.f, 0.f, 1.f}, {1., 0., 0., 1.}, {}},
+               {{7.0, 8.0, 9.0}, {0.f, 0.f, 1.f}, {1., 0., 0., 1.}, {}},
+               {{16.0, 17.0, 18.0}, {0.f, 0.f, 1.f}, {1., 0., 0., 1.}, {}},
+               {{13.0, 14.0, 15.0}, {0.f, 0.f, 1.f}, {1., 0., 0., 1.}, {}},
+               {{10.0, 11.0, 12.0}, {0.f, 0.f, 1.f}, {1., 0., 0., 1.}, {}}}));
     });
   }
 
@@ -251,9 +258,10 @@ TEST_CASE("[asset] - Mesh Wavefront Obj", "[asset]") {
       auto vertices = std::vector<Vertex>(mesh->getVertexBegin(), mesh->getVertexEnd());
       CHECK_THAT(
           vertices,
-          VertexMatcher({{{1.0, 4.0, 7.0}, {0.f, 0.f, 1.f}, {}},
-                         {{2.0, 5.0, 8.0}, {0.f, 0.f, 1.f}, {}},
-                         {{3.0, 6.0, 9.0}, {0.f, 0.f, 1.f}, {}}}));
+          VertexMatcher(
+              {{{1.0, 4.0, 7.0}, {0.f, 0.f, 1.f}, {1., 0., 0., 1.}, {}},
+               {{2.0, 5.0, 8.0}, {0.f, 0.f, 1.f}, {1., 0., 0., 1.}, {}},
+               {{3.0, 6.0, 9.0}, {0.f, 0.f, 1.f}, {1., 0., 0., 1.}, {}}}));
     });
   }
 
@@ -271,9 +279,10 @@ TEST_CASE("[asset] - Mesh Wavefront Obj", "[asset]") {
       auto vertices = std::vector<Vertex>(mesh->getVertexBegin(), mesh->getVertexEnd());
       CHECK_THAT(
           vertices,
-          VertexMatcher({{{1.0, 4.0, 7.0}, {0.f, 0.f, 1.f}, {}},
-                         {{2.0, 5.0, 8.0}, {0.f, 0.f, 1.f}, {}},
-                         {{3.0, 6.0, 9.0}, {0.f, 0.f, 1.f}, {}}}));
+          VertexMatcher(
+              {{{1.0, 4.0, 7.0}, {0.f, 0.f, 1.f}, {1., 0., 0., 1.}, {}},
+               {{2.0, 5.0, 8.0}, {0.f, 0.f, 1.f}, {1., 0., 0., 1.}, {}},
+               {{3.0, 6.0, 9.0}, {0.f, 0.f, 1.f}, {1., 0., 0., 1.}, {}}}));
     });
   }
 

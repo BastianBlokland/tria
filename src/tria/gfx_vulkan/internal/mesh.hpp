@@ -15,6 +15,7 @@ struct alignas(16) DeviceVertex final {
   float texcoordX;
   math::Vec3f nrm;
   float texcoordY;
+  math::Vec4f tan; // 'w' indicates the handedness, either '1' or '-1'.
 };
 
 /* Mesh resource.

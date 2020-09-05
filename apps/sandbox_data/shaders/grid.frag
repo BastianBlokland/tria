@@ -2,7 +2,7 @@
 #extension GL_GOOGLE_include_directive : enable
 #include "include/input.glsl"
 
-layout(location = 0) in vec4 inLineColor;
+layout(location = 0) in flat vec4 inLineColor;
 
 layout(location = 0) out vec4 outColor;
 
