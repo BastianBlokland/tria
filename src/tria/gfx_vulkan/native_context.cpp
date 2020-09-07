@@ -123,7 +123,7 @@ NativeContext::~NativeContext() {
   // even try to destroy the instance when we have an uncaught exception. However this can lead to
   // resource leaks that could be prevented. Its not a very high priority issue as most likely the
   // app will just try to gracefully exit and not try to keep running.
-  if (!std::uncaught_exception()) {
+  if (std::uncaught_exceptions() == 0) {
 
     vkDestroyInstance(m_vkInstance, nullptr);
 
