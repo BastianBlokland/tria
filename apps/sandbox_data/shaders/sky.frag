@@ -1,5 +1,6 @@
 #version 450
 #extension GL_GOOGLE_include_directive : enable
+#extension GL_EXT_shader_explicit_arithmetic_types_float16 : enable
 #include "include/input.glsl"
 
 /* 3 color gradient based on the y component of the world direction. */

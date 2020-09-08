@@ -13,6 +13,7 @@ add_executable(tria_tests
   tria/log/logger_test.cpp
   tria/log/param_test.cpp
 
+  tria/math/box_test.cpp
   tria/math/base64_test.cpp
   tria/math/mat_test.cpp
   tria/math/pod_vector_test.cpp

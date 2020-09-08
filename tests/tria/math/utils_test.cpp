@@ -163,6 +163,19 @@ TEST_CASE("[math] - Utils", "[math]") {
     CHECK(nextPow2(2147483648) == 2147483648);
     // Undefined for val > 2147483648.
   }
+
+  SECTION("Half floats") {
+    CHECK(approx(halfToFloat(floatToHalf(0.0f)), 0.0f));
+    CHECK(approx(halfToFloat(floatToHalf(1.0f)), 1.0f));
+    CHECK(approx(halfToFloat(floatToHalf(65504.0f)), 65504.0f));
+    CHECK(approx(halfToFloat(floatToHalf(6e-5f)), 6e-5f));
+    CHECK(approx(halfToFloat(floatToHalf(.42f)), .42f, .0001f));
+    CHECK(approx(halfToFloat(floatToHalf(.1337f)), .1337f, .0001f));
+    CHECK(approx(halfToFloat(floatToHalf(13.37f)), 13.37f, .001f));
+    CHECK(approx(halfToFloat(floatToHalf(-.42f)), -.42f, .0001f));
+    CHECK(approx(halfToFloat(floatToHalf(-.1337f)), -.1337f, .0001f));
+    CHECK(approx(halfToFloat(floatToHalf(-13.37f)), -13.37f, .001f));
+  }
 }
 
 } // namespace tria::math::tests

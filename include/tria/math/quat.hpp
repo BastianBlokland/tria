@@ -278,11 +278,11 @@ lookRotQuat(const Vec<Type, 3> fwd, const Vec<Type, 3> upRef) noexcept {
   return lookRotQuat<float>(fwd, up);
 }
 
-/* Check if all components of two quaternion are approximately equal.
+/* Check if all components of two quaternions are approximately equal.
  */
 template <typename T>
-[[nodiscard]] constexpr auto
-approx(Quat<T> x, Quat<T> y, T maxDelta = std::numeric_limits<T>::epsilon()) noexcept {
+[[nodiscard]] constexpr auto approx(
+    const Quat<T>& x, const Quat<T>& y, T maxDelta = std::numeric_limits<T>::epsilon()) noexcept {
   for (auto i = 0U; i != Quat<T>::Size; ++i) {
     if (!approx(x[i], y[i], maxDelta)) {
       return false;

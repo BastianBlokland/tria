@@ -179,6 +179,8 @@ struct ObjFace final {
 };
 
 struct ObjData final {
+  math::Box3f posBounds;
+  math::Box2f texBounds;
   math::PodVector<math::Vec3f> positions;
   math::PodVector<math::Vec2f> texcoords;
   math::PodVector<math::Vec3f> normals;
@@ -188,13 +190,12 @@ struct ObjData final {
 };
 
 /* Read x and y floats seperated by whitespace.
- * The y component is inverted.
  */
-auto readVec2InvertY(Reader& reader) noexcept -> math::Vec2f {
+auto readVec2(Reader& reader) noexcept -> math::Vec2f {
   math::Vec2f result;
   result.x() = reader.consumeFloat();
   reader.consumeWhitespace();
-  result.y() = 1.f - reader.consumeFloat();
+  result.y() = reader.consumeFloat();
   return result;
 }
 
@@ -260,7 +261,9 @@ auto readObjVertex(Reader& reader, const ObjData& d) -> ObjVertex {
  * - faces.
  */
 [[nodiscard]] auto readObjData(Reader& reader) -> ObjData {
-  ObjData result = {};
+  ObjData result   = {};
+  result.posBounds = math::invertedBox3f();
+  result.texBounds = math::invertedBox2f();
   while (true) {
     switch (*reader.getCur()) {
     case ' ':
@@ -276,19 +279,24 @@ auto readObjVertex(Reader& reader, const ObjData& d) -> ObjVertex {
       reader.consumeChar();
       switch (*reader.getCur()) {
       case ' ':
-      case '\t':
+      case '\t': {
         // 'v': Vertex position.
         reader.consumeWhitespace();
-        result.positions.push_back(readVec3(reader));
+        const auto pos = readVec3(reader);
+        result.posBounds.encapsulate(pos);
+        result.positions.push_back(pos);
         reader.consumeRestOfLine();
-        break;
-      case 't':
+      } break;
+      case 't': {
         // 'vt': Vertex texcoord.
         reader.consumeChar();
         reader.consumeWhitespace();
-        result.texcoords.push_back(readVec2InvertY(reader));
+        auto texcoord = readVec2(reader);
+        texcoord.y()  = 1.0f - texcoord.y(); // Flip the y axis, we use the top as the origin.
+        result.texBounds.encapsulate(texcoord);
+        result.texcoords.push_back(texcoord);
         reader.consumeRestOfLine();
-        break;
+      } break;
       case 'n': {
         // 'vn': Vertex normal.
         reader.consumeChar();
@@ -343,6 +351,12 @@ auto readObjVertex(Reader& reader, const ObjData& d) -> ObjVertex {
   }
 
 ObjDataEnd:
+  if (result.positions.empty()) {
+    result.posBounds = {}; // Zero sized box at center (0,0,0).
+  }
+  if (result.texcoords.empty()) {
+    result.texBounds = {}; // Zero sized box at center (0,0).
+  }
   return result;
 }
 
@@ -430,7 +444,8 @@ auto loadMeshObj(log::Logger* /*unused*/, DatabaseImpl* /*unused*/, AssetId id, 
 
   assert(vertices.size() <= numMeshVertices);
   assert(indices.size() == numMeshVertices);
-  return std::make_unique<Mesh>(std::move(id), std::move(vertices), std::move(indices));
+  return std::make_unique<Mesh>(
+      std::move(id), objData.posBounds, objData.texBounds, std::move(vertices), std::move(indices));
 }
 
 } // namespace tria::asset::internal

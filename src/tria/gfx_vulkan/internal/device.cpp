@@ -16,8 +16,9 @@ namespace tria::gfx::internal {
 
 namespace {
 
-constexpr std::array<const char*, 1> g_requiredDeviceExtensions = {
+constexpr std::array<const char*, 2> g_requiredDeviceExtensions = {
     VK_KHR_SWAPCHAIN_EXTENSION_NAME,
+    "VK_KHR_shader_float16_int8",
 };
 
 [[nodiscard]] auto createVkSurfaceKhr(VkInstance vkInstance, const pal::Window* window)
@@ -137,8 +138,13 @@ createVkDevice(VkPhysicalDevice vkPhysicalDevice, std::set<uint32_t> queueFamili
     queueCreateInfos.push_back(queueCreateInfo);
   }
 
+  VkPhysicalDeviceShaderFloat16Int8Features float16Int8Features = {};
+  float16Int8Features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_FLOAT16_INT8_FEATURES;
+  float16Int8Features.shaderFloat16 = true;
+
   VkDeviceCreateInfo createInfo      = {};
   createInfo.sType                   = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
+  createInfo.pNext                   = &float16Int8Features;
   createInfo.pQueueCreateInfos       = queueCreateInfos.data();
   createInfo.queueCreateInfoCount    = queueCreateInfos.size();
   createInfo.enabledExtensionCount   = g_requiredDeviceExtensions.size();
