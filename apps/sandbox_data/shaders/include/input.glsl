@@ -15,29 +15,39 @@ const uint instanceSet = 2; // 'Per instance' resources, like a transformation m
 #define GET_GLOBAL() globalData
 
 /*
- * Utilities for defining and retreiving vertex data.
+ * Utilities for defining and retreiving mesh data.
  */
 
+struct MeshMeta {
+  vec4 posBoundsMin;  // xyz: min position of aabb, w: unused.
+  vec4 posBoundsSize; // xyz: size of the of the aabb, w: unused.
+};
+
 struct VertexData {
-  vec4 posAndU;
-  vec4 nrmAndV;
-  vec4 tan;
+  f16vec4 posFracAndU;
+  f16vec4 nrmAndV;
+  f16vec4 tan;
 };
 
 #define VERTEX_INPUT_BINDING()                                                                     \
   layout(set = graphicSet, binding = 0, std140) readonly buffer VertexBuffer {                     \
+    MeshMeta meshMeta;                                                                             \
     VertexData[] vertices;                                                                         \
   }
 
 #define GET_VERT() vertices[gl_VertexIndex]
 
-#define GET_VERT_POS() GET_VERT().posAndU.xyz
+#define GET_VERT_POS(VERT)                                                                         \
+  vec3(                                                                                            \
+      meshMeta.posBoundsMin.x + meshMeta.posBoundsSize.x * (VERT).posFracAndU.x,                   \
+      meshMeta.posBoundsMin.y + meshMeta.posBoundsSize.y * (VERT).posFracAndU.y,                   \
+      meshMeta.posBoundsMin.z + meshMeta.posBoundsSize.z * (VERT).posFracAndU.z)
 
-#define GET_VERT_NRM() GET_VERT().nrmAndV.xyz
+#define GET_VERT_NRM(VERT) (VERT).nrmAndV.xyz
 
-#define GET_VERT_TAN() GET_VERT().tan
+#define GET_VERT_TAN(VERT) (VERT).tan
 
-#define GET_VERT_TEXCOORD() vec2(GET_VERT().posAndU.w, GET_VERT().nrmAndV.w)
+#define GET_VERT_TEXCOORD(VERT) vec2((VERT).posFracAndU.w, (VERT).nrmAndV.w)
 
 /*
  * Utilities for defining and retreiving per-instance data.

@@ -8,14 +8,24 @@
 
 namespace tria::gfx::internal {
 
+/* Needs to match the layout of the MeshMeta structure in GLSL.
+ */
+struct alignas(16) MeshMeta final {
+  math::Vec3f posBoundsMin;
+  float padding1;
+  math::Vec3f posBoundsSize;
+  float padding2;
+};
+
 /* Needs to match the layout of the vertex structure in GLSL.
  */
 struct alignas(16) DeviceVertex final {
-  math::Vec3f pos;
-  float texcoordX;
-  math::Vec3f nrm;
-  float texcoordY;
-  math::Vec4f tan; // 'w' indicates the handedness, either '1' or '-1'.
+  math::Vec<uint16_t, 3> posFrac; // 0 - 1 fraction of the mesh bounds, 16 bit floats.
+  uint16_t texcoordX;             // 16 bit float.
+  math::Vec<uint16_t, 3> nrm;     // 16 bit floats.
+  uint16_t texcoordY;             // 16 bit float.
+  math::Vec<uint16_t, 3> tan;     // 16 bit floats.
+  uint16_t biTanSign;             // 16 bit float.
 };
 
 /* Mesh resource.

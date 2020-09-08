@@ -1,5 +1,6 @@
 #version 450
 #extension GL_GOOGLE_include_directive : enable
+#extension GL_EXT_shader_explicit_arithmetic_types_float16 : enable
 #include "include/input.glsl"
 
 const uint highlightInterval = 5;
@@ -20,12 +21,15 @@ INSTANCE_INPUT_BINDING(InstanceData);
 layout(location = 0) out flat vec4 outLineColor;
 
 void main() {
+  InstanceData inst = GET_INST();
+  GlobalData global = GET_GLOBAL();
+
   // TODO(bastian): Currently the grid is centered on the camera pos, but checking the frustum
   // bounds would be more effiencient.
-  int centerX = int(GET_INST().cameraPos.x);
-  int centerZ = int(GET_INST().cameraPos.z);
+  int centerX = int(inst.cameraPos.x);
+  int centerZ = int(inst.cameraPos.z);
 
-  int numSegs       = GET_INST().segments;
+  int numSegs       = inst.segments;
   int halfNumSegs   = numSegs >> 1;
   int vertIndex     = gl_VertexIndex;
   int halfVertIndex = gl_VertexIndex >> 1;
@@ -44,5 +48,5 @@ void main() {
 
   float x     = centerX + (isHor ? b : a);
   float z     = centerZ + (isHor ? a : b);
-  gl_Position = GET_GLOBAL().viewProjMat * vec4(x, isHighlight ? .01 : 0, z, 1);
+  gl_Position = global.viewProjMat * vec4(x, isHighlight ? .01 : 0, z, 1);
 }
