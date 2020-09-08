@@ -1,5 +1,6 @@
 #pragma once
 #include "tria/asset/asset.hpp"
+#include "tria/math/box.hpp"
 #include "tria/math/pod_vector.hpp"
 #include "tria/math/vec.hpp"
 
@@ -38,8 +39,15 @@ struct Vertex final {
  */
 class Mesh final : public Asset {
 public:
-  Mesh(AssetId id, math::PodVector<Vertex> vertices, math::PodVector<IndexType> indices) :
+  Mesh(
+      AssetId id,
+      const math::Box3f& posBounds,
+      const math::Box2f& texBounds,
+      math::PodVector<Vertex> vertices,
+      math::PodVector<IndexType> indices) :
       Asset{std::move(id), getKind()},
+      m_posBounds{posBounds},
+      m_texBounds{texBounds},
       m_vertices{std::move(vertices)},
       m_indices{std::move(indices)} {}
   Mesh(const Mesh& rhs) = delete;
@@ -51,6 +59,9 @@ public:
 
   [[nodiscard]] constexpr static auto getKind() -> AssetKind { return AssetKind::Mesh; }
 
+  [[nodiscard]] auto getPosBounds() const noexcept -> const math::Box3f& { return m_posBounds; }
+  [[nodiscard]] auto getTexBounds() const noexcept -> const math::Box2f& { return m_texBounds; }
+
   [[nodiscard]] auto getVertexCount() const noexcept { return m_vertices.size(); }
   [[nodiscard]] auto getVertexBegin() const noexcept { return m_vertices.begin(); }
   [[nodiscard]] auto getVertexEnd() const noexcept { return m_vertices.end(); }
@@ -60,6 +71,8 @@ public:
   [[nodiscard]] auto getIndexEnd() const noexcept { return m_indices.end(); }
 
 private:
+  math::Box3f m_posBounds;
+  math::Box2f m_texBounds;
   math::PodVector<Vertex> m_vertices;
   math::PodVector<IndexType> m_indices;
 };
@@ -72,7 +85,7 @@ private:
     float maxDelta = std::numeric_limits<float>::epsilon()) noexcept {
   return (
       approx(x.position, y.position, maxDelta) && approx(x.normal, y.normal, maxDelta) &&
-      approx(x.texcoord, y.texcoord, maxDelta));
+      approx(x.tangent, y.tangent, maxDelta) && approx(x.texcoord, y.texcoord, maxDelta));
 }
 
 } // namespace tria::asset

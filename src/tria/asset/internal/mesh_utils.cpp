@@ -53,7 +53,7 @@ auto computeTangents(
     if (math::approxZero(t)) {
       // Not possible to calculate a tangent, vertex is not used in any triangle with non-zero
       // positional area and texcoord area.
-      vertices[i].tangent = {.1f, 0.f, 0.f, 1.f};
+      vertices[i].tangent = {1.f, 0.f, 0.f, 1.f};
       continue;
     }
 
