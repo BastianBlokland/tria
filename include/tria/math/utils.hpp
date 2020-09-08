@@ -131,4 +131,12 @@ template <typename T>
   return hash;
 }
 
+/* Convert a 32 bit float to a 16 bit float.
+ */
+[[nodiscard]] auto floatToHalf(float val) noexcept -> uint16_t;
+
+/* Convert a 16 bit float to a 32 bit float.
+ */
+[[nodiscard]] auto halfToFloat(uint16_t val) noexcept -> float;
+
 } // namespace tria::math
