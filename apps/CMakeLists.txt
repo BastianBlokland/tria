@@ -90,6 +90,7 @@ configure_shaders(sandbox_data ${CMAKE_CURRENT_SOURCE_DIR}/sandbox_data
   shaders/grid.vert
   shaders/grid.frag)
 configure_data(sandbox_data ${CMAKE_CURRENT_SOURCE_DIR}/sandbox_data
+  fonts
   graphics
   meshes
   textures)
