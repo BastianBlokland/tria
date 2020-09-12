@@ -2,6 +2,7 @@
 message(STATUS "Configuring tria_tests executable")
 add_executable(tria_tests
   tria/asset/database_test.cpp
+  tria/asset/font_ttf_test.cpp
   tria/asset/graphic_test.cpp
   tria/asset/texture_ppm_test.cpp
   tria/asset/texture_tga_test.cpp

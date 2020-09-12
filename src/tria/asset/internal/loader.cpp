@@ -7,6 +7,7 @@ using RawData = math::RawData;
 
 auto loadGraphic(log::Logger*, DatabaseImpl*, AssetId, RawData) -> AssetUnique;
 auto loadMeshObj(log::Logger*, DatabaseImpl*, AssetId, RawData) -> AssetUnique;
+auto loadFontTtf(log::Logger*, DatabaseImpl*, AssetId, RawData) -> AssetUnique;
 auto loadTexturePpm(log::Logger*, DatabaseImpl*, AssetId, RawData) -> AssetUnique;
 auto loadTextureTga(log::Logger*, DatabaseImpl*, AssetId, RawData) -> AssetUnique;
 auto loadShaderSpv(log::Logger*, DatabaseImpl*, AssetId, RawData) -> AssetUnique;
@@ -20,6 +21,7 @@ auto getLoader(const fs::path& path) -> AssetLoader {
   static const std::unordered_map<std::string, AssetLoader> table = {
       {".gfx", loadGraphic},
       {".obj", loadMeshObj},
+      {".ttf", loadFontTtf},
       {".ppm", loadTexturePpm},
       {".tga", loadTextureTga},
       {".spv", loadShaderSpv},
