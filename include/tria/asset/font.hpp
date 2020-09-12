@@ -2,7 +2,6 @@
 #include "tria/asset/asset.hpp"
 #include "tria/math/pod_vector.hpp"
 #include "tria/math/vec.hpp"
-#include <bits/stdint-uintn.h>
 
 namespace tria::asset {
 

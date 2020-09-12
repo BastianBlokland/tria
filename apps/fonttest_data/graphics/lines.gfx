@@ -1,0 +1,11 @@
+{
+  "shaders": [
+    "shaders/lines.vert.spv",
+    "shaders/white.frag.spv"
+  ],
+  "topology": "linestrip",
+  "lineWidth": 2,
+  "blend": "none",
+  "depthTest": "always",
+  "cull": "none"
+}

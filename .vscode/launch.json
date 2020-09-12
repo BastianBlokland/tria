@@ -13,6 +13,17 @@
       "stopOnEntry": false
     },
     {
+      "name": "fonttest",
+      "preLaunchTask": "build",
+      "type": "lldb",
+      "request": "launch",
+      "program": "${workspaceFolder}/bin/fonttest",
+      "args": [],
+      "cwd": "${workspaceFolder}",
+      "terminal": "integrated",
+      "stopOnEntry": false
+    },
+    {
       "name": "tria_tests",
       "preLaunchTask": "build",
       "type": "lldb",

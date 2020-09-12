@@ -102,3 +102,20 @@ configure_assets(sandbox_data
   corset/corset_diff.tga
   corset/corset_nrm.tga)
 add_dependencies(sandbox sandbox_data)
+
+# FontTest.
+message(STATUS "Configuring fonttest executable")
+add_executable(fonttest
+  fonttest/main.cpp)
+target_compile_features(fonttest PUBLIC cxx_std_17)
+target_link_libraries(fonttest PRIVATE tria_asset)
+target_link_libraries(fonttest PRIVATE tria_pal)
+target_link_libraries(fonttest PRIVATE tria_log)
+target_link_libraries(fonttest PRIVATE tria_gfx)
+configure_shaders(fonttest_data ${CMAKE_CURRENT_SOURCE_DIR}/fonttest_data
+  shaders/lines.vert
+  shaders/white.frag)
+configure_data(fonttest_data ${CMAKE_CURRENT_SOURCE_DIR}/fonttest_data
+  fonts
+  graphics)
+add_dependencies(fonttest fonttest_data)
