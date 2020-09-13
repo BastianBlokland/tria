@@ -5,31 +5,23 @@
 
 namespace tria::asset {
 
-enum class GlyphPointType {
-  Normal,
-  ControlPoint,
+enum class GlyphSegmentType {
+  Line,            // Consists of to 2 points, begin and end.
+  QuadraticBezier, // Consists of 3 points, begin, control, end.
 };
 
-struct GlyphPoint final {
-  math::Vec2f position;
-  GlyphPointType type;
+struct GlyphSegment final {
+  GlyphSegmentType type;
+  uint16_t startPointIdx; // Index of the first point, number of points depends on the type.
 
-  constexpr GlyphPoint(math::Vec2f position, GlyphPointType type) :
-      position{position}, type{type} {}
-
-  [[nodiscard]] constexpr auto operator==(const GlyphPoint& rhs) const noexcept -> bool {
-    return (position == rhs.position && type == rhs.type);
-  }
-
-  [[nodiscard]] constexpr auto operator!=(const GlyphPoint& rhs) const noexcept -> bool {
-    return !operator==(rhs);
-  }
+  constexpr GlyphSegment(GlyphSegmentType type, uint16_t startPointIdx) noexcept :
+      type{type}, startPointIdx{startPointIdx} {}
 };
 
 class Glyph final {
 public:
-  Glyph(math::PodVector<uint16_t> contourEndPoints, math::PodVector<GlyphPoint> points) :
-      m_contourEndPoints{std::move(contourEndPoints)}, m_points{std::move(points)} {}
+  Glyph(math::PodVector<math::Vec2f> points, math::PodVector<GlyphSegment> segments) :
+      m_points{std::move(points)}, m_segments{std::move(segments)} {}
   Glyph(const Glyph& rhs) = delete;
   Glyph(Glyph&& rhs)      = default;
   ~Glyph() noexcept       = default;
@@ -37,21 +29,18 @@ public:
   auto operator=(const Glyph& rhs) -> Glyph& = delete;
   auto operator=(Glyph&& rhs) -> Glyph& = default;
 
-  [[nodiscard]] auto getNumContours() const noexcept { return m_contourEndPoints.size(); }
+  [[nodiscard]] auto getNumSegments() const noexcept { return m_segments.size(); }
+  [[nodiscard]] auto getSegmentsBegin() const noexcept { return m_segments.begin(); }
+  [[nodiscard]] auto getSegmentsEnd() const noexcept { return m_segments.end(); }
 
-  [[nodiscard]] auto getContourBegin(uint16_t c) const noexcept {
-    assert(c < m_contourEndPoints.size());
-    return m_points.data() + (c == 0U ? 0U : m_contourEndPoints[c - 1U]);
-  }
-
-  [[nodiscard]] auto getContourEnd(uint16_t c) const noexcept {
-    assert(c < m_contourEndPoints.size());
-    return m_points.data() + m_contourEndPoints[c];
+  [[nodiscard]] auto getPoint(uint16_t idx) const noexcept {
+    assert(idx < m_points.size());
+    return m_points[idx];
   }
 
 private:
-  math::PodVector<uint16_t> m_contourEndPoints;
-  math::PodVector<GlyphPoint> m_points;
+  math::PodVector<math::Vec2f> m_points;
+  math::PodVector<GlyphSegment> m_segments;
 };
 
 /*
@@ -77,14 +66,5 @@ public:
 private:
   std::vector<Glyph> m_glyphs;
 };
-
-/* Check if two glyph points are approximately equal.
- */
-[[nodiscard]] constexpr auto approx(
-    const GlyphPoint& x,
-    const GlyphPoint& y,
-    float maxDelta = std::numeric_limits<float>::epsilon()) noexcept {
-  return approx(x.position, y.position, maxDelta) && x.type == y.type;
-}
 
 } // namespace tria::asset

@@ -49,15 +49,29 @@ TEST_CASE("[asset] - True Type Font", "[asset]") {
 
       auto db    = Database{nullptr, dir};
       auto* font = db.get("test.ttf")->downcast<Font>();
-      REQUIRE(font->getGlyphCount() == 2U); // 1 + the 'missing char' glyph.
-      const auto* glyph = font->getGlyphBegin() + 1U;
-      REQUIRE(glyph->getNumContours() == 1U);
+      REQUIRE(font->getGlyphCount() == 2U);           // 1 + the 'missing char' glyph.
+      const auto* glyph = font->getGlyphBegin() + 1U; // Skip the 'missing char' glyph.
 
-      const auto nrmPt = GlyphPointType::Normal;
-      CHECK(approx(glyph->getContourBegin(0)[0], GlyphPoint{{0.951020419f, 0.f}, nrmPt}));
-      CHECK(approx(glyph->getContourBegin(0)[1], GlyphPoint{{0.951020419f, 0.750183165f}, nrmPt}));
-      CHECK(approx(glyph->getContourBegin(0)[2], GlyphPoint{{1.f, 0.750183165f}, nrmPt}));
-      CHECK(approx(glyph->getContourBegin(0)[3], GlyphPoint{{1.f, 0.f}, nrmPt}));
+      /* Glyph is a box consisting of 4 points and 4 lines connecting the edges of the box.
+       */
+
+      REQUIRE(glyph->getNumSegments() == 4U);
+      CHECK(glyph->getSegmentsBegin()[0].type == GlyphSegmentType::Line);
+      CHECK(glyph->getSegmentsBegin()[0].startPointIdx == 0U);
+
+      CHECK(glyph->getSegmentsBegin()[1].type == GlyphSegmentType::Line);
+      CHECK(glyph->getSegmentsBegin()[1].startPointIdx == 1U);
+
+      CHECK(glyph->getSegmentsBegin()[2].type == GlyphSegmentType::Line);
+      CHECK(glyph->getSegmentsBegin()[2].startPointIdx == 2U);
+
+      CHECK(glyph->getSegmentsBegin()[3].type == GlyphSegmentType::Line);
+      CHECK(glyph->getSegmentsBegin()[3].startPointIdx == 3U);
+
+      CHECK(approx(glyph->getPoint(0U), {0.951020419f, 0.f}));
+      CHECK(approx(glyph->getPoint(1U), {0.951020419f, 0.750183165f}));
+      CHECK(approx(glyph->getPoint(2U), {1.f, 0.750183165f}));
+      CHECK(approx(glyph->getPoint(3U), {1.f, 0.f}));
     });
   }
 }

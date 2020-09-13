@@ -4,14 +4,16 @@
 #include "include/input.glsl"
 
 struct InstanceData {
-  vec4[1024] points;
+  vec4[512] points;
 };
 INSTANCE_INPUT_BINDING(InstanceData);
 
 void main() {
   InstanceData inst = GET_INST();
 
-  vec2 point  = inst.points[gl_VertexIndex].xy;
+  vec4 rawPoint = inst.points[gl_VertexIndex / 2];
+  vec2 point = gl_VertexIndex % 2 == 0 ? rawPoint.xy : rawPoint.zw;
+
   point.y     = 1 - point.y;
   gl_Position = vec4(point * 2.0 - 1.0, 0.0, 1.0);
 }

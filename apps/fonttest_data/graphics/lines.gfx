@@ -3,7 +3,7 @@
     "shaders/lines.vert.spv",
     "shaders/white.frag.spv"
   ],
-  "topology": "linestrip",
+  "topology": "lines",
   "lineWidth": 2,
   "blend": "none",
   "depthTest": "always",

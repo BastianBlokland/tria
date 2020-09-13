@@ -13,34 +13,51 @@ using namespace tria;
 using namespace tria::math;
 using namespace std::chrono;
 
+auto quadBezier(math::Vec2f p0, math::Vec2f p1, math::Vec2f p2, float t) {
+  const auto invT = 1.f - t;
+  return p1 + (p0 - p1) * invT * invT + (p2 - p1) * t * t;
+}
+
 auto drawGlyph(asset::Database& db, gfx::Canvas& canvas, const asset::Glyph* glyph, Box2f bounds) {
-  static auto points = math::PodVector<math::Vec4f>{};
+  static auto points = math::PodVector<math::Vec2f>{};
 
-  for (auto c = 0U; c != glyph->getNumContours(); ++c) {
-    points.clear();
-    for (const auto* p = glyph->getContourBegin(c); p != glyph->getContourEnd(c); ++p) {
-      if (p->type == asset::GlyphPointType::Normal) {
+  points.clear();
+  for (auto* s = glyph->getSegmentsBegin(); s != glyph->getSegmentsEnd(); ++s) {
+    switch (s->type) {
+    case asset::GlyphSegmentType::Line: {
+      points.emplace_back(
+          lerp(bounds.min().x(), bounds.max().x(), glyph->getPoint(s->startPointIdx + 0U).x()),
+          lerp(bounds.min().y(), bounds.max().y(), glyph->getPoint(s->startPointIdx + 0U).y()));
+      points.emplace_back(
+          lerp(bounds.min().x(), bounds.max().x(), glyph->getPoint(s->startPointIdx + 1U).x()),
+          lerp(bounds.min().y(), bounds.max().y(), glyph->getPoint(s->startPointIdx + 1U).y()));
+    } break;
+    case asset::GlyphSegmentType::QuadraticBezier: {
+      const auto numSegs = 5U;
+      for (auto i = 0U; i != numSegs; ++i) {
+        auto t = i / static_cast<float>(numSegs - 1U);
+        auto p = quadBezier(
+            glyph->getPoint(s->startPointIdx),
+            glyph->getPoint(s->startPointIdx + 1U),
+            glyph->getPoint(s->startPointIdx + 2U),
+            t);
+        if (i > 1U) {
+          points.push_back(points.back());
+        }
         points.emplace_back(
-            lerp(bounds.min().x(), bounds.max().x(), p->position.x()),
-            lerp(bounds.min().y(), bounds.max().y(), p->position.y()),
-            0.f,
-            0.f);
+            lerp(bounds.min().x(), bounds.max().x(), p.x()),
+            lerp(bounds.min().y(), bounds.max().y(), p.y()));
       }
+    } break;
     }
-    // Add the first point again to 'close' the contour.
-    points.emplace_back(
-        lerp(bounds.min().x(), bounds.max().x(), glyph->getContourBegin(c)->position.x()),
-        lerp(bounds.min().y(), bounds.max().y(), glyph->getContourBegin(c)->position.y()),
-        0.f,
-        0.f);
-
-    canvas.draw(
-        db.get("graphics/lines.gfx")->downcast<asset::Graphic>(),
-        static_cast<uint32_t>(points.size()),
-        points.data(),
-        points.size() * sizeof(math::Vec4f),
-        1U);
   }
+
+  canvas.draw(
+      db.get("graphics/lines.gfx")->downcast<asset::Graphic>(),
+      static_cast<uint32_t>(points.size()),
+      points.data(),
+      points.size() * sizeof(math::Vec2f),
+      1U);
 }
 
 auto runApp(pal::Platform& platform, asset::Database& db, gfx::Context& gfx) {
@@ -53,6 +70,7 @@ auto runApp(pal::Platform& platform, asset::Database& db, gfx::Context& gfx) {
       gfx::DepthMode::Disable,
       gfx::clearMask(gfx::Clear::Color));
 
+  auto offset = 0U;
   while (!win.getIsCloseRequested()) {
     platform.handleEvents();
 
@@ -60,9 +78,17 @@ auto runApp(pal::Platform& platform, asset::Database& db, gfx::Context& gfx) {
       const auto* font    = db.get("fonts/hack_regular.ttf")->downcast<asset::Font>();
       const auto gridSize = 5U;
 
+      if (win.isKeyPressed(pal::Key::Space)) {
+        if (offset > font->getGlyphCount()) {
+          offset = 0;
+        } else {
+          offset += gridSize * gridSize;
+        }
+      }
+
       for (auto y = 0U; y != gridSize; ++y) {
         for (auto x = 0U; x != gridSize; ++x) {
-          auto* glyph = font->getGlyphBegin() + y * gridSize + x;
+          auto* glyph = font->getGlyphBegin() + offset + y * gridSize + x;
           if (glyph < font->getGlyphEnd()) {
             auto xNrm = x / static_cast<float>(gridSize);
             auto yNrm = y / static_cast<float>(gridSize);
@@ -85,9 +111,9 @@ auto main(int /*unused*/, char* * /*unused*/) -> int {
 
   pal::setThreadName("tria_main_thread");
 
-  auto logger =
-      log::Logger{log::makeConsolePrettySink(),
-                  log::makeFileJsonSink(pal::getCurExecutablePath().replace_extension("log"))};
+  auto logger = log::Logger{
+      log::makeConsolePrettySink(),
+      log::makeFileJsonSink(pal::getCurExecutablePath().replace_extension("log"))};
 
   int ret;
   try {

@@ -396,6 +396,151 @@ readMaxpTable(const math::RawData& raw, const TtfTableRecordMap& recordMap) noex
   return result;
 }
 
+/* Calculate the amount of points in a glyph. Takes the implicit points that 'close' contours and
+ * the implicit onCurve point between two control points into account.
+ */
+[[nodiscard]] auto
+getGlyphPointCount(const math::PodVector<uint8_t>& flags, uint16_t numContours) noexcept {
+  auto count = 1U + numContours;
+  for (auto i = 1U; i != flags.size(); ++i) {
+    const auto onCurveA = flags[i - 1U] & 0x01;
+    const auto onCurveB = flags[i - 0U] & 0x01;
+    count += 1U + (!onCurveA && !onCurveB);
+  }
+  return count;
+}
+
+/* Construct a glyph out of the ttf data. This will decode the lines and quadratic beziers and make
+ * all implicit points explicit.
+ */
+[[nodiscard]] auto buildGlyph(
+    const math::PodVector<uint8_t>& ttfFlags,
+    const math::PodVector<uint16_t>& ttfContourEndPoints,
+    const math::PodVector<math::Vec2f>& ttfPoints) noexcept {
+
+  auto segments   = math::PodVector<GlyphSegment>{};
+  auto points     = math::PodVector<math::Vec2f>{};
+  auto pointCount = getGlyphPointCount(ttfFlags, ttfContourEndPoints.size());
+  points.reserve(pointCount);
+
+  for (auto c = 0U; c != ttfContourEndPoints.size(); ++c) {
+    const auto cStart = c == 0U ? 0U : ttfContourEndPoints[c - 1U];
+    const auto cEnd   = ttfContourEndPoints[c];
+    if ((cEnd - cStart) < 2U) {
+      continue; // Not enough points in this contour to form a segment.
+    }
+
+    // TODO(bastian): Check if the TTF spec enforces the first point to be 'onCurve'.
+    assert(ttfFlags[cStart] & 0x01); // Assume 'onCurve'.
+    points.push_back(ttfPoints[cStart]);
+    for (auto i = cStart; i != cEnd; ++i) {
+      const auto cur  = i;
+      const auto next = (i + 1U) == cEnd ? cStart : i + 1U; // Wraps around for the last entry.
+
+      const auto curOnCurve  = ttfFlags[cur] & 0x01;
+      const auto nextOnCurve = ttfFlags[next] & 0x01;
+
+      if (nextOnCurve) {
+        /* Next is a point on the curve.
+         * If the current is also on the curve then there is a straight line between them.
+         * Otherwise this point 'finishes' the previous curve.
+         */
+        if (curOnCurve) {
+          segments.emplace_back(GlyphSegmentType::Line, points.size() - 1U);
+        }
+      } else {
+        /* Next is a control point.
+         * If the current is also a control point we synthesize the implicit 'on curve' point to
+         * finish the previous curve.
+         */
+        if (!curOnCurve) {
+          points.push_back((ttfPoints[cur] + ttfPoints[next]) * .5f);
+        }
+        segments.emplace_back(GlyphSegmentType::QuadraticBezier, points.size() - 1U);
+        assert(i + 1U < cEnd); // One additional point has to follow this to 'finnish' the curve.
+      }
+
+      points.push_back(ttfPoints[next]);
+    }
+  }
+
+  assert(points.size() == pointCount);
+  return Glyph{std::move(points), std::move(segments)};
+}
+
+[[nodiscard]] auto readGlyphFlags(Reader& reader, const uint16_t count) noexcept
+    -> math::PodVector<uint8_t> {
+  auto flags = math::PodVector<uint8_t>(count);
+  for (auto i = 0U; i != count;) {
+    const auto f          = reader.consumeUIntChecked<1>();
+    const auto isRepeated = f & 0x08;
+    auto repeatCount      = isRepeated ? reader.consumeUIntChecked<1>() + 1U : 1U;
+    while (repeatCount--) {
+      flags[i++] = f;
+    }
+  }
+  return flags;
+}
+
+[[nodiscard]] auto
+readGlyphSimple(Reader& reader, TtfGlyphHeader header, math::Box<int16_t, 2> bounds) noexcept
+    -> std::optional<Glyph> {
+
+  // Read contour data.
+  if (reader.getRemainingCount() < header.numContours * 2U) {
+    return std::nullopt; // Not enough data for contour endpoints.
+  }
+  auto contourEndPoints = math::PodVector<uint16_t>(header.numContours);
+  for (auto i = 0U; i != contourEndPoints.size(); ++i) {
+    // +1 because 'end' meaning one past the last one is more idiomatic c++.
+    contourEndPoints[i] = reader.consumeUInt<2>() + 1U;
+  }
+
+  // Skip over ttf instruction byte code for hinting, we do not support it.
+  if (reader.getRemainingCount() < 2U) {
+    return std::nullopt; // Not enough data for instruction length;
+  }
+  const auto instructionLength = reader.consumeUInt<2>();
+  if (!reader.skip(instructionLength)) {
+    return std::nullopt; // Not enough data for instructions;
+  }
+
+  auto flags  = readGlyphFlags(reader, contourEndPoints.back());
+  auto points = math::PodVector<math::Vec2f>(contourEndPoints.back());
+
+  // Read the x coordinates for all points.
+  auto xPos = 0;
+  for (auto i = 0U; i != points.size(); ++i) {
+    const auto isShort = flags[i] & 0x02;
+    if (isShort) {
+      xPos += reader.consumeUIntChecked<1>() * ((flags[i] & 0x10) ? 1 : -1);
+    } else {
+      xPos += (flags[i] & 0x10) ? 0 : reader.consumeIntChecked<2>();
+    }
+    points[i].x() = math::unlerp(
+        static_cast<float>(bounds.min().x()),
+        static_cast<float>(bounds.max().x()),
+        static_cast<float>(xPos));
+  }
+
+  // Read the y coordinates for all points.
+  auto yPos = 0;
+  for (auto i = 0U; i != points.size(); ++i) {
+    const auto isShort = flags[i] & 0x04;
+    if (isShort) {
+      yPos += reader.consumeUIntChecked<1>() * ((flags[i] & 0x20) ? 1 : -1);
+    } else {
+      yPos += (flags[i] & 0x20) ? 0 : reader.consumeIntChecked<2>();
+    }
+    points[i].y() = math::unlerp(
+        static_cast<float>(bounds.min().y()),
+        static_cast<float>(bounds.max().y()),
+        static_cast<float>(yPos));
+  }
+
+  return buildGlyph(flags, contourEndPoints, points);
+}
+
 [[nodiscard]] auto readGlyph(
     const math::RawData& raw, size_t offset, size_t size, math::Box<int16_t, 2> bounds) noexcept
     -> std::optional<Glyph> {
@@ -416,71 +561,7 @@ readMaxpTable(const math::RawData& raw, const TtfTableRecordMap& recordMap) noex
     // Composite glyphs (negative numContours) are not supported at this time.
     return std::nullopt;
   }
-  if (reader.getRemainingCount() < header.numContours * 2U) {
-    return std::nullopt; // Not enough data for contour endpoints.
-  }
-
-  auto contourEndPoints = math::PodVector<uint16_t>(header.numContours);
-  for (auto i = 0U; i != contourEndPoints.size(); ++i) {
-    // +1 because 'end' meaning one past the last one is more idiomatic c++.
-    contourEndPoints[i] = reader.consumeUInt<2>() + 1U;
-  }
-
-  // Skip over ttf instruction byte code for hinting, we do not support it.
-  if (reader.getRemainingCount() < 2U) {
-    return std::nullopt; // Not enough data for instruction length;
-  }
-  const auto instructionLength = reader.consumeUInt<2>();
-  if (!reader.skip(instructionLength)) {
-    return std::nullopt; // Not enough data for instructions;
-  }
-
-  auto points = math::PodVector<GlyphPoint>(contourEndPoints.back());
-
-  // Read the flags for all points.
-  auto flags = math::PodVector<uint8_t>(points.size());
-  for (auto i = 0U; i != flags.size();) {
-    const auto f          = reader.consumeUIntChecked<1>();
-    const auto isOnCurve  = f & 0x01;
-    const auto isRepeated = f & 0x08;
-    auto count            = isRepeated ? reader.consumeUIntChecked<1>() + 1U : 1U;
-    while (count--) {
-      points[i].type = isOnCurve ? GlyphPointType::Normal : GlyphPointType::ControlPoint;
-      flags[i++]     = f;
-    }
-  }
-
-  // Read the x coordinates for all points.
-  auto xPos = 0;
-  for (auto i = 0U; i != points.size(); ++i) {
-    const auto isShort = flags[i] & 0x02;
-    if (isShort) {
-      xPos += reader.consumeUIntChecked<1>() * ((flags[i] & 0x10) ? 1 : -1);
-    } else {
-      xPos += (flags[i] & 0x10) ? 0 : reader.consumeIntChecked<2>();
-    }
-    points[i].position.x() = math::unlerp(
-        static_cast<float>(bounds.min().x()),
-        static_cast<float>(bounds.max().x()),
-        static_cast<float>(xPos));
-  }
-
-  // Read the y coordinates for all points.
-  auto yPos = 0;
-  for (auto i = 0U; i != points.size(); ++i) {
-    const auto isShort = flags[i] & 0x04;
-    if (isShort) {
-      yPos += reader.consumeUIntChecked<1>() * ((flags[i] & 0x20) ? 1 : -1);
-    } else {
-      yPos += (flags[i] & 0x20) ? 0 : reader.consumeIntChecked<2>();
-    }
-    points[i].position.y() = math::unlerp(
-        static_cast<float>(bounds.min().y()),
-        static_cast<float>(bounds.max().y()),
-        static_cast<float>(yPos));
-  }
-
-  return Glyph{std::move(contourEndPoints), std::move(points)};
+  return readGlyphSimple(reader, header, bounds);
 }
 
 } // namespace
