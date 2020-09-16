@@ -49,8 +49,9 @@ TEST_CASE("[asset] - True Type Font", "[asset]") {
 
       auto db    = Database{nullptr, dir};
       auto* font = db.get("test.ttf")->downcast<Font>();
-      REQUIRE(font->getGlyphCount() == 2U);           // 1 + the 'missing char' glyph.
-      const auto* glyph = font->getGlyphBegin() + 1U; // Skip the 'missing char' glyph.
+
+      const auto* glyph = font->getGlyph(0x31); // Get the 'digit one' glyph.
+      REQUIRE(glyph);
 
       /* Glyph is a box consisting of 4 points and 4 lines connecting the edges of the box.
        */

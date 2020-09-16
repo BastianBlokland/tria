@@ -2,6 +2,7 @@
 #include "tria/asset/err/font_ttf_err.hpp"
 #include "tria/asset/font.hpp"
 #include "tria/math/box.hpp"
+#include "tria/math/pod_vector_io.hpp"
 #include "tria/math/vec.hpp"
 #include <optional>
 #include <string>
@@ -37,15 +38,17 @@ class Reader final {
 public:
   Reader(const uint8_t* current, const uint8_t* end) : m_cur{current}, m_end{end} {}
 
+  [[nodiscard]] auto getCurrent() noexcept { return m_cur; }
+
   /* Check how much data is remaining.
    */
-  auto getRemainingCount() { return m_end - m_cur; }
+  [[nodiscard]] auto getRemainingCount() noexcept { return m_end - m_cur; }
 
   /* Skip an amount of bytes.
    * Returns true if succeeded (enough data available) otherwise false (and pointer is not
    * modified).
    */
-  [[nodiscard]] auto skip(unsigned int count) {
+  [[nodiscard]] auto skip(unsigned int count) noexcept {
     if (getRemainingCount() < count) {
       return false;
     }
@@ -57,7 +60,7 @@ public:
    * Ttf fonts are in big-endian, we read byte for byte to host endianness.
    */
   template <unsigned int Size>
-  auto consumeUInt() -> uint_t<Size> {
+  auto consumeUInt() noexcept -> uint_t<Size> {
     auto result = uint_t<Size>{};
     for (auto i = Size; i-- != 0U;) {
       const auto byte = static_cast<uint8_t>(*m_cur++);
@@ -67,7 +70,7 @@ public:
   }
 
   template <unsigned int Size>
-  auto consumeUIntChecked() -> uint_t<Size> {
+  auto consumeUIntChecked() noexcept -> uint_t<Size> {
     if (getRemainingCount() < Size) {
       return {};
     }
@@ -79,13 +82,13 @@ public:
    * Ttf format uses 2's complement integers and we assume the host is using that also.
    */
   template <unsigned int Size>
-  auto consumeInt() -> int_t<Size> {
+  auto consumeInt() noexcept -> int_t<Size> {
     const auto raw = consumeUInt<Size>();
     return reinterpret_cast<const int_t<Size>&>(raw);
   }
 
   template <unsigned int Size>
-  auto consumeIntChecked() -> int_t<Size> {
+  auto consumeIntChecked() noexcept -> int_t<Size> {
     if (getRemainingCount() < Size) {
       return {};
     }
@@ -160,14 +163,28 @@ struct TtfMaxpTable final {
   uint16_t maxComponentDepth;
 };
 
+struct TtfEncodingRecord final {
+  uint16_t platformId;
+  uint16_t encodingId;
+  size_t offset; // From the start of the file.
+};
+
+struct TtfCmapTable final {
+  uint16_t version;
+  math::PodVector<TtfEncodingRecord> subtables;
+};
+
 struct TtfGlyphHeader final {
   int16_t numContours;
   math::Box<int16_t, 2> glyphBounds;
 };
 
-struct TtfGlyphDataPos final {
-  size_t offset;
-  size_t size;
+struct TtfGlyph final {
+  size_t dataOffset; // From the start of the file.
+  size_t dataSize;
+  math::PodVector<CodePoint> codepoints;
+  math::PodVector<math::Vec2f> points;
+  math::PodVector<GlyphSegment> segments;
 };
 
 /* Four character string used to identify tables.
@@ -335,6 +352,137 @@ readMaxpTable(const math::RawData& raw, const TtfTableRecordMap& recordMap) noex
   return result;
 }
 
+[[nodiscard]] auto readCmap(const math::RawData& raw, const TtfTableRecordMap& recordMap) noexcept
+    -> std::optional<TtfCmapTable> {
+
+  const auto cmapItr = recordMap.find("cmap");
+  if (cmapItr == recordMap.end()) {
+    return std::nullopt;
+  }
+  const auto cmapOffset = cmapItr->second.offset;
+  const auto cmapLength = cmapItr->second.length;
+
+  auto reader = Reader{raw.begin() + cmapOffset, raw.begin() + cmapOffset + cmapLength};
+  if (reader.getRemainingCount() < 4U) {
+    return std::nullopt; // Not enough data for cmap header.
+  }
+
+  TtfCmapTable result;
+  result.version = reader.consumeUInt<2>();
+  if (result.version != 0U) {
+    return std::nullopt; // Unsupported cmap version.
+  }
+
+  const auto numTables = reader.consumeUInt<2>();
+  if (reader.getRemainingCount() < numTables * 8U) {
+    return std::nullopt; // Not enough data for the encoding tables.
+  }
+
+  result.subtables = math::PodVector<TtfEncodingRecord>{numTables};
+  for (auto i = 0U; i != numTables; ++i) {
+    result.subtables[i].platformId = reader.consumeUInt<2>();
+    result.subtables[i].encodingId = reader.consumeUInt<2>();
+    result.subtables[i].offset     = cmapOffset + reader.consumeUInt<4>();
+  }
+
+  return std::optional{std::move(result)};
+}
+
+[[nodiscard]] auto readCmapFormat4(
+    const math::RawData& raw, size_t offset, size_t size, std::vector<TtfGlyph>& output) noexcept {
+
+  auto reader = Reader{raw.begin() + offset, raw.begin() + offset + size};
+
+  struct {
+    uint16_t language; // Unused as we only support unicode (non language specific).
+    uint16_t doubleSegcount;
+    uint16_t searchRange;
+    uint16_t entrySelector;
+    uint16_t rangeShift;
+    math::PodVector<uint16_t> endCodes;
+    uint16_t reservedPad;
+    math::PodVector<uint16_t> startCodes;
+    math::PodVector<uint16_t> deltas;
+    math::PodVector<size_t> rangeOffsets;
+  } header;
+  header.language       = reader.consumeUIntChecked<2>();
+  header.doubleSegcount = reader.consumeUIntChecked<2>();
+  const auto segCount   = header.doubleSegcount / 2U;
+  header.searchRange    = reader.consumeUIntChecked<2>();
+  header.entrySelector  = reader.consumeUIntChecked<2>();
+  header.rangeShift     = reader.consumeUIntChecked<2>();
+  header.endCodes       = math::PodVector<uint16_t>{segCount};
+  for (auto i = 0U; i != segCount; ++i) {
+    header.endCodes[i] = reader.consumeUInt<2>();
+  }
+  header.reservedPad = reader.consumeUIntChecked<2U>();
+  header.startCodes  = math::PodVector<uint16_t>{segCount};
+  for (auto i = 0U; i != segCount; ++i) {
+    header.startCodes[i] = reader.consumeUIntChecked<2>();
+  }
+  header.deltas = math::PodVector<uint16_t>{segCount};
+  for (auto i = 0U; i != segCount; ++i) {
+    header.deltas[i] = reader.consumeIntChecked<2>();
+  }
+  header.rangeOffsets = math::PodVector<size_t>{segCount};
+  for (auto i = 0U; i != segCount; ++i) {
+    const auto rangeOffset = reader.consumeUIntChecked<2>();
+    // Range offsets are a tad strange, as they are actually an offset from the current location in
+    // the file, here we convert them to absolute offsets into the file.
+    header.rangeOffsets[i] =
+        rangeOffset == 0U ? 0U : reader.getCurrent() - raw.begin() + rangeOffset - 2U;
+  }
+
+  // Iterate over every segment (block of codepoints) and map the codepoint to the glyph.
+  for (auto segmentIdx = 0U; segmentIdx != segCount; ++segmentIdx) {
+    const auto startCode   = header.startCodes[segmentIdx];
+    const auto endCode     = header.endCodes[segmentIdx];
+    const auto delta       = header.deltas[segmentIdx];
+    const auto rangeOffset = header.rangeOffsets[segmentIdx];
+    if (startCode == 0xFFFF || endCode == 0xFFFF) {
+      continue; // 0xFFFF in the ending segment as a stop sentinel.
+    }
+    for (auto code = startCode; code <= endCode; ++code) {
+      // There are two different ways of mapping segments to glyphs, either a direct mapping (with
+      // an offset) or a lookup table.
+      if (rangeOffset == 0U) {
+        // Directly map a code-point to a glyph (with a offset named 'delta').
+        const auto glyphId = (code + delta) % 65536U;
+        if (glyphId < output.size()) {
+          output[glyphId].codepoints.push_back(code);
+        }
+      } else {
+        // Read the glyph-id from a lookup table.
+        auto glyphIdReader = Reader{raw.begin() + rangeOffset + (code - startCode) * 2U, raw.end()};
+        auto glyphId       = glyphIdReader.consumeUIntChecked<2>();
+        if (glyphId < output.size()) {
+          output[glyphId].codepoints.push_back(code);
+        }
+      }
+    }
+  }
+  return true;
+}
+
+[[nodiscard]] auto readCodepoints(
+    const math::RawData& raw,
+    const TtfCmapTable& cmapTable,
+    std::vector<TtfGlyph>& output) noexcept {
+
+  for (const auto& subtable : cmapTable.subtables) {
+    auto reader = Reader{raw.begin() + subtable.offset, raw.end()};
+    if (reader.getRemainingCount() < 2U) {
+      continue; // Not enough data remaining for a format id.
+    }
+    switch (reader.consumeUInt<2U>()) {
+    case 4U:
+      const auto size = reader.consumeUIntChecked<2>();
+      return readCmapFormat4(raw, subtable.offset + 4U, size, output);
+    }
+  }
+  return false;
+}
+
 /* Get the offsets and sizes in the file for all glyphs.
  * Returns mapping of glyph index to its [offset, size] in the file, size can be zero if there is no
  * data for that glyph index.
@@ -343,18 +491,19 @@ readMaxpTable(const math::RawData& raw, const TtfTableRecordMap& recordMap) noex
     const math::RawData& raw,
     const TtfTableRecordMap& recordMap,
     const TtfHeadTable& headTable,
-    const TtfMaxpTable& maxExpTable) noexcept -> math::PodVector<TtfGlyphDataPos> {
+    const TtfMaxpTable& maxExpTable,
+    std::vector<TtfGlyph>& output) noexcept {
 
   const auto locaItr = recordMap.find("loca");
   if (locaItr == recordMap.end()) {
-    return {};
+    return false;
   }
   const auto locaOffset = locaItr->second.offset;
   const auto locaLength = locaItr->second.length;
 
   const auto glyfItr = recordMap.find("glyf");
   if (locaItr == recordMap.end()) {
-    return {};
+    return false;
   }
 
   auto reader = Reader{raw.begin() + locaOffset, raw.begin() + locaOffset + locaLength};
@@ -366,7 +515,7 @@ readMaxpTable(const math::RawData& raw, const TtfTableRecordMap& recordMap) noex
      */
     if (locaLength != offsets.size() * 4U) {
       // Not enough space to have offsets for all glyphs.
-      return {};
+      return false;
     }
     for (auto i = 0U; i != offsets.size(); ++i) {
       offsets[i] = glyfItr->second.offset + reader.consumeUInt<4>();
@@ -377,7 +526,7 @@ readMaxpTable(const math::RawData& raw, const TtfTableRecordMap& recordMap) noex
      */
     if (locaLength != offsets.size() * 2U) {
       // Not enough space to have offsets for all glyphs.
-      return {};
+      return false;
     }
     for (auto i = 0U; i != offsets.size(); ++i) {
       offsets[i] = glyfItr->second.offset + reader.consumeUInt<2>() * 2U;
@@ -387,13 +536,12 @@ readMaxpTable(const math::RawData& raw, const TtfTableRecordMap& recordMap) noex
   /* Calculate size based on the difference between this entries offset and the next, there is a
    * extra end offset after the last entry.
    */
-  auto result = math::PodVector<TtfGlyphDataPos>(numGlyphs);
-  for (auto i = 0U; i != result.size(); ++i) {
+  for (auto i = 0U; i != numGlyphs; ++i) {
     assert(offsets[i] <= glyfItr->second.offset + glyfItr->second.length);
-    result[i].offset = offsets[i];
-    result[i].size   = offsets[i + 1U] - offsets[i];
+    output[i].dataOffset = offsets[i];
+    output[i].dataSize   = offsets[i + 1U] - offsets[i];
   }
-  return result;
+  return true;
 }
 
 /* Calculate the amount of points in a glyph. Takes the implicit points that 'close' contours and
@@ -416,12 +564,11 @@ getGlyphPointCount(const math::PodVector<uint8_t>& flags, uint16_t numContours) 
 [[nodiscard]] auto buildGlyph(
     const math::PodVector<uint8_t>& ttfFlags,
     const math::PodVector<uint16_t>& ttfContourEndPoints,
-    const math::PodVector<math::Vec2f>& ttfPoints) noexcept {
+    const math::PodVector<math::Vec2f>& ttfPoints,
+    TtfGlyph& output) noexcept {
 
-  auto segments   = math::PodVector<GlyphSegment>{};
-  auto points     = math::PodVector<math::Vec2f>{};
   auto pointCount = getGlyphPointCount(ttfFlags, ttfContourEndPoints.size());
-  points.reserve(pointCount);
+  output.points.reserve(pointCount);
 
   for (auto c = 0U; c != ttfContourEndPoints.size(); ++c) {
     const auto cStart = c == 0U ? 0U : ttfContourEndPoints[c - 1U];
@@ -432,7 +579,7 @@ getGlyphPointCount(const math::PodVector<uint8_t>& flags, uint16_t numContours) 
 
     // TODO(bastian): Check if the TTF spec enforces the first point to be 'onCurve'.
     assert(ttfFlags[cStart] & 0x01); // Assume 'onCurve'.
-    points.push_back(ttfPoints[cStart]);
+    output.points.push_back(ttfPoints[cStart]);
     for (auto i = cStart; i != cEnd; ++i) {
       const auto cur  = i;
       const auto next = (i + 1U) == cEnd ? cStart : i + 1U; // Wraps around for the last entry.
@@ -446,7 +593,7 @@ getGlyphPointCount(const math::PodVector<uint8_t>& flags, uint16_t numContours) 
          * Otherwise this point 'finishes' the previous curve.
          */
         if (curOnCurve) {
-          segments.emplace_back(GlyphSegmentType::Line, points.size() - 1U);
+          output.segments.emplace_back(GlyphSegmentType::Line, output.points.size() - 1U);
         }
       } else {
         /* Next is a control point.
@@ -454,18 +601,18 @@ getGlyphPointCount(const math::PodVector<uint8_t>& flags, uint16_t numContours) 
          * finish the previous curve.
          */
         if (!curOnCurve) {
-          points.push_back((ttfPoints[cur] + ttfPoints[next]) * .5f);
+          output.points.push_back((ttfPoints[cur] + ttfPoints[next]) * .5f);
         }
-        segments.emplace_back(GlyphSegmentType::QuadraticBezier, points.size() - 1U);
+        output.segments.emplace_back(GlyphSegmentType::QuadraticBezier, output.points.size() - 1U);
         assert(i + 1U < cEnd); // One additional point has to follow this to 'finnish' the curve.
       }
 
-      points.push_back(ttfPoints[next]);
+      output.points.push_back(ttfPoints[next]);
     }
   }
 
-  assert(points.size() == pointCount);
-  return Glyph{std::move(points), std::move(segments)};
+  assert(output.points.size() == pointCount);
+  return true;
 }
 
 [[nodiscard]] auto readGlyphFlags(Reader& reader, const uint16_t count) noexcept
@@ -482,13 +629,15 @@ getGlyphPointCount(const math::PodVector<uint8_t>& flags, uint16_t numContours) 
   return flags;
 }
 
-[[nodiscard]] auto
-readGlyphSimple(Reader& reader, TtfGlyphHeader header, math::Box<int16_t, 2> bounds) noexcept
-    -> std::optional<Glyph> {
+[[nodiscard]] auto readGlyphSimple(
+    Reader& reader,
+    TtfGlyphHeader header,
+    math::Box<int16_t, 2> bounds,
+    TtfGlyph& output) noexcept {
 
   // Read contour data.
   if (reader.getRemainingCount() < header.numContours * 2U) {
-    return std::nullopt; // Not enough data for contour endpoints.
+    return false; // Not enough data for contour endpoints.
   }
   auto contourEndPoints = math::PodVector<uint16_t>(header.numContours);
   for (auto i = 0U; i != contourEndPoints.size(); ++i) {
@@ -498,15 +647,16 @@ readGlyphSimple(Reader& reader, TtfGlyphHeader header, math::Box<int16_t, 2> bou
 
   // Skip over ttf instruction byte code for hinting, we do not support it.
   if (reader.getRemainingCount() < 2U) {
-    return std::nullopt; // Not enough data for instruction length;
+    return false; // Not enough data for instruction length;
   }
   const auto instructionLength = reader.consumeUInt<2>();
   if (!reader.skip(instructionLength)) {
-    return std::nullopt; // Not enough data for instructions;
+    return false; // Not enough data for instructions;
   }
 
-  auto flags  = readGlyphFlags(reader, contourEndPoints.back());
-  auto points = math::PodVector<math::Vec2f>(contourEndPoints.back());
+  auto numPoints = contourEndPoints.empty() ? 0U : contourEndPoints.back();
+  auto flags     = readGlyphFlags(reader, numPoints);
+  auto points    = math::PodVector<math::Vec2f>(numPoints);
 
   // Read the x coordinates for all points.
   auto xPos = 0;
@@ -538,16 +688,16 @@ readGlyphSimple(Reader& reader, TtfGlyphHeader header, math::Box<int16_t, 2> bou
         static_cast<float>(yPos));
   }
 
-  return buildGlyph(flags, contourEndPoints, points);
+  return buildGlyph(flags, contourEndPoints, points, output);
 }
 
-[[nodiscard]] auto readGlyph(
-    const math::RawData& raw, size_t offset, size_t size, math::Box<int16_t, 2> bounds) noexcept
-    -> std::optional<Glyph> {
+[[nodiscard]] auto
+readGlyph(const math::RawData& raw, math::Box<int16_t, 2> bounds, TtfGlyph& output) noexcept {
 
-  auto reader = Reader{raw.begin() + offset, raw.begin() + offset + size};
-  if (size < 10U) {
-    return std::nullopt; // Not enough space for a glyph header.
+  auto reader =
+      Reader{raw.begin() + output.dataOffset, raw.begin() + output.dataOffset + output.dataSize};
+  if (reader.getRemainingCount() < 10U) {
+    return false; // Not enough space for a glyph header.
   }
 
   TtfGlyphHeader header;
@@ -557,16 +707,22 @@ readGlyphSimple(Reader& reader, TtfGlyphHeader header, math::Box<int16_t, 2> bou
   header.glyphBounds.max().x() = reader.consumeInt<2>();
   header.glyphBounds.max().y() = reader.consumeInt<2>();
 
-  if (header.numContours <= 0) {
-    // Composite glyphs (negative numContours) are not supported at this time.
-    return std::nullopt;
+  if (header.numContours == 0) {
+    // Glyphs with no contours are valid, for example a space character glyph.
+    return true;
   }
-  return readGlyphSimple(reader, header, bounds);
+
+  if (header.numContours < 0) {
+    // Composite glyphs (negative numContours) are not supported at this time.
+    return false;
+  }
+
+  return readGlyphSimple(reader, header, bounds, output);
 }
 
 } // namespace
 
-auto loadFontTtf(log::Logger* /*unused*/, DatabaseImpl* /*unused*/, AssetId id, math::RawData raw)
+auto loadFontTtf(log::Logger* logger, DatabaseImpl* /*unused*/, AssetId id, math::RawData raw)
     -> AssetUnique {
 
   auto reader               = Reader{raw.begin(), raw.end()};
@@ -580,7 +736,7 @@ auto loadFontTtf(log::Logger* /*unused*/, DatabaseImpl* /*unused*/, AssetId id, 
   if (!validateTtfFile(raw, offsetTableOpt->records)) {
     throw err::FontTtfErr{"Malformed ttf file"};
   }
-  auto headTableOpt = readHeadTable(raw, offsetTableOpt->records);
+  const auto headTableOpt = readHeadTable(raw, offsetTableOpt->records);
   if (!headTableOpt || headTableOpt->magicNumber != 0x5F0F3CF5) {
     throw err::FontTtfErr{"Invalid head table"};
   }
@@ -590,26 +746,50 @@ auto loadFontTtf(log::Logger* /*unused*/, DatabaseImpl* /*unused*/, AssetId id, 
   if (headTableOpt->fontDirectionHint != 2U) {
     throw err::FontTtfErr{"fontDirectionHint is deprecated"};
   }
-  auto maxpTableOpt = readMaxpTable(raw, offsetTableOpt->records);
+  const auto maxpTableOpt = readMaxpTable(raw, offsetTableOpt->records);
   if (!maxpTableOpt) {
     throw err::FontTtfErr{"Invalid maxp table"};
   }
-  auto glyphsDataPositions =
-      readGlyphDataPositions(raw, offsetTableOpt->records, *headTableOpt, *maxpTableOpt);
-  if (glyphsDataPositions.empty()) {
-    throw err::FontTtfErr{"No valid glyph data found"};
+
+  auto glyphData = std::vector<TtfGlyph>(maxpTableOpt->numGlyphs);
+
+  const auto cmapTableOpt = readCmap(raw, offsetTableOpt->records);
+  if (!cmapTableOpt) {
+    throw err::FontTtfErr{"Invalid cmap table"};
   }
-  auto glyphs = std::vector<Glyph>{};
-  glyphs.reserve(glyphsDataPositions.size());
-  for (const auto [offset, size] : glyphsDataPositions) {
-    if (size > 0U) {
-      auto glyphOpt = readGlyph(raw, offset, size, headTableOpt->glyphBounds);
-      if (glyphOpt) {
-        glyphs.push_back(std::move(*glyphOpt));
-      }
+  if (!readCodepoints(raw, *cmapTableOpt, glyphData)) {
+    throw err::FontTtfErr{"Unable to read codepoints (no supported cmap encoding?)"};
+  }
+
+  if (!readGlyphDataPositions(
+          raw, offsetTableOpt->records, *headTableOpt, *maxpTableOpt, glyphData)) {
+    throw err::FontTtfErr{"Unable to locate glyph data"};
+  }
+  for (auto i = 0U; i != glyphData.size(); ++i) {
+    if (glyphData[i].dataSize == 0U) {
+      continue; // Glyphs without data are valid, for example a space character glyph.
+    }
+
+    if (!readGlyph(raw, headTableOpt->glyphBounds, glyphData[i])) {
+      LOG_W(
+          logger,
+          "Failed to read glyph",
+          {"glyphId", i},
+          {"codepoints", glyphData[i].codepoints},
+          {"dataOffset", glyphData[i].dataOffset},
+          {"dataSize", glyphData[i].dataSize});
     }
   }
 
+  // Copy the glyph-data to the final (immutable) glyph structure.
+  auto glyphs = std::vector<Glyph>{};
+  glyphs.reserve(glyphData.size());
+  for (auto i = 0U; i != glyphData.size(); ++i) {
+    assert(glyphData[i].codepoints.size() < 2);
+    glyphs.push_back(Glyph{std::move(glyphData[i].codepoints),
+                           std::move(glyphData[i].points),
+                           std::move(glyphData[i].segments)});
+  }
   return std::make_unique<Font>(std::move(id), std::move(glyphs));
 }
 
