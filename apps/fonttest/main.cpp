@@ -3,107 +3,84 @@
 #include "tria/gfx/context.hpp"
 #include "tria/math/pod_vector.hpp"
 #include "tria/math/utils.hpp"
+#include "tria/math/vec.hpp"
 #include "tria/pal/platform.hpp"
 #include "tria/pal/utils.hpp"
 #include <chrono>
+#include <cstring>
 #include <thread>
 
 using namespace std::literals;
 using namespace tria;
 using namespace tria::math;
+using namespace tria::asset;
 using namespace std::chrono;
 
-auto quadBezier(math::Vec2f p0, math::Vec2f p1, math::Vec2f p2, float t) {
-  const auto invT = 1.f - t;
-  return p1 + (p0 - p1) * invT * invT + (p2 - p1) * t * t;
+auto xRoot(Vec2f p1, Vec2f p2) {
+  // line equation: p = p1 + (p2 - p1) * t
+
+  // 0      = p1.y + (p2.y - p1.y) * t
+  // -p1.y  = (p2.y - p1.y) * t
+  // -p1.y / (p2.y - p1.y) = t
+
+  // t = p1.y / (p2.y - p1.y)
+
+  const auto to2 = p2 - p1;
+  if (to2.y() == 0.f) {
+    // parallel line, no root.
+    return -1.f;
+  }
+  const auto t = -p1.y() / to2.y();
+  if (t < 0.f || t > 1.f) {
+    return -1.f;
+  }
+  return p1.x() + to2.x() * t;
 }
 
-auto drawGlyph(asset::Database& db, gfx::Canvas& canvas, const asset::Glyph* glyph, Box2f bounds) {
-  static auto points = math::PodVector<math::Vec2f>{};
-
-  points.clear();
-  for (auto* s = glyph->getSegmentsBegin(); s != glyph->getSegmentsEnd(); ++s) {
-    switch (s->type) {
-    case asset::GlyphSegmentType::Line: {
-      points.emplace_back(
-          lerp(bounds.min().x(), bounds.max().x(), glyph->getPoint(s->startPointIdx + 0U).x()),
-          lerp(bounds.min().y(), bounds.max().y(), glyph->getPoint(s->startPointIdx + 0U).y()));
-      points.emplace_back(
-          lerp(bounds.min().x(), bounds.max().x(), glyph->getPoint(s->startPointIdx + 1U).x()),
-          lerp(bounds.min().y(), bounds.max().y(), glyph->getPoint(s->startPointIdx + 1U).y()));
+auto contains(Vec2f point, const Glyph* glyph) {
+  auto num = 0U;
+  for (auto itr = glyph->getSegmentsBegin(); itr != glyph->getSegmentsEnd(); ++itr) {
+    switch (itr->type) {
+    case GlyphSegmentType::Line: {
+      const auto p1   = glyph->getPoint(itr->startPointIdx);
+      const auto p2   = glyph->getPoint(itr->startPointIdx + 1U);
+      const auto root = xRoot(p1 - point, p2 - point);
+      num += root >= 0.f;
     } break;
-    case asset::GlyphSegmentType::QuadraticBezier: {
-      const auto numSegs = 5U;
-      for (auto i = 0U; i != numSegs; ++i) {
-        auto t = i / static_cast<float>(numSegs - 1U);
-        auto p = quadBezier(
-            glyph->getPoint(s->startPointIdx),
-            glyph->getPoint(s->startPointIdx + 1U),
-            glyph->getPoint(s->startPointIdx + 2U),
-            t);
-        if (i > 1U) {
-          points.push_back(points.back());
-        }
-        points.emplace_back(
-            lerp(bounds.min().x(), bounds.max().x(), p.x()),
-            lerp(bounds.min().y(), bounds.max().y(), p.y()));
-      }
+    case GlyphSegmentType::QuadraticBezier: {
+      const auto p1 = glyph->getPoint(itr->startPointIdx);
+      // const auto c = glyph->getPoint(itr->startPointIdx + 1U);
+      const auto p2   = glyph->getPoint(itr->startPointIdx + 2U);
+      const auto root = xRoot(p1 - point, p2 - point);
+      num += root >= 0.f;
     } break;
     }
   }
-
-  canvas.draw(
-      db.get("graphics/lines.gfx")->downcast<asset::Graphic>(),
-      static_cast<uint32_t>(points.size()),
-      points.data(),
-      points.size() * sizeof(math::Vec2f),
-      1U);
+  return (num % 2U) == 1U;
 }
 
-auto runApp(pal::Platform& platform, asset::Database& db, gfx::Context& gfx) {
+auto runApp(pal::Platform& /*unused*/, asset::Database& db, gfx::Context& /*unused*/) {
+  const auto* font  = db.get("fonts/hack_regular.ttf")->downcast<asset::Font>();
+  const auto* glyph = font->getGlyph(0x42);
+  const auto size   = 128U;
 
-  auto win    = platform.createWindow({512, 512});
-  auto canvas = gfx.createCanvas(
-      &win,
-      gfx::VSyncMode::Enable,
-      gfx::SampleCount::X1,
-      gfx::DepthMode::Disable,
-      gfx::clearMask(gfx::Clear::Color));
+  using Rgb = math::Vec<uint8_t, 3>;
 
-  auto offset = 0U;
-  while (!win.getIsCloseRequested()) {
-    platform.handleEvents();
-
-    if (canvas.drawBegin()) {
-      const auto* font    = db.get("fonts/hack_regular.ttf")->downcast<asset::Font>();
-      const auto gridSize = 5U;
-
-      if (win.isKeyPressed(pal::Key::Space)) {
-        if (offset > font->getGlyphCount()) {
-          offset = 0;
-        } else {
-          offset += gridSize * gridSize;
-        }
-      }
-
-      for (auto y = 0U; y != gridSize; ++y) {
-        for (auto x = 0U; x != gridSize; ++x) {
-          auto* glyph = font->getGlyphBegin() + offset + y * gridSize + x;
-          if (glyph < font->getGlyphEnd()) {
-            auto xNrm = x / static_cast<float>(gridSize);
-            auto yNrm = y / static_cast<float>(gridSize);
-            drawGlyph(
-                db, canvas, glyph, {{xNrm, yNrm}, {xNrm + 1.f / gridSize, yNrm + 1.f / gridSize}});
-          }
-        }
-      }
-      canvas.drawEnd();
-
-    } else {
-      // Unable to draw, possibly due to a minimized window.
-      std::this_thread::sleep_for(100ms);
+  auto pixels = PodVector<Rgb>{size * size};
+  for (auto y = 0U; y != size; ++y) {
+    for (auto x = 0U; x != size; ++x) {
+      const auto point     = Vec2f{(x + .5f) / size, (y + .5f) / size};
+      pixels[y * size + x] = contains(point, glyph) ? Rgb{255U, 255U, 255U} : Rgb{0U, 0U, 0U};
     }
   }
+
+  const auto destPath = pal::getCurExecutablePath().replace_extension("ppm");
+  auto* fileHandle    = std::fopen(destPath.u8string().c_str(), "wb");
+  const auto* header  = "P6\n128 128\n255\n";
+  std::fwrite(header, std::strlen(header), 1U, fileHandle);
+  std::fwrite(pixels.data(), pixels.size() * sizeof(Rgb), 1U, fileHandle);
+  std::fclose(fileHandle);
+
   return 0;
 }
 
