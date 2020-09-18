@@ -12,8 +12,8 @@ void main() {
   InstanceData inst = GET_INST();
 
   vec4 rawPoint = inst.points[gl_VertexIndex / 2];
-  vec2 point = gl_VertexIndex % 2 == 0 ? rawPoint.xy : rawPoint.zw;
+  vec2 point    = gl_VertexIndex % 2 == 0 ? rawPoint.xy : rawPoint.zw;
+  point.y *= -1.0;
 
-  point.y     = 1 - point.y;
-  gl_Position = vec4(point * 2.0 - 1.0, 0.0, 1.0);
+  gl_Position = vec4(point, 0.0, 1.0);
 }

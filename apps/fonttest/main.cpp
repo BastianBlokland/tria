@@ -3,103 +3,163 @@
 #include "tria/gfx/context.hpp"
 #include "tria/math/pod_vector.hpp"
 #include "tria/math/utils.hpp"
-#include "tria/math/vec.hpp"
 #include "tria/pal/platform.hpp"
 #include "tria/pal/utils.hpp"
 #include <chrono>
-#include <cstring>
 #include <thread>
 
 using namespace std::literals;
 using namespace tria;
 using namespace tria::math;
-using namespace tria::asset;
 using namespace std::chrono;
 
-auto xRoot(Vec2f p1, Vec2f p2) {
-  // line equation: p = p1 + (p2 - p1) * t
-
-  // 0      = p1.y + (p2.y - p1.y) * t
-  // -p1.y  = (p2.y - p1.y) * t
-  // -p1.y / (p2.y - p1.y) = t
-
-  // t = p1.y / (p2.y - p1.y)
-
-  const auto to2 = p2 - p1;
-  if (to2.y() == 0.f) {
-    // parallel line, no root.
-    return -1.f;
-  }
-  const auto t = -p1.y() / to2.y();
-  if (t < 0.f || t > 1.f) {
-    return -1.f;
-  }
-  return p1.x() + to2.x() * t;
+auto quadBezier(math::Vec2f p0, math::Vec2f c, math::Vec2f p1, float t) {
+  const auto invT = 1.f - t;
+  return c + (p0 - c) * invT * invT + (p1 - c) * t * t;
 }
 
-auto contains(Vec2f point, const Glyph* glyph) {
-  auto num = 0U;
-  for (auto itr = glyph->getSegmentsBegin(); itr != glyph->getSegmentsEnd(); ++itr) {
-    switch (itr->type) {
-    case GlyphSegmentType::Line: {
-      const auto p1   = glyph->getPoint(itr->startPointIdx);
-      const auto p2   = glyph->getPoint(itr->startPointIdx + 1U);
-      const auto root = xRoot(p1 - point, p2 - point);
-      num += root >= 0.f;
-    } break;
-    case GlyphSegmentType::QuadraticBezier: {
-      const auto p1 = glyph->getPoint(itr->startPointIdx);
-      // const auto c = glyph->getPoint(itr->startPointIdx + 1U);
-      const auto p2   = glyph->getPoint(itr->startPointIdx + 2U);
-      const auto root = xRoot(p1 - point, p2 - point);
-      num += root >= 0.f;
-    } break;
-    }
+[[nodiscard]] auto quadBezierRoots(Vec2f p0, Vec2f c, Vec2f p1) -> std::vector<float> {
+  /* (1 - t)² * p0.y + 2 * t * (1 - t) * c.y + t² * p1.y = 0
+   * t1 = -sqrt(c² - p0.y * p1.y + c.y - p0.y) / (2 * c.y - p0.y - p1.y)
+   * t2 = sqrt(c² - p0.y * p1.y + c.y - p0.y) / (2 * c.y - p0.y - p1.y)
+   */
+  const auto d  = c.y() * c.y() - p0.y() * p1.y() + c.y() - p0.y();
+  const auto v  = std::sqrt(d);
+  const auto v2 = 2 * c.y() - p0.y() - p1.y();
+  // if (d <= .0f) {
+  //   return {};
+  // }
+  const auto ta = -v / v2;
+  const auto tb = v / v2;
+  auto result   = std::vector<float>{};
+  if (ta >= 0.f && ta <= 1.f) {
+    // const auto xa = (1 - ta) * (1 - ta) * p0.x() + 2 * ta * (1 - ta) * c.x() + ta * ta * p1.x();
+    result.push_back(quadBezier(p0, c, p1, ta).x());
   }
-  return (num % 2U) == 1U;
+  if (tb >= 0.f && tb <= 1.f) {
+    // const auto xb = (1 - tb) * (1 - tb) * p0.x() + 2 * tb * (1 - tb) * c.x() + tb * tb * p1.x();
+    result.push_back(quadBezier(p0, c, p1, tb).x());
+  }
+  return result;
 }
 
-auto runApp(pal::Platform& /*unused*/, asset::Database& db, gfx::Context& /*unused*/) {
-  const auto* font  = db.get("fonts/hack_regular.ttf")->downcast<asset::Font>();
-  const auto* glyph = font->getGlyph(0x42);
-  const auto size   = 128U;
+auto plot(asset::Database& db, gfx::Canvas& canvas, math::Vec2f p0, math::Vec2f c, math::Vec2f p1) {
+  static auto points = math::PodVector<math::Vec2f>{};
+  points.clear();
 
-  using Rgb = math::Vec<uint8_t, 3>;
-
-  auto pixels = PodVector<Rgb>{size * size};
-  for (auto y = 0U; y != size; ++y) {
-    for (auto x = 0U; x != size; ++x) {
-      const auto point     = Vec2f{(x + .5f) / size, (y + .5f) / size};
-      pixels[y * size + x] = contains(point, glyph) ? Rgb{255U, 255U, 255U} : Rgb{0U, 0U, 0U};
+  const auto numSegs = 100U;
+  for (auto i = 0U; i != numSegs; ++i) {
+    auto t = i / static_cast<float>(numSegs - 1U);
+    auto p = quadBezier(p0, c, p1, t);
+    if (i > 1U) {
+      points.push_back(points.back());
     }
+    points.emplace_back(p);
   }
 
-  const auto destPath = pal::getCurExecutablePath().replace_extension("ppm");
-  auto* fileHandle    = std::fopen(destPath.u8string().c_str(), "wb");
-  const auto* header  = "P6\n128 128\n255\n";
-  std::fwrite(header, std::strlen(header), 1U, fileHandle);
-  std::fwrite(pixels.data(), pixels.size() * sizeof(Rgb), 1U, fileHandle);
-  std::fclose(fileHandle);
+  canvas.draw(
+      db.get("graphics/lines.gfx")->downcast<asset::Graphic>(),
+      static_cast<uint32_t>(points.size()),
+      points.data(),
+      points.size() * sizeof(math::Vec2f),
+      1U);
+}
 
+auto drawCircle(asset::Database& db, gfx::Canvas& canvas, math::Vec2f p) {
+  canvas.draw(db.get("graphics/circle.gfx")->downcast<asset::Graphic>(), p);
+}
+
+auto drawCircleRed(asset::Database& db, gfx::Canvas& canvas, math::Vec2f p) {
+  canvas.draw(db.get("graphics/circle_red.gfx")->downcast<asset::Graphic>(), p);
+}
+
+auto drawLine(asset::Database& db, gfx::Canvas& canvas, math::Vec2f p0, math::Vec2f p1) {
+  static auto points = math::PodVector<math::Vec2f>{};
+  points.clear();
+
+  points.push_back(p0);
+  points.push_back(p1);
+
+  canvas.draw(
+      db.get("graphics/lines_gray.gfx")->downcast<asset::Graphic>(),
+      static_cast<uint32_t>(points.size()),
+      points.data(),
+      points.size() * sizeof(math::Vec2f),
+      1U);
+}
+
+auto runApp(pal::Platform& platform, asset::Database& db, gfx::Context& gfx) {
+  auto win    = platform.createWindow({512, 512});
+  auto canvas = gfx.createCanvas(
+      &win,
+      gfx::VSyncMode::Enable,
+      gfx::SampleCount::X1,
+      gfx::DepthMode::Disable,
+      gfx::clearMask(gfx::Clear::Color));
+
+  auto p0 = Vec2f{-.5f, 0.f};
+  auto c  = Vec2f{+.0f, +.5f};
+  auto p1 = Vec2f{+.5f, 0.f};
+
+  while (!win.getIsCloseRequested()) {
+    platform.handleEvents();
+    if (canvas.drawBegin()) {
+
+      if (win.isKeyDown(pal::Key::Alpha1)) {
+        p0 = (win.getMousePosNrm() * 2.f - Vec2f{1.f, 1.f}) * Vec2f{1.f, -1.f};
+      }
+      if (win.isKeyDown(pal::Key::Alpha2)) {
+        c = (win.getMousePosNrm() * 2.f - Vec2f{1.f, 1.f}) * Vec2f{1.f, -1.f};
+      }
+      if (win.isKeyDown(pal::Key::Alpha3)) {
+        p1 = (win.getMousePosNrm() * 2.f - Vec2f{1.f, 1.f}) * Vec2f{1.f, -1.f};
+      }
+
+      drawLine(db, canvas, {-1, 0}, {1, 0});
+      drawLine(db, canvas, {0, -1}, {0, 1});
+
+      plot(db, canvas, p0, c, p1);
+      drawCircle(db, canvas, p0);
+      drawCircle(db, canvas, c);
+      drawCircle(db, canvas, p1);
+
+      for (const auto x : quadBezierRoots(p0, c, p1)) {
+        drawCircleRed(db, canvas, {x, 0});
+      }
+
+      canvas.drawEnd();
+    } else {
+      // Unable to draw, possibly due to a minimized window.
+      std::this_thread::sleep_for(100ms);
+    }
+
+    char titleBuffer[256];
+    std::snprintf(
+        titleBuffer,
+        sizeof(titleBuffer),
+        "p0: (%.2f, %.2f), c: (%.2f, %.2f), p1: (%.2f, %.2f)",
+        p0.x(),
+        p0.y(),
+        c.x(),
+        c.y(),
+        p1.x(),
+        p1.y());
+    win.setTitle(titleBuffer);
+  }
   return 0;
 }
 
 auto main(int /*unused*/, char* * /*unused*/) -> int {
-
   pal::setThreadName("tria_main_thread");
-
   auto logger = log::Logger{
       log::makeConsolePrettySink(),
       log::makeFileJsonSink(pal::getCurExecutablePath().replace_extension("log"))};
-
   int ret;
   try {
     auto platform = pal::Platform{&logger};
     auto db = asset::Database{&logger, pal::getCurExecutablePath().parent_path() / "fonttest_data"};
     auto gfx = gfx::Context{&logger};
-
     LOG_I(&logger, "FontTest startup");
-
     ret = runApp(platform, db, gfx);
   } catch (const std::exception& e) {
     LOG_E(&logger, "Uncaught exception", {"what", e.what()});
@@ -108,7 +168,6 @@ auto main(int /*unused*/, char* * /*unused*/) -> int {
     LOG_E(&logger, "Uncaught exception");
     ret = 1;
   }
-
   LOG_I(&logger, "FontTest shutdown");
   return ret;
 }

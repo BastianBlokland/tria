@@ -1,7 +1,7 @@
 {
   "shaders": [
     "shaders/lines.vert.spv",
-    "shaders/blue.frag.spv"
+    "shaders/gray.frag.spv"
   ],
   "topology": "lines",
   "lineWidth": 2,

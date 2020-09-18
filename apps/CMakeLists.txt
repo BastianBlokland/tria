@@ -114,8 +114,15 @@ target_link_libraries(fonttest PRIVATE tria_log)
 target_link_libraries(fonttest PRIVATE tria_gfx)
 configure_shaders(fonttest_data ${CMAKE_CURRENT_SOURCE_DIR}/fonttest_data
   shaders/lines.vert
-  shaders/white.frag)
+  shaders/circle.vert
+  shaders/white.frag
+  shaders/gray.frag
+  shaders/blue.frag
+  shaders/tex.frag
+  shaders/tex_red.frag)
 configure_data(fonttest_data ${CMAKE_CURRENT_SOURCE_DIR}/fonttest_data
   fonts
-  graphics)
+  graphics
+  meshes
+  textures)
 add_dependencies(fonttest fonttest_data)
