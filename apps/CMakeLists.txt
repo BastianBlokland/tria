@@ -118,6 +118,7 @@ configure_shaders(fonttest_data ${CMAKE_CURRENT_SOURCE_DIR}/fonttest_data
   shaders/white.frag
   shaders/gray.frag
   shaders/blue.frag
+  shaders/red.frag
   shaders/tex.frag
   shaders/tex_red.frag)
 configure_data(fonttest_data ${CMAKE_CURRENT_SOURCE_DIR}/fonttest_data

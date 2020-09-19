@@ -79,6 +79,29 @@ auto plot(asset::Database& db, gfx::Canvas& canvas, math::Vec2f p0, math::Vec2f 
       1U);
 }
 
+auto plotRed(
+    asset::Database& db, gfx::Canvas& canvas, math::Vec2f p0, math::Vec2f c, math::Vec2f p1) {
+  static auto points = math::PodVector<math::Vec2f>{};
+  points.clear();
+
+  const auto numSegs = 100U;
+  for (auto i = 0U; i != numSegs; ++i) {
+    auto t = i / static_cast<float>(numSegs - 1U);
+    auto p = quadBezier(p0, c, p1, t);
+    if (i > 1U) {
+      points.push_back(points.back());
+    }
+    points.emplace_back(p);
+  }
+
+  canvas.draw(
+      db.get("graphics/lines_red.gfx")->downcast<asset::Graphic>(),
+      static_cast<uint32_t>(points.size()),
+      points.data(),
+      points.size() * sizeof(math::Vec2f),
+      1U);
+}
+
 auto drawCircle(asset::Database& db, gfx::Canvas& canvas, math::Vec2f p) {
   canvas.draw(db.get("graphics/circle.gfx")->downcast<asset::Graphic>(), p);
 }
@@ -102,6 +125,56 @@ auto drawLine(asset::Database& db, gfx::Canvas& canvas, math::Vec2f p0, math::Ve
       1U);
 }
 
+auto drawGlyph(asset::Database& db, gfx::Canvas& canvas, const asset::Glyph* glyph) {
+  auto red           = false;
+  const auto numSegs = glyph->getNumSegments();
+  for (auto i = 0U; i != numSegs; ++i) {
+    const auto* seg = glyph->getSegmentsBegin() + i;
+    switch (seg->type) {
+    case tria::asset::GlyphSegmentType::Line:
+      drawLine(
+          db,
+          canvas,
+          glyph->getPoint(seg->startPointIdx),
+          glyph->getPoint(seg->startPointIdx + 1U));
+      break;
+    case tria::asset::GlyphSegmentType::QuadraticBezier:
+      red = !red;
+      if (red) {
+        plot(
+            db,
+            canvas,
+            glyph->getPoint(seg->startPointIdx),
+            glyph->getPoint(seg->startPointIdx + 1U),
+            glyph->getPoint(seg->startPointIdx + 2U));
+      } else {
+        plot(
+            db,
+            canvas,
+            glyph->getPoint(seg->startPointIdx),
+            glyph->getPoint(seg->startPointIdx + 1U),
+            glyph->getPoint(seg->startPointIdx + 2U));
+      }
+      break;
+    }
+  }
+
+  for (auto i = 0U; i != numSegs; ++i) {
+    const auto* seg = glyph->getSegmentsBegin() + i;
+    switch (seg->type) {
+    case tria::asset::GlyphSegmentType::Line:
+      drawCircle(db, canvas, glyph->getPoint(seg->startPointIdx));
+      drawCircle(db, canvas, glyph->getPoint(seg->startPointIdx + 1U));
+      break;
+    case tria::asset::GlyphSegmentType::QuadraticBezier:
+      drawCircle(db, canvas, glyph->getPoint(seg->startPointIdx));
+      drawCircleRed(db, canvas, glyph->getPoint(seg->startPointIdx + 1U));
+      drawCircle(db, canvas, glyph->getPoint(seg->startPointIdx + 2U));
+      break;
+    }
+  }
+}
+
 auto runApp(pal::Platform& platform, asset::Database& db, gfx::Context& gfx) {
   auto win    = platform.createWindow({512, 512});
   auto canvas = gfx.createCanvas(
@@ -111,9 +184,10 @@ auto runApp(pal::Platform& platform, asset::Database& db, gfx::Context& gfx) {
       gfx::DepthMode::Disable,
       gfx::clearMask(gfx::Clear::Color));
 
-  auto p0 = Vec2f{-.5f, -.1f};
-  auto c  = Vec2f{+.0f, +.5f};
-  auto p1 = Vec2f{+.5f, -.1f};
+  const auto* font = db.get("fonts/hack_regular.ttf")->downcast<asset::Font>();
+  auto p0          = Vec2f{-.5f, -.1f};
+  auto c           = Vec2f{+.0f, +.5f};
+  auto p1          = Vec2f{+.5f, -.1f};
 
   while (!win.getIsCloseRequested()) {
     platform.handleEvents();
@@ -132,16 +206,18 @@ auto runApp(pal::Platform& platform, asset::Database& db, gfx::Context& gfx) {
       drawLine(db, canvas, {-1, 0}, {1, 0});
       drawLine(db, canvas, {0, -1}, {0, 1});
 
-      plot(db, canvas, p0, c, p1);
-      drawCircle(db, canvas, p0);
-      drawCircle(db, canvas, c);
-      drawCircle(db, canvas, p1);
+      drawGlyph(db, canvas, font->getGlyph(0x32));
 
-      std::array<float, 2> roots;
-      const auto numRoots = quadBezierRoots(p0, c, p1, roots);
-      for (auto i = 0U; i != numRoots; ++i) {
-        drawCircleRed(db, canvas, {roots[i], 0});
-      }
+      // plot(db, canvas, p0, c, p1);
+      // drawCircle(db, canvas, p0);
+      // drawCircle(db, canvas, c);
+      // drawCircle(db, canvas, p1);
+
+      // std::array<float, 2> roots;
+      // const auto numRoots = quadBezierRoots(p0, c, p1, roots);
+      // for (auto i = 0U; i != numRoots; ++i) {
+      //   drawCircleRed(db, canvas, {roots[i], 0});
+      // }
 
       canvas.drawEnd();
     } else {

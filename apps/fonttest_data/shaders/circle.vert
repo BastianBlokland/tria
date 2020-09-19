@@ -19,7 +19,7 @@ void main() {
   vec2 center = inst.point.xy;
   center.y *= -1.0;
 
-  float scale = .05;
+  float scale = .005;
 
   gl_Position = vec4(center + GET_VERT_POS(vert).xy * scale, 0.0, 1.0);
   outTexcoord = GET_VERT_TEXCOORD(vert);
