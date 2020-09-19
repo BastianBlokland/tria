@@ -1,0 +1,17 @@
+{
+  "shaders": [
+    "shaders/circle.vert.spv",
+    "shaders/tex_red.frag.spv"
+  ],
+  "samplers": [
+    {
+      "texture": "textures/circle.tga",
+      "wrap": "clamp",
+      "filter": "linear"
+    }
+  ],
+  "mesh": "meshes/quad_xy.obj",
+  "blend": "alpha",
+  "depthTest": "always",
+  "cull": "none"
+}
