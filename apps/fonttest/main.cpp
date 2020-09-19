@@ -19,6 +19,28 @@ auto quadBezier(Type p0, Type c, Type p1, float t) {
   return c + (p0 - c) * invT * invT + (p1 - c) * t * t;
 }
 
+auto xRoot(Vec2f p1, Vec2f p2, std::array<float, 1>& output) -> unsigned int {
+  // line equation: p = p1 + (p2 - p1) * t
+
+  // 0      = p1.y + (p2.y - p1.y) * t
+  // -p1.y  = (p2.y - p1.y) * t
+  // -p1.y / (p2.y - p1.y) = t
+
+  // t = p1.y / (p2.y - p1.y)
+
+  const auto to2 = p2 - p1;
+  if (approxZero(to2.y())) {
+    // parallel line, no root.
+    return 0U;
+  }
+  const auto t = -p1.y() / to2.y();
+  if (t < 0.f || t > 1.f) {
+    return 0U;
+  }
+  output[0] = p1.x() + to2.x() * t;
+  return 1U;
+}
+
 [[nodiscard]] auto quadBezierRoots(Vec2f p0, Vec2f c, Vec2f p1, std::array<float, 2>& output)
     -> unsigned int {
 
@@ -77,6 +99,34 @@ auto plot(asset::Database& db, gfx::Canvas& canvas, math::Vec2f p0, math::Vec2f 
       points.data(),
       points.size() * sizeof(math::Vec2f),
       1U);
+}
+
+auto contains(Vec2f point, const asset::Glyph* glyph, unsigned int& num) {
+  // auto num = 0U;
+  for (auto itr = glyph->getSegmentsBegin(); itr != glyph->getSegmentsEnd(); ++itr) {
+    switch (itr->type) {
+    case asset::GlyphSegmentType::Line: {
+      const auto p1       = glyph->getPoint(itr->startPointIdx);
+      const auto p2       = glyph->getPoint(itr->startPointIdx + 1U);
+      auto roots          = std::array<float, 1U>{};
+      const auto numRoots = xRoot(p1 - point, p2 - point, roots);
+      for (auto i = 0U; i != numRoots; ++i) {
+        num += roots[i] >= 0.f;
+      }
+    } break;
+    case asset::GlyphSegmentType::QuadraticBezier: {
+      const auto p1       = glyph->getPoint(itr->startPointIdx);
+      const auto c        = glyph->getPoint(itr->startPointIdx + 1U);
+      const auto p2       = glyph->getPoint(itr->startPointIdx + 2U);
+      auto roots          = std::array<float, 2U>{};
+      const auto numRoots = quadBezierRoots(p1 - point, c - point, p2 - point, roots);
+      for (auto i = 0U; i != numRoots; ++i) {
+        num += roots[i] >= 0.f;
+      }
+    } break;
+    }
+  }
+  return (num % 2U) == 1U;
 }
 
 auto plotRed(
@@ -189,6 +239,7 @@ auto runApp(pal::Platform& platform, asset::Database& db, gfx::Context& gfx) {
   auto c           = Vec2f{+.0f, +.5f};
   auto p1          = Vec2f{+.5f, -.1f};
 
+  auto num = 0U;
   while (!win.getIsCloseRequested()) {
     platform.handleEvents();
     if (canvas.drawBegin()) {
@@ -208,9 +259,14 @@ auto runApp(pal::Platform& platform, asset::Database& db, gfx::Context& gfx) {
 
       drawGlyph(db, canvas, font->getGlyph(0x32));
 
+      num = 0U;
       // plot(db, canvas, p0, c, p1);
       // drawCircle(db, canvas, p0);
-      // drawCircle(db, canvas, c);
+      if (contains(c, font->getGlyph(0x32), num)) {
+        drawCircleRed(db, canvas, c);
+      } else {
+        drawCircle(db, canvas, c);
+      }
       // drawCircle(db, canvas, p1);
 
       // std::array<float, 2> roots;
@@ -226,16 +282,7 @@ auto runApp(pal::Platform& platform, asset::Database& db, gfx::Context& gfx) {
     }
 
     char titleBuffer[256];
-    std::snprintf(
-        titleBuffer,
-        sizeof(titleBuffer),
-        "p0: (%.2f, %.2f), c: (%.2f, %.2f), p1: (%.2f, %.2f)",
-        p0.x(),
-        p0.y(),
-        c.x(),
-        c.y(),
-        p1.x(),
-        p1.y());
+    std::snprintf(titleBuffer, sizeof(titleBuffer), "c: (%.2f, %.2f), num: %u", c.x(), c.y(), num);
     win.setTitle(titleBuffer);
   }
   return 0;
