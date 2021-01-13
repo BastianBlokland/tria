@@ -50,11 +50,11 @@ function(configure_data targetName dataSrcDir)
 endfunction(configure_data)
 
 # Utility function to copy external assets to the output.
-## Note: for license info see: https://bastian.tech/assets/license.txt
+## Note: for license info see: https://www.bastian.tech/assets/license.txt
 function(configure_assets targetName)
   message(STATUS "Configuring external assets: ${targetName}")
   foreach(assetName IN LISTS ARGN)
-    set(srcUrl "https://bastian.tech/assets/${assetName}")
+    set(srcUrl "https://www.bastian.tech/assets/${assetName}")
     set(destPath ${EXECUTABLE_OUTPUT_PATH}/${targetName}/assets/${assetName})
     set(cachePath ${CMAKE_CURRENT_BINARY_DIR}/assets/${assetName})
 
