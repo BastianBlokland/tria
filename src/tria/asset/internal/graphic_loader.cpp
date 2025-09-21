@@ -106,7 +106,7 @@ auto loadGraphic(log::Logger* /*unused*/, DatabaseImpl* db, AssetId id, math::Ra
   // Shaders.
   auto shaders = std::vector<const Shader*>{};
   simdjson::dom::array shadersArray;
-  if (!obj.at("shaders").get(shadersArray)) {
+  if (!obj.at_key("shaders").get(shadersArray)) {
     for (const auto& elem : shadersArray) {
       std::string_view shaderId;
       if (elem.get(shaderId)) {
@@ -130,20 +130,20 @@ auto loadGraphic(log::Logger* /*unused*/, DatabaseImpl* db, AssetId id, math::Ra
   // Mesh  (optional field).
   const Mesh* mesh = nullptr;
   std::string_view meshId;
-  if (!obj.at("mesh").get(meshId)) {
+  if (!obj.at_key("mesh").get(meshId)) {
     mesh = db->get(AssetId{meshId})->downcast<Mesh>();
   }
 
   // Samplers (optional field).
   auto samplers = std::vector<TextureSampler>{};
   simdjson::dom::array samplersArray;
-  if (!obj.at("samplers").get(samplersArray)) {
+  if (!obj.at_key("samplers").get(samplersArray)) {
 
     for (const auto& elem : samplersArray) {
 
       // Texture.
       std::string_view textureId;
-      if (elem.at("texture").get(textureId)) {
+      if (elem.at_key("texture").get(textureId)) {
         throw err::GraphicErr{"Object in sampler array is missing a 'texture' field"};
       }
       const auto* texture = db->get(AssetId{textureId})->downcast<Texture>();
@@ -151,7 +151,7 @@ auto loadGraphic(log::Logger* /*unused*/, DatabaseImpl* db, AssetId id, math::Ra
       // Wrap mode (optional field).
       auto wrapMode = WrapMode::Repeat;
       std::string_view wrapStr;
-      if (!elem.at("wrap").get(wrapStr)) {
+      if (!elem.at_key("wrap").get(wrapStr)) {
         auto wrapModeOpt = getTextureWrapMode(wrapStr);
         if (!wrapModeOpt) {
           throw err::GraphicErr{"Unsupported wrap mode"};
@@ -162,7 +162,7 @@ auto loadGraphic(log::Logger* /*unused*/, DatabaseImpl* db, AssetId id, math::Ra
       // Filter mode (optional field).
       auto filterMode = FilterMode::Linear;
       std::string_view filterStr;
-      if (!elem.at("filter").get(filterStr)) {
+      if (!elem.at_key("filter").get(filterStr)) {
         auto filterModeOpt = getTextureFilterMode(filterStr);
         if (!filterModeOpt) {
           throw err::GraphicErr{"Unsupported filter mode"};
@@ -173,7 +173,7 @@ auto loadGraphic(log::Logger* /*unused*/, DatabaseImpl* db, AssetId id, math::Ra
       // Anisotropy mode (optional field).
       auto anisoMode = AnisotropyMode::None;
       std::string_view anisoModeStr;
-      if (!elem.at("anisotropy").get(anisoModeStr)) {
+      if (!elem.at_key("anisotropy").get(anisoModeStr)) {
         auto anisoModeOpt = getTextureAnisotropyMode(anisoModeStr);
         if (!anisoModeOpt) {
           throw err::GraphicErr{"Unsupported anisotropy filter mode"};
@@ -188,7 +188,7 @@ auto loadGraphic(log::Logger* /*unused*/, DatabaseImpl* db, AssetId id, math::Ra
   // Vertex topology (optional field).
   auto vertexTopology = VertexTopology::Triangles;
   std::string_view topologyStr;
-  if (!obj.at("topology").get(topologyStr)) {
+  if (!obj.at_key("topology").get(topologyStr)) {
     auto vertexTopologyOpt = getVertexTopology(topologyStr);
     if (!vertexTopologyOpt) {
       throw err::GraphicErr{"Unsupported vertex topology"};
@@ -199,7 +199,7 @@ auto loadGraphic(log::Logger* /*unused*/, DatabaseImpl* db, AssetId id, math::Ra
   // Rasterizer mode (optional field).
   auto rasterizerMode = RasterizerMode::Fill;
   std::string_view rasterizerStr;
-  if (!obj.at("rasterizer").get(rasterizerStr)) {
+  if (!obj.at_key("rasterizer").get(rasterizerStr)) {
     auto rasterizerModeOpt = getRasterizerMode(rasterizerStr);
     if (!rasterizerModeOpt) {
       throw err::GraphicErr{"Unsupported rasterizer mode"};
@@ -209,14 +209,14 @@ auto loadGraphic(log::Logger* /*unused*/, DatabaseImpl* db, AssetId id, math::Ra
 
   // Line width (optional field).
   double lineWidth;
-  if (obj.at("lineWidth").get(lineWidth)) {
+  if (obj.at_key("lineWidth").get(lineWidth)) {
     lineWidth = 1.; // Default to 1 pixel wide lines.
   }
 
   // Blend mode (optional field).
   auto blendMode = BlendMode::None;
   std::string_view blendStr;
-  if (!obj.at("blend").get(blendStr)) {
+  if (!obj.at_key("blend").get(blendStr)) {
     auto blendModeOpt = getBlendMode(blendStr);
     if (!blendModeOpt) {
       throw err::GraphicErr{"Unsupported blend mode"};
@@ -227,7 +227,7 @@ auto loadGraphic(log::Logger* /*unused*/, DatabaseImpl* db, AssetId id, math::Ra
   // Depth test mode (optional field).
   auto depthTestMode = DepthTestMode::None;
   std::string_view depthTestStr;
-  if (!obj.at("depthTest").get(depthTestStr)) {
+  if (!obj.at_key("depthTest").get(depthTestStr)) {
     auto depthTestModeOpt = getDepthTestMode(depthTestStr);
     if (!depthTestModeOpt) {
       throw err::GraphicErr{"Unsupported depth-test mode"};
@@ -238,7 +238,7 @@ auto loadGraphic(log::Logger* /*unused*/, DatabaseImpl* db, AssetId id, math::Ra
   // Cull mode (optional field).
   auto cullMode = CullMode::Back;
   std::string_view cullModeStr;
-  if (!obj.at("cull").get(cullModeStr)) {
+  if (!obj.at_key("cull").get(cullModeStr)) {
     auto cullModeOpt = getCullMode(cullModeStr);
     if (!cullModeOpt) {
       throw err::GraphicErr{"Unsupported cull mode"};

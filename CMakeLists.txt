@@ -57,10 +57,10 @@ set(CXX_FLAGS_WIN32 "\
 # Global compiler flags.
 if(MSVC)
   message(STATUS "Setting msvc compiler flags")
-  set(CMAKE_CXX_FLAGS "/std:c++17 /fp:fast /WX /wd4530 /wd26451 /EHsc ${CXX_FLAGS_WIN32}")
+  set(CMAKE_CXX_FLAGS "/std:c++17 /WX /wd4530 /wd26451 /EHsc ${CXX_FLAGS_WIN32}")
 else()
   message(STATUS "Setting unix compiler flags")
-  set(CXX_FLAGS_SHARED "-std=c++17 -ffast-math -mf16c -Werror -Wall -Wextra -fno-strict-aliasing")
+  set(CXX_FLAGS_SHARED "-std=c++17 -mf16c -fno-strict-aliasing")
   if(${TRIA_PLATFORM} STREQUAL "win32")
     set(CXX_FLAGS_SHARED "${CXX_FLAGS_SHARED} ${CXX_FLAGS_WIN32} -Wno-deprecated-declarations")
   endif()
@@ -90,7 +90,7 @@ message(STATUS "Fetching dependency: simdjson")
 FetchContent_Declare(
   simdjson
   GIT_REPOSITORY https://github.com/simdjson/simdjson.git
-  GIT_TAG 501fed6c4fb5c9a5bf30e90c4299de3477119b56)
+  GIT_TAG v2.0.0)
 set(SIMDJSON_JUST_LIBRARY ON CACHE INTERNAL "")
 set(SIMDJSON_BUILD_STATIC ON CACHE INTERNAL "")
 set(SIMDJSON_COMPETITION OFF CACHE INTERNAL "")
