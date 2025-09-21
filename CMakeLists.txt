@@ -57,10 +57,10 @@ set(CXX_FLAGS_WIN32 "\
 # Global compiler flags.
 if(MSVC)
   message(STATUS "Setting msvc compiler flags")
-  set(CMAKE_CXX_FLAGS "/std:c++17 /fp:fast /WX /wd4530 /wd26451 /EHsc ${CXX_FLAGS_WIN32}")
+  set(CMAKE_CXX_FLAGS "/std:c++17 /WX /wd4530 /wd26451 /EHsc ${CXX_FLAGS_WIN32}")
 else()
   message(STATUS "Setting unix compiler flags")
-  set(CXX_FLAGS_SHARED "-std=c++17 -ffast-math -mf16c -fno-strict-aliasing")
+  set(CXX_FLAGS_SHARED "-std=c++17 -mf16c -fno-strict-aliasing")
   if(${TRIA_PLATFORM} STREQUAL "win32")
     set(CXX_FLAGS_SHARED "${CXX_FLAGS_SHARED} ${CXX_FLAGS_WIN32} -Wno-deprecated-declarations")
   endif()
